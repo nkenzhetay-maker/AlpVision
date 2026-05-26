@@ -1,0 +1,8 @@
+{
+  "name": "alpvision",
+  "version": "1.0.0",
+  "description": "TRT Russian Dijital — AI Görsel Asistanı",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
