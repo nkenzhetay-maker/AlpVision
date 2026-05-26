@@ -1,21 +1,7 @@
 [build]
-  functions = "netlify/functions"
-
-[functions]
-  node_bundler = "esbuild"
-
-[[functions]]
-  path = "netlify/functions/generate-bg.js"
-  [functions.generate-bg]
-    timeout = 30
+  functions = "functions"
 
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
