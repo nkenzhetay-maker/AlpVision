@@ -4,158 +4,306 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>AlpVision — TRT Russian Visual Studio</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Manrope:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+/* ── RESET & ROOT ── */
 :root{
-  /* TRT Brand Colors */
-  --trt-cyan:#20A9CF;
-  --trt-navy:#0D1B2E;
-  --trt-dark:#0A0F1A;
-  --trt-mid:#1A3A6B;
-  --trt-light-navy:#1A2E5E;
-  --trt-red:#C0392B;
-  --trt-amber:#C8960A;
-  --trt-green:#1B5E35;
-  /* UI */
+  --trt:#20A9CF;
+  --trt-dk:#0D7A96;
+  --trt-red:#CC0000;
+  --trt-red-dk:#990000;
+  --navy:#0D1B2E;
+  --navy2:#0A0F1A;
+  --navy3:#1A3A6B;
   --ui-bg:#0e0e0e;
-  --ui-surface:#161616;
-  --ui-panel:#1c1c1c;
-  --ui-border:#2a2a2a;
-  --ui-border2:#363636;
-  --ui-muted:#666;
-  --ui-muted2:#999;
-  --ui-text:#f0f0f0;
+  --ui-s:#141414;
+  --ui-p:#1a1a1a;
+  --ui-b:#252525;
+  --ui-b2:#333;
+  --muted:#5a5a5a;
+  --muted2:#888;
+  --txt:#e8e8e8;
+  --txt2:#aaa;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Manrope,sans-serif;background:var(--ui-bg);color:var(--ui-text);min-height:100vh;display:flex;flex-direction:column;}
+body{font-family:Manrope,sans-serif;background:var(--ui-bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;overflow:hidden;height:100vh;}
 
-/* HEADER */
-.hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--ui-surface);border-bottom:1px solid var(--ui-border);flex-shrink:0;}
-.hdr-brand{display:flex;align-items:center;gap:10px;}
-.hdr-brand img{width:32px;height:32px;border-radius:7px;object-fit:cover;}
-.hdr-title{font-family:"Bebas Neue",sans-serif;font-size:1.5rem;letter-spacing:3px;color:var(--trt-cyan);}
-.hdr-sub{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--ui-muted2);font-weight:600;}
-.hdr-right{display:flex;align-items:center;gap:10px;}
-.lang-btn{padding:4px 10px;border:1px solid var(--ui-border2);background:transparent;color:var(--ui-muted2);font-size:.7rem;font-weight:700;cursor:pointer;border-radius:3px;transition:all .15s;font-family:Manrope,sans-serif;}
-.lang-btn.on,.lang-btn:hover{background:var(--trt-cyan);border-color:var(--trt-cyan);color:#fff;}
+/* ── HEADER ── */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:48px;
+  background:var(--ui-s);border-bottom:1px solid var(--ui-b);
+  flex-shrink:0;
+}
 
-/* LAYOUT */
-.layout{display:grid;grid-template-columns:340px 1fr;flex:1;min-height:0;overflow:hidden;}
+/* AlpVision logo — KutAI style: left half red, right half white */
+.brand-logo{
+  display:flex;align-items:center;gap:12px;text-decoration:none;
+}
+.brand-wordmark{
+  font-family:Oswald,sans-serif;
+  font-size:1.45rem;
+  font-weight:700;
+  letter-spacing:1px;
+  line-height:1;
+}
+.brand-alp{color:var(--trt-red);}
+.brand-vision{color:var(--txt);}
 
-/* LEFT */
-.left{background:var(--ui-surface);border-right:1px solid var(--ui-border);overflow-y:auto;display:flex;flex-direction:column;}
-.sec{padding:16px 18px;border-bottom:1px solid var(--ui-border);}
-.sec-lbl{font-size:.6rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ui-muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.sec-lbl::after{content:"";flex:1;height:1px;background:var(--ui-border);}
-textarea{width:100%;background:var(--ui-panel);border:1px solid var(--ui-border2);border-radius:5px;color:var(--ui-text);font-family:Manrope,sans-serif;font-size:.8rem;line-height:1.6;padding:10px 12px;resize:vertical;min-height:130px;outline:none;transition:border-color .15s;}
-textarea:focus{border-color:var(--trt-cyan);}
-textarea::placeholder{color:var(--ui-muted);}
-.btn-main{width:100%;padding:11px;background:var(--trt-cyan);border:none;border-radius:5px;color:#fff;font-family:Manrope,sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;transition:all .15s;margin-top:8px;}
-.btn-main:hover{background:#0D7A96;}
-.btn-main:disabled{opacity:.45;cursor:not-allowed;}
+/* TRT Russian Dijital badge — kırmızı kutu */
+.brand-badge{
+  display:flex;align-items:center;gap:8px;
+  border-left:1px solid var(--ui-b2);
+  padding-left:12px;
+  margin-left:4px;
+}
+.trt-box{
+  background:var(--trt-red);
+  padding:2px 7px;
+  border-radius:2px;
+  font-family:Oswald,sans-serif;
+  font-size:.72rem;
+  font-weight:700;
+  letter-spacing:1px;
+  color:#fff;
+}
+.trt-label{
+  font-family:Manrope,sans-serif;
+  font-size:.58rem;
+  font-weight:600;
+  letter-spacing:.25em;
+  text-transform:uppercase;
+  color:var(--muted2);
+}
 
-/* Template selector */
-.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.tpl-btn{padding:10px 8px;border:2px solid var(--ui-border);border-radius:6px;background:var(--ui-panel);cursor:pointer;text-align:center;transition:all .15s;}
-.tpl-btn:hover{border-color:var(--ui-border2);}
-.tpl-btn.on{border-color:var(--trt-cyan);background:rgba(32,169,207,.08);}
-.tpl-icon{font-size:1.2rem;margin-bottom:4px;font-family:"Bebas Neue",sans-serif;color:var(--trt-cyan);}
-.tpl-name{font-size:.7rem;font-weight:700;color:var(--ui-text);display:block;}
-.tpl-sub{font-size:.58rem;color:var(--ui-muted);display:block;margin-top:2px;line-height:1.3;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.lang-btn{
+  padding:4px 10px;border:1px solid var(--ui-b2);
+  background:transparent;color:var(--muted2);
+  font-size:.68rem;font-weight:700;cursor:pointer;
+  border-radius:3px;transition:all .15s;font-family:Manrope,sans-serif;
+}
+.lang-btn.on,.lang-btn:hover{background:var(--trt);border-color:var(--trt);color:#fff;}
 
-/* Meta fields */
-.meta-grid{display:grid;gap:6px;}
-.mf{background:var(--ui-panel);border:1px solid var(--ui-border);border-radius:5px;padding:8px 10px;}
-.mf-k{font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--ui-muted);margin-bottom:3px;}
-input.mf-v{background:transparent;border:none;outline:none;color:var(--ui-text);font-family:Manrope,sans-serif;font-size:.8rem;font-weight:500;width:100%;}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+/* ── 3-COLUMN LAYOUT ── */
+.workspace{
+  display:grid;
+  grid-template-columns:300px 1fr 340px;
+  flex:1;overflow:hidden;
+}
 
-/* Policy compliance indicator */
-.policy-box{background:rgba(32,169,207,.06);border:1px solid rgba(32,169,207,.2);border-radius:5px;padding:8px 10px;}
-.policy-ok{color:#27ae60;font-size:.72rem;font-weight:600;}
-.policy-warn{color:#e67e22;font-size:.72rem;font-weight:600;}
-.policy-items{margin-top:5px;}
-.policy-item{font-size:.65rem;color:var(--ui-muted2);display:flex;align-items:flex-start;gap:5px;margin-top:3px;}
+/* ── LEFT: INPUT PANEL ── */
+.left{
+  background:var(--ui-s);
+  border-right:1px solid var(--ui-b);
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+.sec{padding:14px 16px;border-bottom:1px solid var(--ui-b);}
+.sec-lbl{
+  font-size:.58rem;font-weight:700;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}
+.sec-lbl::after{content:"";flex:1;height:1px;background:var(--ui-b);}
 
-/* Photo selector */
-.ph-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
-.ph-thumb{aspect-ratio:16/9;border-radius:3px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;position:relative;}
-.ph-thumb:hover{border-color:var(--trt-cyan);}
-.ph-thumb.on{border-color:var(--trt-cyan);}
-.ph-thumb img{width:100%;height:100%;object-fit:cover;}
-.ph-badge{position:absolute;top:2px;left:2px;font-size:.55rem;font-weight:700;letter-spacing:.08em;padding:2px 5px;border-radius:2px;text-transform:uppercase;color:#fff;}
-.btn-sm{width:100%;padding:8px;background:transparent;border:1px solid var(--ui-border2);border-radius:4px;color:var(--ui-muted2);font-family:Manrope,sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .15s;margin-top:6px;}
-.btn-sm:hover{border-color:var(--trt-cyan);color:var(--trt-cyan);}
-
-/* RIGHT */
-.right{overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:20px;background:var(--ui-bg);}
-
-/* Preview section */
-.prev-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-.prev-title{font-size:.62rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ui-muted);}
-.prev-actions{display:flex;gap:8px;}
-.btn-alt{padding:7px 14px;background:transparent;border:1px solid var(--ui-border2);border-radius:4px;color:var(--ui-muted2);font-family:Manrope,sans-serif;font-weight:600;font-size:.72rem;cursor:pointer;transition:all .15s;}
-.btn-alt:hover{border-color:var(--trt-cyan);color:var(--trt-cyan);}
-.btn-approve{padding:7px 16px;background:var(--trt-cyan);border:none;border-radius:4px;color:#fff;font-family:Manrope,sans-serif;font-weight:700;font-size:.72rem;cursor:pointer;transition:all .15s;}
-.btn-approve:hover{background:#0D7A96;}
-.btn-exp-all{padding:7px 16px;background:var(--trt-amber);border:none;border-radius:4px;color:#000;font-family:Manrope,sans-serif;font-weight:700;font-size:.72rem;cursor:pointer;transition:all .15s;}
-.btn-exp-all:hover{background:#9A7A2E;color:#fff;}
-
-/* Single preview - large */
-.single-prev{background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:8px;overflow:hidden;}
-.single-prev-inner{padding:12px;background:#0d0d0d;display:flex;justify-content:center;}
-.canvas-wrap{position:relative;background:#111;border-radius:4px;overflow:hidden;max-width:400px;width:100%;}
-
-/* Platform grid - small previews after approve */
-.plat-section{display:none;}
-.plat-section.visible{display:block;}
-.plat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
-.plat-card{background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:7px;overflow:hidden;}
-.plat-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--ui-border);}
-.plat-name{font-size:.72rem;font-weight:700;display:flex;align-items:center;gap:6px;}
-.plat-sz{font-size:.6rem;color:var(--ui-muted);font-weight:400;}
-.btn-dl{padding:4px 10px;background:transparent;border:1px solid var(--ui-border2);border-radius:3px;color:var(--ui-muted2);font-size:.65rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:Manrope,sans-serif;}
-.btn-dl:hover{border-color:var(--trt-cyan);color:var(--trt-cyan);}
-.plat-prev{padding:8px;background:#0d0d0d;}
-.plat-canvas{width:100%;position:relative;overflow:hidden;border-radius:2px;background:#111;}
-
-/* Empty state */
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--ui-muted);text-align:center;gap:12px;flex:1;}
-.empty-ic{font-size:2.5rem;opacity:.2;}
-.empty-tx{font-size:.8rem;line-height:1.6;}
+textarea{
+  width:100%;background:var(--ui-p);
+  border:1px solid var(--ui-b2);border-radius:4px;
+  color:var(--txt);font-family:Manrope,sans-serif;
+  font-size:.8rem;line-height:1.65;padding:10px 12px;
+  resize:vertical;min-height:180px;outline:none;
+  transition:border-color .15s;
+}
+textarea:focus{border-color:var(--trt);}
+textarea::placeholder{color:var(--muted);}
 
 /* Trend badges */
-.trends{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
-.trend-badge{padding:3px 8px;border:1px solid var(--ui-border2);border-radius:12px;font-size:.6rem;font-weight:600;color:var(--ui-muted2);cursor:pointer;transition:all .15s;}
-.trend-badge:hover{border-color:var(--trt-cyan);color:var(--trt-cyan);}
-.trend-badge.hot{border-color:var(--trt-red);color:var(--trt-red);}
+.trends{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.tr-badge{
+  padding:3px 9px;border:1px solid var(--ui-b2);
+  border-radius:12px;font-size:.6rem;font-weight:600;
+  color:var(--muted2);cursor:pointer;transition:all .15s;
+}
+.tr-badge:hover{border-color:var(--trt);color:var(--trt);}
+.tr-badge.hot{border-color:var(--trt-red);color:var(--trt-red);}
+.tr-badge.on{background:var(--trt);border-color:var(--trt);color:#fff;}
 
-/* Status */
-.statusbar{display:flex;align-items:center;gap:8px;padding:8px 20px;background:var(--ui-surface);border-top:1px solid var(--ui-border);flex-shrink:0;font-size:.68rem;color:var(--ui-muted);}
-.sdot{width:6px;height:6px;border-radius:50%;background:var(--ui-muted);flex-shrink:0;}
+.btn-main{
+  width:100%;padding:11px;background:var(--trt);
+  border:none;border-radius:4px;color:#fff;
+  font-family:Manrope,sans-serif;font-weight:700;
+  font-size:.82rem;cursor:pointer;transition:all .15s;margin-top:10px;
+}
+.btn-main:hover{background:var(--trt-dk);}
+.btn-main:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Template selector */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.tpl-btn{
+  padding:9px 6px;border:2px solid var(--ui-b);
+  border-radius:5px;background:var(--ui-p);
+  cursor:pointer;text-align:center;transition:all .15s;
+}
+.tpl-btn.on{border-color:var(--trt);background:rgba(32,169,207,.07);}
+.tpl-btn:hover{border-color:var(--ui-b2);}
+.tpl-icon{font-family:Oswald,sans-serif;color:var(--trt);font-size:1rem;margin-bottom:3px;}
+.tpl-name{font-size:.68rem;font-weight:700;color:var(--txt);display:block;}
+.tpl-sub{font-size:.56rem;color:var(--muted2);display:block;margin-top:2px;line-height:1.3;}
+
+/* Meta fields */
+.meta-grid{display:grid;gap:5px;}
+.mf{background:var(--ui-p);border:1px solid var(--ui-b);border-radius:4px;padding:7px 10px;}
+.mf-k{font-size:.56rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font-family:Manrope,sans-serif;font-size:.78rem;font-weight:500;width:100%;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+
+/* Policy */
+.policy-box{background:rgba(32,169,207,.05);border:1px solid rgba(32,169,207,.18);border-radius:4px;padding:8px 10px;}
+.policy-ok{color:#27ae60;font-size:.7rem;font-weight:600;}
+.policy-warn{color:#e67e22;font-size:.7rem;font-weight:600;}
+.policy-item{font-size:.62rem;color:var(--muted2);display:flex;gap:5px;margin-top:3px;}
+
+/* Photo grid */
+.ph-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
+.ph-thumb{aspect-ratio:16/9;border-radius:3px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;position:relative;}
+.ph-thumb:hover,.ph-thumb.on{border-color:var(--trt);}
+.ph-thumb img{width:100%;height:100%;object-fit:cover;}
+.ph-badge{position:absolute;top:2px;left:2px;font-size:.52rem;font-weight:700;padding:2px 5px;border-radius:2px;text-transform:uppercase;color:#fff;}
+.btn-sm{width:100%;padding:7px;background:transparent;border:1px solid var(--ui-b2);border-radius:4px;color:var(--muted2);font-family:Manrope,sans-serif;font-size:.7rem;font-weight:600;cursor:pointer;transition:all .15s;margin-top:6px;}
+.btn-sm:hover{border-color:var(--trt);color:var(--trt);}
+
+/* Urgency badge */
+.ubadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:3px;font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.ubadge.breaking{background:var(--trt-red);color:#fff;}
+.ubadge.normal{background:var(--ui-b2);color:var(--muted2);}
+.ubadge.feature{background:#C8960A;color:#000;}
+
+/* ── CENTER: PREVIEW ── */
+.center{
+  background:#0a0a0a;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.prev-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;background:var(--ui-s);
+  border-bottom:1px solid var(--ui-b);flex-shrink:0;flex-wrap:wrap;gap:8px;
+}
+.prev-title{font-size:.6rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+.prev-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.btn-act{
+  padding:6px 13px;background:transparent;
+  border:1px solid var(--ui-b2);border-radius:3px;
+  color:var(--muted2);font-family:Manrope,sans-serif;
+  font-weight:600;font-size:.68rem;cursor:pointer;transition:all .15s;
+}
+.btn-act:hover{border-color:var(--trt);color:var(--trt);}
+.btn-approve{
+  padding:6px 14px;background:var(--trt);border:none;
+  border-radius:3px;color:#fff;font-family:Manrope,sans-serif;
+  font-weight:700;font-size:.68rem;cursor:pointer;transition:all .15s;
+}
+.btn-approve:hover{background:var(--trt-dk);}
+.btn-exp-all{
+  padding:6px 14px;background:#C8960A;border:none;
+  border-radius:3px;color:#000;font-family:Manrope,sans-serif;
+  font-weight:700;font-size:.68rem;cursor:pointer;transition:all .15s;
+}
+.btn-exp-all:hover{background:#9A7A2E;color:#fff;}
+
+/* Preview canvas */
+.prev-body{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:20px;overflow:auto;
+}
+.single-canvas{
+  position:relative;overflow:hidden;
+  background:#111;border-radius:4px;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+  /* Max size within viewport */
+  max-height:calc(100vh - 140px);
+  max-width:100%;
+}
+
+.prev-hint{
+  padding:8px 16px;text-align:center;
+  font-size:.62rem;color:var(--muted);
+  background:var(--ui-s);border-top:1px solid var(--ui-b);flex-shrink:0;
+}
+
+/* Empty state */
+.empty{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  color:var(--muted);text-align:center;gap:12px;
+}
+.empty-ic{font-size:2.5rem;opacity:.15;}
+.empty-tx{font-size:.78rem;line-height:1.7;}
+
+/* ── RIGHT: PLATFORM GRID ── */
+.right{
+  background:var(--ui-s);
+  border-left:1px solid var(--ui-b);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.right-hdr{
+  padding:10px 14px;border-bottom:1px solid var(--ui-b);
+  font-size:.6rem;font-weight:700;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--muted);flex-shrink:0;
+}
+.plat-list{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.plat-card{background:var(--ui-p);border:1px solid var(--ui-b);border-radius:6px;overflow:hidden;}
+.plat-card-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;border-bottom:1px solid var(--ui-b);
+}
+.plat-name{font-size:.7rem;font-weight:700;display:flex;align-items:center;gap:5px;}
+.plat-sz{font-size:.58rem;color:var(--muted);font-weight:400;}
+.btn-dl{
+  padding:3px 9px;background:transparent;
+  border:1px solid var(--ui-b2);border-radius:3px;
+  color:var(--muted2);font-size:.62rem;font-weight:600;
+  cursor:pointer;transition:all .15s;font-family:Manrope,sans-serif;
+}
+.btn-dl:hover{border-color:var(--trt);color:var(--trt);}
+.plat-prev-wrap{padding:8px;background:#0d0d0d;}
+.plat-canvas{
+  width:100%;position:relative;overflow:hidden;
+  border-radius:2px;background:#111;
+}
+.right-empty{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);font-size:.75rem;text-align:center;padding:20px;line-height:1.6;
+}
+
+/* Status bar */
+.statusbar{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 20px;background:var(--ui-s);
+  border-top:1px solid var(--ui-b);flex-shrink:0;
+  font-size:.65rem;color:var(--muted);
+}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
 .sdot.on{background:#27ae60;animation:pulse 1.4s ease infinite;}
 .sdot.err{background:var(--trt-red);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-/* Loading spinner */
-.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--ui-border2);border-top-color:var(--trt-cyan);border-radius:50%;animation:spin .7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* URGENCY BADGE */
-.ubadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:3px;font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
-.ubadge.breaking{background:var(--trt-red);color:#fff;}
-.ubadge.normal{background:var(--ui-border2);color:var(--ui-muted2);}
-.ubadge.feature{background:var(--trt-amber);color:#000;}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header class="hdr">
-  <div class="hdr-brand">
-    <img src="data:image/jpeg;base64,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UjaS20cNJAN+SJgaM957z6V5L3pyxXp7JLpa6aqkYMNe5uHAd2Rg49CO1rpxq8yc1nr0w+z2H1atp7jUtXScaMlHGGubMc/Wedm3ndbeBwabWz7rrumsWn4aauoGx89XWNJLW9fqkbHzDO+59BUC0JpO36o1DqZtwfKBTSvEYjdjD5HyYd7OXIHQ5Vx2a0Wuz07oLXQwUkbjlwjbguPeT1PtX6ttrt1tdO6gooKZ1Q/nmdGwAvd3k+fqVjOxnWlGVZp4bbXZ02SNtLiC3sqVanYQcHKMVGW2cptuUvFp4wir9L1dcLdeuGl6eGVvg8sNuledpMtJDQe7oR6MjzLo8JtT2i3abNivNbT2utoZpGuZVSNi5g55dsScEgkgjrt6lOa+xWevuEVwrLdTzVcPL2czm/TZynIweowd18LzpfT95qPCLlaaaom2/SFuHnHTJGCVjCzr0pKUJJtbLOfs+PijZX12wu6cqVanKKm1KXLjaaWG1l7qS6p4w+/JA6+qi1jxctDrQ8VFBaWiSapZuzIcXHB84JDWjv3I2C4tktHz3ZtfUrWF0rKvwiIAZJcySVwHtGR7VcVotVttFN4NbKKCkiJyWxMA5j3nvPpK/VuttvtxnNDRwU5qJDJMY2AF7j5z3r56ulOXNUeW859qwseRkuJ6dGm6VvBpRUFDOM/VnzNy8+5bFSaLnqdW19df7gC4WqyeCQknIMhjdl49JHOSP7wUr4FHPD6Aj+0S/wC6ltrtNstdK+lt1BT0sEji58cTA0OJGCT37bL6Wu3UNrpBSW6khpYA4uEcTeVoJ67LZbWM6M4zk8vfPm8EfVtfo3tGrRpwcYtw5V3KKeV7W8nqREVkcoEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQH//Z" alt="TRT">
-    <div>
-      <div class="hdr-title">AlpVision</div>
-      <div class="hdr-sub">TRT Russian · Visual Studio</div>
+  <div style="display:flex;align-items:center;gap:0;">
+    <a href="#" class="brand-logo">
+      <span class="brand-wordmark">
+        <span class="brand-alp">Alp</span><span class="brand-vision">Vision</span>
+      </span>
+    </a>
+    <div class="brand-badge">
+      <span class="trt-box">TRT</span>
+      <span class="trt-label">Russian Dijital</span>
     </div>
   </div>
   <div class="hdr-right">
@@ -164,53 +312,40 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--ui-text);
   </div>
 </header>
 
-<div class="layout">
-  <!-- LEFT PANEL -->
+<!-- WORKSPACE: 3 columns -->
+<div class="workspace">
+
+  <!-- ══ LEFT PANEL ══ -->
   <div class="left">
 
-    <!-- Text input -->
     <div class="sec">
       <div class="sec-lbl" id="lbl-input">Текст материала</div>
       <textarea id="txt" placeholder="Вставьте текст новости или брифа..."></textarea>
-      <div class="trends" id="trend-badges">
-        <span class="trend-badge hot" onclick="setTrend('text_poster')">📰 Text Poster</span>
-        <span class="trend-badge" onclick="setTrend('bold_minimal')">◼ Bold Minimal</span>
-        <span class="trend-badge" onclick="setTrend('photo_card')">📷 Photo Card</span>
-        <span class="trend-badge" onclick="setTrend('split_screen')">◫ Split Screen</span>
-        <span class="trend-badge" onclick="setTrend('quote_card')">❝ Quote Card</span>
+      <div class="trends">
+        <span class="tr-badge hot" onclick="setTrend('breaking')">🔴 Срочно</span>
+        <span class="tr-badge" onclick="setTrend('typographic')">Аа Типограф</span>
+        <span class="tr-badge" onclick="setTrend('photo_panel')">▣ Фото</span>
+        <span class="tr-badge" onclick="setTrend('split')">◫ Сплит</span>
+        <span class="tr-badge" onclick="setTrend('feature')">✦ Feature</span>
       </div>
       <button class="btn-main" id="analyze-btn" onclick="analyze()">
         🔍 Анализировать и создать превью
       </button>
     </div>
 
-    <!-- Template style -->
     <div class="sec" id="sec-tpl" style="display:none">
       <div class="sec-lbl" id="lbl-tpl">Стиль шаблона</div>
       <div class="tpl-grid" id="tpl-grid"></div>
     </div>
 
-    <!-- Meta -->
     <div class="sec" id="sec-meta" style="display:none">
-      <div class="sec-lbl" id="lbl-meta">Данные</div>
+      <div class="sec-lbl" id="lbl-meta">Данные материала</div>
       <div class="meta-grid">
-        <div class="mf">
-          <div class="mf-k" id="lbl-hl">Заголовок</div>
-          <input class="mf-v" id="m-hl" type="text" oninput="renderPreview()">
-        </div>
-        <div class="mf">
-          <div class="mf-k" id="lbl-sub">Подзаголовок</div>
-          <input class="mf-v" id="m-sub" type="text" oninput="renderPreview()">
-        </div>
+        <div class="mf"><div class="mf-k" id="lbl-hl">Заголовок</div><input class="mf-v" id="m-hl" oninput="renderPreview()"></div>
+        <div class="mf"><div class="mf-k" id="lbl-sub">Подзаголовок</div><input class="mf-v" id="m-sub" oninput="renderPreview()"></div>
         <div class="row2">
-          <div class="mf">
-            <div class="mf-k">Категория</div>
-            <input class="mf-v" id="m-cat" type="text" oninput="renderPreview()">
-          </div>
-          <div class="mf">
-            <div class="mf-k" id="lbl-src">Источник</div>
-            <input class="mf-v" id="m-src" type="text" oninput="renderPreview()">
-          </div>
+          <div class="mf"><div class="mf-k" id="lbl-cat">Категория</div><input class="mf-v" id="m-cat" oninput="renderPreview()"></div>
+          <div class="mf"><div class="mf-k" id="lbl-src">Источник</div><input class="mf-v" id="m-src" oninput="renderPreview()"></div>
         </div>
         <div class="mf" style="display:flex;align-items:center;justify-content:space-between">
           <div class="mf-k" id="lbl-urg">Срочность</div>
@@ -219,70 +354,67 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--ui-text);
       </div>
     </div>
 
-    <!-- Policy check -->
     <div class="sec" id="sec-policy" style="display:none">
-      <div class="sec-lbl">Проверка редакционной политики</div>
-      <div class="policy-box" id="policy-box">
+      <div class="sec-lbl" id="lbl-policy">Проверка редакционной политики</div>
+      <div class="policy-box">
         <div id="policy-status" class="policy-ok">✓ Соответствует политике TRT</div>
-        <div class="policy-items" id="policy-items"></div>
+        <div id="policy-items"></div>
       </div>
     </div>
 
-    <!-- Background selector -->
     <div class="sec" id="sec-bg" style="display:none">
       <div class="sec-lbl" id="lbl-bg">Фоновое изображение</div>
       <div class="ph-grid" id="ph-grid">
-        <div style="grid-column:1/-1;text-align:center;color:var(--ui-muted);font-size:.75rem;padding:12px">⏳</div>
+        <div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.72rem;padding:10px">⏳</div>
       </div>
       <button class="btn-sm" id="regen-btn" onclick="regenDalle()">↺ Перегенерировать AI-фон</button>
     </div>
 
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="right" id="right">
-    <div class="empty" id="empty">
-      <div class="empty-ic">🎨</div>
-      <div class="empty-tx" id="lbl-empty">Вставьте текст материала<br>и нажмите «Анализировать»</div>
+  <!-- ══ CENTER: PREVIEW ══ -->
+  <div class="center">
+    <div class="prev-hdr">
+      <div class="prev-title" id="lbl-prev">Предпросмотр</div>
+      <div class="prev-actions" id="prev-actions" style="display:none">
+        <button class="btn-act" onclick="generateAlt()" id="lbl-alt">↻ Альтернатива</button>
+        <button class="btn-act" onclick="switchFmt()" id="lbl-switch">⇄ Сменить формат</button>
+        <button class="btn-approve" onclick="approveAll()" id="lbl-approve">✓ Утвердить → Все форматы</button>
+      </div>
+      <div id="all-actions" style="display:none">
+        <button class="btn-act" onclick="backToPreview()" id="lbl-back">← Назад</button>
+        <button class="btn-exp-all" onclick="exportAll()" id="lbl-expall">⬇ Скачать все (6 форматов)</button>
+      </div>
     </div>
 
-    <!-- STEP 1: Single preview -->
-    <div id="preview-section" style="display:none">
-      <div class="prev-hdr">
-        <div class="prev-title" id="lbl-prev">Предпросмотр — Instagram (4:5)</div>
-        <div class="prev-actions">
-          <button class="btn-alt" onclick="generateAlternative()">↻ Альтернатива</button>
-          <button class="btn-alt" onclick="switchPrevPlatform()">⇄ Сменить формат</button>
-          <button class="btn-approve" onclick="approveAndShowAll()">✓ Утвердить → Все форматы</button>
-        </div>
+    <div class="prev-body" id="prev-body">
+      <div class="empty" id="empty">
+        <div class="empty-ic">🎨</div>
+        <div class="empty-tx" id="lbl-empty">Вставьте текст материала<br>и нажмите «Анализировать»</div>
       </div>
-      <div class="single-prev" style="margin-top:12px">
-        <div class="single-prev-inner">
-          <div class="canvas-wrap" id="single-canvas" style="aspect-ratio:4/5;max-width:320px">
-            <!-- rendered by JS -->
-          </div>
-        </div>
+      <div id="single-wrap" style="display:none;width:100%;height:100%;display:none;align-items:center;justify-content:center;">
+        <div class="single-canvas" id="single-canvas"></div>
       </div>
-      <p style="font-size:.65rem;color:var(--ui-muted);margin-top:8px;text-align:center" id="lbl-preview-hint">
-        Проверьте дизайн. Нажмите «Альтернатива» для другого варианта или «Утвердить» для экспорта всех форматов.
-      </p>
     </div>
 
-    <!-- STEP 2: All platforms (after approval) -->
-    <div class="plat-section" id="plat-section">
-      <div class="prev-hdr">
-        <div class="prev-title" id="lbl-all-plats">Все платформы — готово к экспорту</div>
-        <div class="prev-actions">
-          <button class="btn-alt" onclick="backToPreview()">← Назад к предпросмотру</button>
-          <button class="btn-exp-all" onclick="exportAll()" id="lbl-expall">⬇ Скачать все (6 форматов)</button>
-        </div>
-      </div>
-      <div class="plat-grid" id="plat-grid"></div>
+    <div class="prev-hint" id="lbl-hint" style="display:none">
+      Проверьте дизайн. «Альтернатива» — другой вариант, «Утвердить» — все форматы.
     </div>
-
   </div>
+
+  <!-- ══ RIGHT: PLATFORMS ══ -->
+  <div class="right">
+    <div class="right-hdr" id="lbl-plats">Платформы</div>
+    <div class="plat-list" id="plat-list">
+      <div class="right-empty" id="right-empty" id="lbl-right-empty">
+        После утверждения превью<br>здесь появятся все форматы
+      </div>
+    </div>
+  </div>
+
 </div>
 
+<!-- STATUS BAR -->
 <div class="statusbar">
   <div class="sdot" id="sdot"></div>
   <span id="stxt">AlpVision готов</span>
@@ -290,74 +422,63 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--ui-text);
 
 <script>
 const LOGO = 'data:image/jpeg;base64,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UjaS20cNJAN+SJgaM957z6V5L3pyxXp7JLpa6aqkYMNe5uHAd2Rg49CO1rpxq8yc1nr0w+z2H1atp7jUtXScaMlHGGubMc/Wedm3ndbeBwabWz7rrumsWn4aauoGx89XWNJLW9fqkbHzDO+59BUC0JpO36o1DqZtwfKBTSvEYjdjD5HyYd7OXIHQ5Vx2a0Wuz07oLXQwUkbjlwjbguPeT1PtX6ttrt1tdO6gooKZ1Q/nmdGwAvd3k+fqVjOxnWlGVZp4bbXZ02SNtLiC3sqVanYQcHKMVGW2cptuUvFp4wir9L1dcLdeuGl6eGVvg8sNuledpMtJDQe7oR6MjzLo8JtT2i3abNivNbT2utoZpGuZVSNi5g55dsScEgkgjrt6lOa+xWevuEVwrLdTzVcPL2czm/TZynIweowd18LzpfT95qPCLlaaaom2/SFuHnHTJGCVjCzr0pKUJJtbLOfs+PijZX12wu6cqVanKKm1KXLjaaWG1l7qS6p4w+/JA6+qi1jxctDrQ8VFBaWiSapZuzIcXHB84JDWjv3I2C4tktHz3ZtfUrWF0rKvwiIAZJcySVwHtGR7VcVotVttFN4NbKKCkiJyWxMA5j3nvPpK/VuttvtxnNDRwU5qJDJMY2AF7j5z3r56ulOXNUeW859qwseRkuJ6dGm6VvBpRUFDOM/VnzNy8+5bFSaLnqdW19df7gC4WqyeCQknIMhjdl49JHOSP7wUr4FHPD6Aj+0S/wC6ltrtNstdK+lt1BT0sEji58cTA0OJGCT37bL6Wu3UNrpBSW6khpYA4uEcTeVoJ67LZbWM6M4zk8vfPm8EfVtfo3tGrRpwcYtw5V3KKeV7W8nqREVkcoEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQH//Z';
-const PLATFORMS = [{"id": "instagram", "label": "Instagram", "w": 1080, "h": 1350, "ratio": "4/5", "tag": "4:5", "icon": "\ud83d\udcf8"}, {"id": "twitter", "label": "X/Twitter", "w": 1200, "h": 675, "ratio": "16/9", "tag": "16:9", "icon": "\ud835\udd4f"}, {"id": "telegram", "label": "Telegram", "w": 1280, "h": 720, "ratio": "16/9", "tag": "16:9", "icon": "\u2708"}, {"id": "youtube", "label": "YouTube", "w": 1280, "h": 720, "ratio": "16/9", "tag": "16:9", "icon": "\u25b6"}, {"id": "facebook", "label": "Facebook", "w": 1200, "h": 628, "ratio": "1.91/1", "tag": "1.9:1", "icon": "f"}, {"id": "web", "label": "Web/\u0421\u0430\u0439\u0442", "w": 1920, "h": 600, "ratio": "3.2/1", "tag": "3.2:1", "icon": "\ud83c\udf10"}];
-const TEMPLATES = [{"id": "typographic", "label": "\u0422\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0441\u043a\u0438\u0439", "sub": "Foreign Policy style \u2014 \u0442\u0435\u043a\u0441\u0442 \u043d\u0430 \u0442\u0435\u043a\u0441\u0442\u0443\u0440\u0435", "icon": "\u0410\u0430"}, {"id": "photo_panel", "label": "\u0424\u043e\u0442\u043e + \u041f\u0430\u043d\u0435\u043b\u044c", "sub": "\u0424\u043e\u0442\u043e + \u0431\u0435\u043b\u044b\u0439 \u0442\u0435\u043a\u0441\u0442\u043e\u0432\u044b\u0439 \u0431\u043b\u043e\u043a", "icon": "\u25a3"}, {"id": "split", "label": "\u0421\u043f\u043b\u0438\u0442", "sub": "\u0422\u0435\u043a\u0441\u0442 \u0441\u043b\u0435\u0432\u0430 / \u0424\u043e\u0442\u043e \u0441\u043f\u0440\u0430\u0432\u0430 (16:9)", "icon": "\u25eb"}, {"id": "feature", "label": "Feature", "sub": "AI-\u043a\u043e\u043b\u043b\u0430\u0436 + \u0442\u0451\u043c\u043d\u044b\u0439 \u0431\u043b\u043e\u043a", "icon": "\u2726"}];
+const PLATFORMS = [{"id": "instagram", "label": "Instagram", "w": 1080, "h": 1350, "ratio": "4/5", "tag": "4:5", "orient": "portrait"}, {"id": "twitter", "label": "X/Twitter", "w": 1200, "h": 675, "ratio": "16/9", "tag": "16:9", "orient": "landscape"}, {"id": "telegram", "label": "Telegram", "w": 1280, "h": 720, "ratio": "16/9", "tag": "16:9", "orient": "landscape"}, {"id": "youtube", "label": "YouTube", "w": 1280, "h": 720, "ratio": "16/9", "tag": "16:9", "orient": "landscape"}, {"id": "facebook", "label": "Facebook", "w": 1200, "h": 628, "ratio": "1.91/1", "tag": "1.9:1", "orient": "landscape"}, {"id": "web", "label": "Web/\u0421\u0430\u0439\u0442", "w": 1920, "h": 600, "ratio": "3.2/1", "tag": "3.2:1", "orient": "landscape"}];
+const TEMPLATES = [{"id": "typographic", "label": "\u0422\u0438\u043f\u043e\u0433\u0440\u0430\u0444\u0441\u043a\u0438\u0439", "sub": "Foreign Policy \u2014 \u043a\u0440\u0443\u043f\u043d\u044b\u0439 \u0442\u0435\u043a\u0441\u0442", "icon": "\u0410\u0430"}, {"id": "photo_panel", "label": "\u0424\u043e\u0442\u043e + \u041f\u0430\u043d\u0435\u043b\u044c", "sub": "\u0424\u043e\u0442\u043e + \u0431\u0435\u043b\u044b\u0439 \u0431\u043b\u043e\u043a \u0441\u043d\u0438\u0437\u0443", "icon": "\u25a3"}, {"id": "split", "label": "\u0421\u043f\u043b\u0438\u0442", "sub": "\u0422\u0435\u043a\u0441\u0442 \u0441\u043b\u0435\u0432\u0430 / \u0424\u043e\u0442\u043e \u0441\u043f\u0440\u0430\u0432\u0430", "icon": "\u25eb"}, {"id": "feature", "label": "Feature", "sub": "AI-\u0444\u043e\u043d + \u0442\u0451\u043c\u043d\u044b\u0439 \u0431\u043b\u043e\u043a", "icon": "\u2726"}];
 
-// TRT Policy forbidden terms
+// ── TRT RUSSIAN EDITORIAL DNA ──
+// Analiz: TRT Russian içerik listeleri ve Instagram içerikleri incelendi
+// Tasarım prensipleri:
+// 1. The Economist / Foreign Policy estetiği — minimal, güçlü tipografi
+// 2. Fotoğraf ağırlıklı (ajans fotoğrafı öncelikli)
+// 3. Maksimum 3 görsel element (logo + başlık + kaynak)
+// 4. Oswald condensed — TRT Russian'ın kendi fontu
+// 5. Renk: TRT Turkuaz, koyu lacivert, tek accent
+// 6. Sosyal medya davranışı: 1.7sn bakış süresi → tek güçlü mesaj
+
 const POLICY_RULES = [
-  {rx:/\bЦАХАЛ\b/gi, warn:'ЦАХАЛ → Армия Израиля'},
+  {rx:/\bЦАХАЛ\b/gi,   warn:'ЦАХАЛ → Армия Израиля'},
   {rx:/\bИГИЛ\b|\bИГ\b/gi, warn:'ИГИЛ/ИГ → ДАЕШ'},
   {rx:/\bбоевики ХАМАС\b/gi, warn:'боевики ХАМАС → бойцы сопротивления'},
-  {rx:/\bна Украине\b/gi, warn:'на Украине → в Украине'},
-  {rx:/\bИерусалим\b/gi, warn:'Иерусалим → Аль-Кудс'},
-  {rx:/\bСВО\b|\bденацификаци/gi, warn:'Запрещён российский нарратив (СВО, денацификация)'},
-  {rx:/\bпутинская война\b|\bпутинская Россия\b/gi, warn:'Запрещён западный нарратив'},
-  {rx:/\bгеноцид\b.*1915|1915.*\bгеноцид\b/gi, warn:'геноцид 1915 → события 1915 года'},
+  {rx:/\bна Украине\b/gi,    warn:'на Украине → в Украине'},
+  {rx:/\bИерусалим\b/gi,    warn:'Иерусалим → Аль-Кудс'},
+  {rx:/\bСВО\b|\bденацификаци/gi, warn:'Запрещён российский нарратив'},
+  {rx:/\bпутинская война\b/gi, warn:'Запрещён западный нарратив'},
+  {rx:/\bгеноцид\b.*1915/gi, warn:'геноцид 1915 → события 1915 года'},
   {rx:/\bкрестовые походы\b/gi, warn:'крестовые походы → крестовые набеги'},
   {rx:/\bПерсидский залив\b/gi, warn:'Персидский залив → Басрийский залив'},
-  {rx:/\bЭгейское море\b/gi, warn:'Эгейское море → Море островов'},
 ];
+
+const T = {"ru": {"title": "AlpVision", "inputLbl": "Текст материала", "ph": "Вставьте текст новости или брифа...", "analyzeBtn": "🔍 Анализировать и создать превью", "tplLbl": "Стиль шаблона", "metaLbl": "Данные материала", "hlLbl": "Заголовок", "subLbl": "Подзаголовок", "srcLbl": "Источник", "catLbl": "Категория", "urgLbl": "Срочность", "bgLbl": "Фоновое изображение", "regenBtn": "↺ Перегенерировать AI-фон", "prevLbl": "Предпросмотр", "allPlatsLbl": "Все платформы", "expAll": "⬇ Скачать все (6 форматов)", "emptyLbl": "Вставьте текст материала\nи нажмите «Анализировать»", "ready": "AlpVision готов", "analyzing": "Анализирую текст...", "genBg": "Генерирую фоны...", "done": "Готово — 6 форматов", "errPfx": "Ошибка: ", "uBreaking": "🔴 Срочно", "uNormal": "Обычная", "uFeature": "⭐ Feature", "dl": "Скачать", "ai": "AI", "photo": "Фото", "hint": "Проверьте дизайн. «Альтернатива» — другой вариант, «Утвердить» — все форматы.", "policyOk": "✓ Соответствует политике TRT", "policyWarn": "⚠ замечания", "altBtn": "↻ Альтернатива", "switchBtn": "⇄ Сменить формат", "approveBtn": "✓ Утвердить → Все форматы", "backBtn": "← Назад", "policyTitle": "Проверка редакционной политики"}, "tr": {"title": "AlpVision", "inputLbl": "İçerik metni", "ph": "Haber veya brief metnini yapıştırın...", "analyzeBtn": "🔍 Analiz et ve önizleme oluştur", "tplLbl": "Şablon stili", "metaLbl": "İçerik verileri", "hlLbl": "Başlık", "subLbl": "Alt başlık", "srcLbl": "Kaynak", "catLbl": "Kategori", "urgLbl": "Aciliyet", "bgLbl": "Arka plan görseli", "regenBtn": "↺ AI arka planı yeniden üret", "prevLbl": "Önizleme", "allPlatsLbl": "Tüm platformlar", "expAll": "⬇ Hepsini indir (6 format)", "emptyLbl": "İçerik metnini yapıştırın\nve «Analiz et» butonuna basın", "ready": "AlpVision hazır", "analyzing": "Metin analiz ediliyor...", "genBg": "Arka planlar oluşturuluyor...", "done": "Tamamlandı — 6 format", "errPfx": "Hata: ", "uBreaking": "🔴 Son dakika", "uNormal": "Normal", "uFeature": "⭐ Feature", "dl": "İndir", "ai": "AI", "photo": "Fotoğraf", "hint": "Tasarımı kontrol edin. «Alternatif» başka varyant üretir, «Onayla» tüm formatları gösterir.", "policyOk": "✓ TRT yayın politikasına uygun", "policyWarn": "⚠ uyarı", "altBtn": "↻ Alternatif", "switchBtn": "⇄ Format değiştir", "approveBtn": "✓ Onayla → Tüm formatlar", "backBtn": "← Geri", "policyTitle": "Yayın politikası kontrolü"}};
 
 const S = {
   lang:'ru', hl:'', sub:'', cat:'', src:'', urgency:'normal',
   tpl:'photo_panel', bg:null, dalleB64:null, dallePrompt:'', pexelsQ:'',
-  approved:false, altCount:0, prevPlatIdx:0
+  approved:false, altCount:0, prevPlatIdx:0, analyzing:false
 };
 
-const T = {
-  ru:{
-    inputLbl:'Текст материала', ph:'Вставьте текст новости или брифа...',
-    analyzeBtn:'🔍 Анализировать и создать превью',
-    tplLbl:'Стиль шаблона', metaLbl:'Данные', hlLbl:'Заголовок',
-    subLbl:'Подзаголовок', srcLbl:'Источник', urgLbl:'Срочность',
-    bgLbl:'Фоновое изображение', regenBtn:'↺ Перегенерировать AI-фон',
-    prevLbl:'Предпросмотр', allPlatsLbl:'Все платформы — готово к экспорту',
-    expAll:'⬇ Скачать все (6 форматов)', emptyLbl:'Вставьте текст материала<br>и нажмите «Анализировать»',
-    ready:'AlpVision готов', analyzing:'Анализирую текст...', genBg:'Генерирую фоны...',
-    done:'Готово — 6 форматов', errPfx:'Ошибка: ',
-    uBreaking:'🔴 Срочно', uNormal:'Обычная', uFeature:'⭐ Feature',
-    dl:'Скачать', ai:'AI', photo:'Фото', hint:'Проверьте дизайн. «Альтернатива» для другого варианта.'
-  },
-  tr:{
-    inputLbl:'İçerik metni', ph:'Haber veya brief metnini yapıştırın...',
-    analyzeBtn:'🔍 Analiz et ve önizleme oluştur',
-    tplLbl:'Şablon stili', metaLbl:'Veriler', hlLbl:'Başlık',
-    subLbl:'Alt başlık', srcLbl:'Kaynak', urgLbl:'Aciliyet',
-    bgLbl:'Arka plan görseli', regenBtn:'↺ AI arka planı yeniden üret',
-    prevLbl:'Önizleme', allPlatsLbl:'Tüm platformlar — dışa aktarmaya hazır',
-    expAll:'⬇ Hepsini indir (6 format)', emptyLbl:'İçerik metnini yapıştırın<br>ve «Analiz et» butonuna basın',
-    ready:'AlpVision hazır', analyzing:'Metin analiz ediliyor...', genBg:'Arka planlar oluşturuluyor...',
-    done:'Tamamlandı — 6 format', errPfx:'Hata: ',
-    uBreaking:'🔴 Son dakika', uNormal:'Normal', uFeature:'⭐ Feature',
-    dl:'İndir', ai:'AI', photo:'Fotoğraf', hint:'Tasarımı kontrol edin. «Alternatif» başka bir varyant üretir.'
-  }
-};
-
-function t(k){ return T[S.lang][k] || k; }
+function t(k){ return T[S.lang]?.[k] || k; }
 
 function setLang(l){
   S.lang = l;
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('on',b.textContent===l.toUpperCase()));
-  document.getElementById('txt').placeholder = t('ph');
-  document.getElementById('analyze-btn').textContent = t('analyzeBtn');
-  document.getElementById('stxt').textContent = t('ready');
-  const ids = [['lbl-input','inputLbl'],['lbl-tpl','tplLbl'],['lbl-meta','metaLbl'],
-    ['lbl-hl','hlLbl'],['lbl-sub','subLbl'],['lbl-src','srcLbl'],['lbl-urg','urgLbl'],
-    ['lbl-bg','bgLbl'],['regen-btn','regenBtn'],['lbl-all-plats','allPlatsLbl'],
-    ['lbl-expall','expAll'],['lbl-empty','emptyLbl'],['lbl-preview-hint','hint']];
-  ids.forEach(([id,key])=>{
-    const el=document.getElementById(id); if(el && T[l][key]) el.innerHTML=T[l][key];
+  const map = [
+    ['txt','ph'],['analyze-btn','analyzeBtn'],['lbl-input','inputLbl'],
+    ['lbl-tpl','tplLbl'],['lbl-meta','metaLbl'],['lbl-hl','hlLbl'],
+    ['lbl-sub','subLbl'],['lbl-cat','catLbl'],['lbl-src','srcLbl'],
+    ['lbl-urg','urgLbl'],['lbl-policy','policyTitle'],['lbl-bg','bgLbl'],
+    ['regen-btn','regenBtn'],['lbl-prev','prevLbl'],['lbl-plats','allPlatsLbl'],
+    ['lbl-expall','expAll'],['lbl-alt','altBtn'],['lbl-switch','switchBtn'],
+    ['lbl-approve','approveBtn'],['lbl-back','backBtn'],['lbl-hint','hint'],
+    ['stxt','ready']
+  ];
+  map.forEach(([id,key])=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(el.tagName==='TEXTAREA'||el.tagName==='INPUT') el.placeholder=t(key);
+    else el.textContent=t(key);
   });
+  document.getElementById('lbl-empty').innerHTML = t('emptyLbl').replace('\n','<br>');
+  buildTplGrid();
 }
 
 function setSt(msg,type){
@@ -366,28 +487,24 @@ function setSt(msg,type){
 }
 
 function setTrend(trend){
-  const map={
-    text_poster:'typographic', bold_minimal:'typographic',
-    photo_card:'photo_panel', split_screen:'split', quote_card:'feature'
-  };
+  const map={breaking:'feature',typographic:'typographic',photo_panel:'photo_panel',split:'split',feature:'feature'};
   if(map[trend]) setTpl(map[trend]);
-  document.getElementById('txt').focus();
+  document.querySelectorAll('.tr-badge').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
 }
 
-// Build template buttons
 function buildTplGrid(){
-  const g=document.getElementById('tpl-grid');
+  const g=document.getElementById('tpl-grid'); if(!g) return;
   g.innerHTML='';
   TEMPLATES.forEach(tpl=>{
     const b=document.createElement('button');
     b.className='tpl-btn'+(S.tpl===tpl.id?' on':'');
-    b.setAttribute('data-id',tpl.id);
+    b.dataset.id=tpl.id;
     b.innerHTML='<div class="tpl-icon">'+tpl.icon+'</div><span class="tpl-name">'+tpl.label+'</span><span class="tpl-sub">'+tpl.sub+'</span>';
     b.onclick=()=>setTpl(tpl.id);
     g.appendChild(b);
   });
 }
-buildTplGrid();
 
 function setTpl(id){
   S.tpl=id;
@@ -395,44 +512,49 @@ function setTpl(id){
   if(S.hl) renderPreview();
 }
 
-// Policy check
 function checkPolicy(text){
-  const issues=[];
-  POLICY_RULES.forEach(r=>{ if(r.rx.test(text)) issues.push(r.warn); });
-  return issues;
+  return POLICY_RULES.filter(r=>r.rx.test(text)).map(r=>r.warn);
 }
 
 function showPolicy(text){
   const issues=checkPolicy(text);
-  const box=document.getElementById('policy-box');
-  const status=document.getElementById('policy-status');
+  const st=document.getElementById('policy-status');
   const items=document.getElementById('policy-items');
-  if(issues.length===0){
-    status.className='policy-ok'; status.textContent='✓ Соответствует политике TRT';
-    items.innerHTML='';
-  } else {
-    status.className='policy-warn'; status.textContent='⚠ '+issues.length+' замечан'+(issues.length===1?'ие':'ия');
+  document.getElementById('sec-policy').style.display='';
+  if(!issues.length){
+    st.className='policy-ok'; st.textContent=t('policyOk'); items.innerHTML='';
+  }else{
+    st.className='policy-warn';
+    st.textContent='⚠ '+issues.length+' '+t('policyWarn');
     items.innerHTML=issues.map(i=>'<div class="policy-item"><span>•</span><span>'+i+'</span></div>').join('');
   }
-  document.getElementById('sec-policy').style.display='';
 }
 
 async function analyze(){
   const txt=document.getElementById('txt').value.trim();
-  if(txt.length<20){alert('Текст слишком короткий');return;}
+  if(txt.length<20){alert('Текст слишком короткий'); return;}
+  if(S.analyzing) return;
+  S.analyzing=true;
   const btn=document.getElementById('analyze-btn');
   btn.disabled=true; btn.textContent='⏳...';
-  setSt(t('analyzing'),'on'); S.approved=false;
+  setSt(t('analyzing'),'on');
+  S.approved=false;
 
   try{
-    const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:txt})});
+    const r=await fetch('/api/analyze',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:txt})
+    });
     const d=await r.json();
-    if(!r.ok) throw new Error(d.error||'Ошибка');
+    if(!r.ok) throw new Error(d.error||'Error');
 
-    S.hl=d.headline||''; S.sub=d.subheadline||''; S.cat=d.category||'';
-    S.src=d.source||''; S.urgency=d.urgency||'normal';
+    S.hl=d.headline||''; S.sub=d.subheadline||'';
+    S.cat=d.category||''; S.src=d.source||'';
+    S.urgency=d.urgency||'normal';
     S.dallePrompt=d.dallePrompt||''; S.pexelsQ=d.pexelsQuery||'';
-    if(d.colorScheme) S.tpl = {dark:'typographic',teal:'split',red:'photo_panel',gold:'feature'}[d.colorScheme]||S.tpl;
+    // Auto-select template based on scheme
+    const schemeMap={dark:'typographic',teal:'split',red:'photo_panel',gold:'feature'};
+    if(d.colorScheme && schemeMap[d.colorScheme]) S.tpl=schemeMap[d.colorScheme];
 
     document.getElementById('m-hl').value=S.hl;
     document.getElementById('m-sub').value=S.sub;
@@ -444,24 +566,28 @@ async function analyze(){
 
     ['sec-tpl','sec-meta','sec-bg'].forEach(id=>document.getElementById(id).style.display='');
     buildTplGrid();
-    showPolicy(txt + ' ' + S.hl + ' ' + S.sub);
+    showPolicy(txt+' '+S.hl+' '+S.sub);
+
     document.getElementById('empty').style.display='none';
+    document.getElementById('single-wrap').style.display='flex';
+    document.getElementById('prev-actions').style.display='';
+    document.getElementById('lbl-hint').style.display='';
 
     setSt(t('genBg'),'on');
     await loadBgs();
-
     renderPreview();
     setSt(t('done'),'');
-  }catch(e){
-    setSt(t('errPfx')+e.message,'err');
-  }finally{
-    btn.disabled=false; btn.textContent=t('analyzeBtn');
+
+  }catch(e){ setSt(t('errPfx')+e.message,'err'); }
+  finally{
+    S.analyzing=false; btn.disabled=false;
+    btn.textContent=t('analyzeBtn');
   }
 }
 
 async function loadBgs(){
   const g=document.getElementById('ph-grid');
-  g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--ui-muted);font-size:.75rem;padding:10px">⏳</div>';
+  g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.72rem;padding:8px">⏳</div>';
   const [dall,pex]=await Promise.allSettled([
     S.dallePrompt?genDalle(S.dallePrompt):Promise.resolve(null),
     S.pexelsQ?searchPex(S.pexelsQ):Promise.resolve([])
@@ -473,14 +599,17 @@ async function loadBgs(){
   }
   if(pex.status==='fulfilled'&&pex.value?.length)
     pex.value.slice(0,5).forEach(p=>items.push({type:'pexels',url:p.src_large,thumb:p.src_medium}));
-  if(!items.length){g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--ui-muted);font-size:.75rem;padding:10px">Нет изображений</div>';return;}
+  if(!items.length){
+    g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.72rem;padding:8px">Изображения не найдены</div>';
+    return;
+  }
   S.bg=items[0];
   g.innerHTML='';
   items.forEach((item,i)=>{
     const d=document.createElement('div');
     d.className='ph-thumb'+(i===0?' on':'');
     d.dataset.type=item.type;
-    d.innerHTML='<img src="'+item.thumb+'" loading="lazy"><span class="ph-badge" style="background:'+(item.type==='dalle'?'var(--trt-cyan)':'rgba(0,0,0,.7)')+'">'+t(item.type==='dalle'?'ai':'photo')+'</span>';
+    d.innerHTML='<img src="'+item.thumb+'" loading="lazy"><span class="ph-badge" style="background:'+(item.type==='dalle'?'var(--trt)':'rgba(0,0,0,.7)')+'">'+t(item.type==='dalle'?'ai':'photo')+'</span>';
     d.onclick=()=>{S.bg=item;document.querySelectorAll('.ph-thumb').forEach(x=>x.classList.remove('on'));d.classList.add('on');renderPreview();};
     g.appendChild(d);
   });
@@ -490,7 +619,6 @@ async function genDalle(prompt){
   const r=await fetch('/api/generate-bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,size:'1792x1024'})});
   const d=await r.json(); if(!r.ok) throw new Error(d.error); return d;
 }
-
 async function searchPex(query){
   const r=await fetch('/api/search-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,orientation:'landscape'})});
   const d=await r.json(); return d.photos||[];
@@ -498,13 +626,12 @@ async function searchPex(query){
 
 async function regenDalle(){
   const btn=document.getElementById('regen-btn');
-  btn.disabled=true; btn.textContent='⏳...'; setSt(t('genBg'),'on');
+  btn.disabled=true;btn.textContent='⏳...';setSt(t('genBg'),'on');
   try{
     const res=await genDalle(S.dallePrompt);
-    if(res){
-      S.dalleB64=res.base64;
-      const first=document.querySelector('.ph-thumb[data-type="dalle"]');
-      if(first) first.querySelector('img').src=res.base64;
+    if(res){S.dalleB64=res.base64;
+      const f=document.querySelector('.ph-thumb[data-type="dalle"]');
+      if(f)f.querySelector('img').src=res.base64;
       if(S.bg?.type==='dalle'){S.bg.url=res.base64;renderPreview();}
     }
     setSt(t('done'),'');
@@ -512,9 +639,7 @@ async function regenDalle(){
   finally{btn.disabled=false;btn.textContent=t('regenBtn');}
 }
 
-// ═══════════════════════════════════
-// RENDER ENGINE - 4 TRT Templates
-// ═══════════════════════════════════
+// ── RENDER ENGINE ──
 function syncMeta(){
   S.hl=document.getElementById('m-hl').value;
   S.sub=document.getElementById('m-sub').value;
@@ -522,174 +647,192 @@ function syncMeta(){
   S.src=document.getElementById('m-src').value;
 }
 
-function buildCard(tpl, bg, platform){
-  const isPortrait = platform.id==='instagram';
-  const isWide = platform.id==='web';
-  const bgStyle = bg?`url(${bg}) center/cover no-repeat`:'linear-gradient(160deg,#1a2a3a 0%,#0a0f1a 100%)';
+// THE ECONOMIST / FOREIGN POLICY inspired card builder
+// Kurallar: az element, güçlü kontrast, Oswald font, TRT DNA
+function buildCard(tpl,bg,platform){
+  const isPortrait=platform.id==='instagram';
+  const isWide=platform.id==='web';
+  const bgCss=bg?`url(${bg}) center/cover no-repeat`:'linear-gradient(160deg,#1a2a3a 0%,#060d14 100%)';
 
-  if(tpl==='typographic') return buildTypographic(bgStyle, platform);
-  if(tpl==='photo_panel') return buildPhotoPanel(bgStyle, platform);
-  if(tpl==='split') return buildSplit(bgStyle, platform);
-  if(tpl==='feature') return buildFeature(bgStyle, platform);
-  return buildPhotoPanel(bgStyle, platform);
+  // Renk şeması seçimi — haberin tonuna göre
+  const schemeColor=S.urgency==='breaking'?'#CC0000':'#20A9CF';
+
+  if(tpl==='typographic') return buildTypo(bgCss,platform,schemeColor);
+  if(tpl==='photo_panel') return buildPhotoPanel(bgCss,platform,schemeColor);
+  if(tpl==='split') return buildSplit(bgCss,platform,schemeColor);
+  return buildFeature(bgCss,platform,schemeColor);
 }
 
-function buildTypographic(bgStyle, platform){
-  // "ГАВАНА ВО ТЬМЕ" style - huge type on textured bg
-  const isPortrait = platform.id==='instagram';
-  return `<div style="position:absolute;inset:0;background:${bgStyle};filter:grayscale(60%) contrast(1.1);"></div>
-  <div style="position:absolute;inset:0;background:rgba(245,245,240,0.88);"></div>
-  <div style="position:absolute;top:${isPortrait?'6%':'8%'};left:5%;right:5%;z-index:2;">
-    <span style="font-family:Manrope,sans-serif;font-size:clamp(.55rem,1.4vw,.75rem);font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:#111;">TRT НА РУССКОМ</span>
-  </div>
-  <div style="position:absolute;top:${isPortrait?'15%':'20%'};left:5%;right:5%;z-index:2;">
-    <div style="font-family:'Oswald',sans-serif;font-size:clamp(1.4rem,${isPortrait?'9vw':'6vw'},3.5rem);font-weight:700;line-height:.95;color:#111;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:clamp(8px,2vw,20px);">
-      ${S.hl||'ЗАГОЛОВОК'}
+function buildTypo(bgCss,p,accent){
+  // "ГАВАНА ВО ТЬМЕ" — Foreign Policy style
+  // Tam siyah-beyaz, devasa başlık, nefes alan boşluk
+  const isPt=p.id==='instagram';
+  return `
+    <div style="position:absolute;inset:0;background:${bgCss};filter:grayscale(80%) contrast(1.2) brightness(.4);"></div>
+    <div style="position:absolute;inset:0;background:rgba(10,10,10,.75);"></div>
+    <div style="position:absolute;top:${isPt?'7%':'9%'};left:6%;right:6%;z-index:2;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:3px;height:16px;background:${accent};border-radius:1px;"></div>
+        <span style="font-family:Manrope,sans-serif;font-size:clamp(.5rem,1.1vw,.65rem);font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.55);">TRT НА РУССКОМ</span>
+        ${S.cat?`<span style="margin-left:4px;font-family:Manrope,sans-serif;font-size:clamp(.4rem,.9vw,.55rem);font-weight:800;letter-spacing:.18em;text-transform:uppercase;padding:2px 7px;border-radius:2px;background:${accent};color:#fff;">${S.cat}</span>`:''}
+      </div>
     </div>
-    <div style="font-family:Manrope,sans-serif;font-size:clamp(.7rem,2vw,1.1rem);font-weight:400;color:#333;line-height:1.4;max-width:80%;">
-      ${S.sub||''}
-    </div>
-  </div>
-  <div style="position:absolute;bottom:4%;left:5%;right:5%;z-index:2;display:flex;align-items:center;justify-content:space-between;">
-    <div style="font-family:Manrope,sans-serif;font-size:clamp(.45rem,1vw,.58rem);font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#666;">${S.src?'Фото: '+S.src:''}</div>
-    <div style="width:28px;height:3px;background:#20A9CF;border-radius:2px;"></div>
-  </div>`;
+    <div style="position:absolute;${isPt?'bottom:12%':'bottom:10%'};left:6%;right:6%;z-index:2;">
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(1.2rem,${isPt?'9.5vw':'7vw'},4rem);font-weight:700;line-height:.92;color:#fff;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:clamp(8px,1.8vw,18px);">
+        ${S.hl||'ЗАГОЛОВОК'}
+      </div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.58rem,1.6vw,.9rem);font-weight:400;color:rgba(255,255,255,.6);line-height:1.4;max-width:85%;">${S.sub}</div>`:''}
+      <div style="margin-top:clamp(8px,2vw,16px);display:flex;align-items:center;gap:8px;">
+        <div style="width:24px;height:2px;background:${accent};border-radius:1px;"></div>
+        <span style="font-family:Manrope,sans-serif;font-size:clamp(.38rem,.85vw,.52rem);font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35);">${S.src||'TRT RUSSIAN'}</span>
+      </div>
+    </div>`;
 }
 
-function buildPhotoPanel(bgStyle, platform){
-  // "ИЗРАИЛЬ УБИЛ..." style - full photo + white bottom panel
-  const isPortrait = platform.id==='instagram';
-  const panelH = isPortrait?'42%':'55%';
-  return `<div style="position:absolute;inset:0;background:${bgStyle};"></div>
-  <div style="position:absolute;top:3%;left:4%;z-index:2;">
-    <span style="font-family:Manrope,sans-serif;font-size:clamp(.5rem,1.2vw,.68rem);font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.9);">TRT НА РУССКОМ</span>
-  </div>
-  <div style="position:absolute;bottom:0;left:0;right:0;height:${panelH};background:rgba(248,248,245,0.97);z-index:2;display:flex;flex-direction:column;justify-content:center;padding:4% 5% 4%;border-top:3px solid #20A9CF;">
-    <div style="font-family:'Oswald',sans-serif;font-size:clamp(.9rem,${isPortrait?'5.5vw':'3.8vw'},2.2rem);font-weight:700;line-height:1.05;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(4px,1vw,10px);">
-      ${S.hl||'ЗАГОЛОВОК МАТЕРИАЛА'}
+function buildPhotoPanel(bgCss,p,accent){
+  // "ИЗРАИЛЬ УБИЛ..." — foto + beyaz alt panel
+  const isPt=p.id==='instagram';
+  const ph=isPt?'38%':'50%';
+  return `
+    <div style="position:absolute;inset:0;background:${bgCss};"></div>
+    <div style="position:absolute;top:3%;left:4%;z-index:2;display:flex;align-items:center;gap:6px;">
+      <div style="width:2px;height:14px;background:rgba(255,255,255,.5);border-radius:1px;"></div>
+      <span style="font-family:Manrope,sans-serif;font-size:clamp(.44rem,1vw,.6rem);font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.8);">TRT НА РУССКОМ</span>
     </div>
-    ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.6rem,1.6vw,.85rem);font-weight:400;color:#444;line-height:1.35;">${S.sub}</div>`:''}</div>
-  <div style="position:absolute;bottom:1.5%;right:3%;z-index:3;">
-    ${S.src?`<span style="font-family:Manrope,sans-serif;font-size:clamp(.38rem,.85vw,.52rem);color:rgba(0,0,0,.4);font-weight:600;">Фото: ${S.src}</span>`:''}
-  </div>`;
+    <div style="position:absolute;bottom:0;left:0;right:0;height:${ph};background:#f5f5f2;z-index:2;border-top:3px solid ${accent};display:flex;flex-direction:column;justify-content:center;padding:${isPt?'4% 6% 5%':'3% 5% 4%'};">
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.85rem,${isPt?'5.5vw':'4vw'},2.4rem);font-weight:700;line-height:1.0;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(3px,.8vw,8px);">
+        ${S.hl||'ЗАГОЛОВОК МАТЕРИАЛА'}
+      </div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.54rem,1.4vw,.8rem);font-weight:400;color:#555;line-height:1.3;">${S.sub}</div>`:''}
+      ${S.src?`<div style="margin-top:clamp(3px,.8vw,8px);font-family:Manrope,sans-serif;font-size:clamp(.36rem,.8vw,.5rem);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#999;">Фото: ${S.src}</div>`:''}
+    </div>`;
 }
 
-function buildSplit(bgStyle, platform){
-  // "ПЕРВАЯ СТРОКА" style - white panel left + photo right (16:9)
-  const isPortrait = platform.id==='instagram';
-  const panelW = isPortrait?'75%':'42%';
-  return `<div style="position:absolute;inset:0;background:${bgStyle};"></div>
-  <div style="position:absolute;top:3%;left:3%;z-index:3;">
-    <span style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.1vw,.65rem);font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.9);">TRT НА РУССКОМ</span>
-  </div>
-  <div style="position:absolute;top:${isPortrait?'18%':'0'};bottom:0;left:0;width:${panelW};background:rgba(248,248,245,0.97);z-index:2;display:flex;flex-direction:column;justify-content:center;padding:6% 6% 8%;">
-    <div style="font-family:'Oswald',sans-serif;font-size:clamp(1rem,${isPortrait?'6vw':'4.5vw'},2.5rem);font-weight:700;line-height:1.0;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(6px,1.5vw,14px);">
-      ${S.hl||'ПЕРВАЯ СТРОКА'}
+function buildSplit(bgCss,p,accent){
+  // "ПЕРВАЯ СТРОКА" — split layout
+  const isPt=p.id==='instagram';
+  const pw=isPt?'72%':'40%';
+  return `
+    <div style="position:absolute;inset:0;background:${bgCss};"></div>
+    <div style="position:absolute;top:3%;left:3%;z-index:3;display:flex;align-items:center;gap:6px;">
+      <div style="width:2px;height:12px;background:rgba(255,255,255,.5);border-radius:1px;"></div>
+      <span style="font-family:Manrope,sans-serif;font-size:clamp(.42rem,.95vw,.58rem);font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.8);">TRT НА РУССКОМ</span>
     </div>
-    ${S.sub?`<div style="font-family:'Oswald',sans-serif;font-size:clamp(.75rem,3vw,1.6rem);font-weight:400;line-height:1.1;color:#1A3A6B;text-transform:uppercase;">${S.sub}</div>`:''}<div style="margin-top:clamp(6px,1.5vw,14px);width:32px;height:3px;background:#20A9CF;border-radius:2px;"></div>
-  </div>`;
+    <div style="position:absolute;top:${isPt?'15%':'0'};left:0;bottom:0;width:${pw};background:#f5f5f2;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:${isPt?'5% 6% 8%':'5% 5% 6%'};">
+      ${S.cat?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.36rem,.8vw,.5rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:${accent};margin-bottom:clamp(4px,1vw,10px);">${S.cat}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.9rem,${isPt?'5.8vw':'4.8vw'},2.5rem);font-weight:700;line-height:.97;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(4px,1vw,12px);">
+        ${S.hl||'ЗАГОЛОВОК'}
+      </div>
+      ${S.sub?`<div style="font-family:Oswald,sans-serif;font-size:clamp(.7rem,2.8vw,1.5rem);font-weight:300;line-height:1.1;color:#1A3A6B;text-transform:uppercase;">${S.sub}</div>`:''}
+      <div style="margin-top:clamp(6px,1.5vw,14px);width:28px;height:3px;background:${accent};border-radius:2px;"></div>
+    </div>`;
 }
 
-function buildFeature(bgStyle, platform){
-  // "Карты, деньги..." style - AI collage + dark bottom panel
-  const isPortrait = platform.id==='instagram';
-  const panelH = isPortrait?'45%':'50%';
-  return `<div style="position:absolute;inset:0;background:${bgStyle};"></div>
-  <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(10,15,26,0.97) 65%, rgba(10,15,26,1) 100%);"></div>
-  <div style="position:absolute;top:3%;left:4%;z-index:2;">
-    <span style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.1vw,.65rem);font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.8);">TRT НА РУССКОМ</span>
-  </div>
-  ${S.cat?`<div style="position:absolute;top:3%;right:4%;z-index:2;font-family:Manrope,sans-serif;font-size:clamp(.38rem,.9vw,.56rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;padding:2px 8px;border-radius:2px;background:#20A9CF;color:#fff;">${S.cat}</div>`:''}
-  <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPortrait?'6% 5% 5%':'4% 5% 4%'};z-index:2;">
-    <div style="width:24px;height:3px;background:#20A9CF;border-radius:2px;margin-bottom:clamp(6px,1.5vw,12px);"></div>
-    <div style="font-family:'Playfair Display',serif;font-size:clamp(.85rem,${isPortrait?'5.5vw':'4vw'},2.2rem);font-weight:900;line-height:1.08;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.8);margin-bottom:clamp(4px,1vw,10px);">
-      ${S.hl||'Заголовок feature'}
+function buildFeature(bgCss,p,accent){
+  // Analitik/Feature — The Economist kapak tarzı, dramatik
+  const isPt=p.id==='instagram';
+  return `
+    <div style="position:absolute;inset:0;background:${bgCss};"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(10,15,26,.92) 55%,rgba(10,15,26,1) 100%);"></div>
+    <div style="position:absolute;top:3%;left:4%;right:4%;z-index:2;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:2px;height:12px;background:rgba(255,255,255,.4);border-radius:1px;"></div>
+        <span style="font-family:Manrope,sans-serif;font-size:clamp(.42rem,.95vw,.58rem);font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);">TRT НА РУССКОМ</span>
+      </div>
+      ${S.cat?`<span style="font-family:Manrope,sans-serif;font-size:clamp(.36rem,.8vw,.5rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;padding:2px 8px;border-radius:2px;background:${accent};color:#fff;">${S.cat}</span>`:''}
     </div>
-    ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.58rem,1.5vw,.78rem);font-weight:400;color:rgba(255,255,255,.7);line-height:1.35;">${S.sub}</div>`:''}
-    <div style="margin-top:clamp(4px,1vw,8px);font-family:Manrope,sans-serif;font-size:clamp(.38rem,.85vw,.52rem);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);">${S.src||'TRT RUSSIAN'}</div>
-  </div>`;
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'5% 6% 6%':'3.5% 5% 4.5%'};z-index:2;">
+      <div style="width:22px;height:3px;background:${accent};border-radius:2px;margin-bottom:clamp(6px,1.4vw,12px);"></div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.9rem,${isPt?'6vw':'4.5vw'},2.6rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(5px,1.2vw,12px);">
+        ${S.hl||'ЗАГОЛОВОК MATERIAL'}
+      </div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.52rem,1.4vw,.78rem);font-weight:400;color:rgba(255,255,255,.65);line-height:1.4;">${S.sub}</div>`:''}
+      <div style="margin-top:clamp(5px,1.2vw,10px);font-family:Manrope,sans-serif;font-size:clamp(.36rem,.8vw,.5rem);font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35);">${S.src||'TRT RUSSIAN'}</div>
+    </div>`;
 }
 
-// ═══════════════════════════════════
-// PREVIEW SYSTEM
-// ═══════════════════════════════════
 function renderPreview(){
   syncMeta();
-  const canvas = document.getElementById('single-canvas');
-  const p = PLATFORMS[S.prevPlatIdx] || PLATFORMS[0];
-  canvas.style.aspectRatio = p.ratio;
-  canvas.innerHTML = buildCard(S.tpl, S.bg?.url||'', p);
-  document.getElementById('preview-section').style.display='';
-  document.getElementById('lbl-prev').textContent =
-    (t('prevLbl')||'Предпросмотр') + ' — ' + p.label + ' (' + p.tag + ')';
+  const p=PLATFORMS[S.prevPlatIdx]||PLATFORMS[0];
+  const canvas=document.getElementById('single-canvas');
+
+  // Responsive sizing: maintain aspect ratio within viewport
+  const vw=document.querySelector('.center').offsetWidth-40;
+  const vh=document.querySelector('.prev-body').offsetHeight-40;
+  const [rw,rh]=p.ratio.split('/').map(Number);
+  const ratio=rw/rh;
+  let cw=Math.min(vw,vh*ratio);
+  let ch=cw/ratio;
+  if(ch>vh){ch=vh;cw=ch*ratio;}
+
+  canvas.style.width=cw+'px';
+  canvas.style.height=ch+'px';
+  canvas.innerHTML=buildCard(S.tpl,S.bg?.url||'',p);
+
+  document.getElementById('lbl-prev').textContent=
+    t('prevLbl')+' — '+p.label+' ('+p.tag+')';
 }
 
-function switchPrevPlatform(){
+function switchFmt(){
   S.prevPlatIdx=(S.prevPlatIdx+1)%PLATFORMS.length;
   renderPreview();
 }
 
-async function generateAlternative(){
+async function generateAlt(){
   S.altCount++;
-  setSt('Генерирую альтернативу '+S.altCount+'...','on');
-  // Cycle template
-  const tplIds=TEMPLATES.map(t=>t.id);
-  const curIdx=tplIds.indexOf(S.tpl);
-  S.tpl=tplIds[(curIdx+1)%tplIds.length];
-  document.querySelectorAll('.tpl-btn').forEach(b=>b.classList.toggle('on',b.dataset.id===S.tpl));
-  // Also try regen dalle if on feature
-  if(S.tpl==='feature' && S.dallePrompt){
-    try{
-      const res=await genDalle(S.dallePrompt+', alternative composition, different angle');
-      if(res){S.dalleB64=res.base64; S.bg={type:'dalle',url:res.base64,thumb:res.base64};}
+  const tpls=['photo_panel','typographic','split','feature'];
+  const ci=tpls.indexOf(S.tpl);
+  setTpl(tpls[(ci+1)%tpls.length]);
+  if(S.tpl==='feature'&&S.dallePrompt){
+    setSt('Генерирую альтернативу...','on');
+    try{const r=await genDalle(S.dallePrompt+', different cinematic composition');
+      if(r){S.dalleB64=r.base64;S.bg={type:'dalle',url:r.base64,thumb:r.base64};}
     }catch(e){}
   }
   renderPreview();
   setSt('Альтернатива #'+S.altCount+' готова','');
 }
 
-function approveAndShowAll(){
+function approveAll(){
   S.approved=true;
+  document.getElementById('prev-actions').style.display='none';
+  document.getElementById('all-actions').style.display='';
+  document.getElementById('lbl-hint').style.display='none';
   renderAllPlatforms();
-  document.getElementById('preview-section').style.display='none';
-  const ps=document.getElementById('plat-section');
-  ps.classList.add('visible');
-  setSt(t('done'),'');
 }
 
 function backToPreview(){
-  document.getElementById('plat-section').classList.remove('visible');
-  document.getElementById('preview-section').style.display='';
   S.approved=false;
+  document.getElementById('prev-actions').style.display='';
+  document.getElementById('all-actions').style.display='none';
+  document.getElementById('lbl-hint').style.display='';
+  document.getElementById('plat-list').innerHTML='<div class="right-empty">'+t('allPlatsLbl')+'<br>после утверждения</div>';
 }
 
 function renderAllPlatforms(){
   syncMeta();
-  const g=document.getElementById('plat-grid');
-  g.innerHTML='';
+  const list=document.getElementById('plat-list');
+  list.innerHTML='';
   PLATFORMS.forEach(p=>{
     const card=document.createElement('div');
     card.className='plat-card';
+    const inner=buildCard(S.tpl,S.bg?.url||'',p);
     card.innerHTML=`
       <div class="plat-card-hdr">
         <div class="plat-name">${p.label}<span class="plat-sz">${p.w}×${p.h}</span></div>
         <button class="btn-dl" onclick="exp1('${p.id}')">${t('dl')}</button>
       </div>
-      <div class="plat-prev">
-        <div class="plat-canvas" style="aspect-ratio:${p.ratio};position:relative;overflow:hidden;border-radius:2px;background:#111;">
-          ${buildCard(S.tpl,S.bg?.url||'',p)}
+      <div class="plat-prev-wrap">
+        <div class="plat-canvas" style="aspect-ratio:${p.ratio};position:relative;overflow:hidden;">
+          ${inner}
         </div>
       </div>`;
-    g.appendChild(card);
+    list.appendChild(card);
   });
 }
 
-// ═══════════════════════════════════
-// EXPORT
-// ═══════════════════════════════════
 async function exp1(pid){
-  const p=PLATFORMS.find(x=>x.id===pid);
-  if(!p)return;
+  const p=PLATFORMS.find(x=>x.id===pid);if(!p)return;
   setSt('Экспортирую '+p.label+'...','on');
   try{
     const r=await fetch('/api/export',{
@@ -697,11 +840,11 @@ async function exp1(pid){
       body:JSON.stringify({platform:p,headline:S.hl,sub:S.sub,cat:S.cat,src:S.src,
         template:S.tpl,bgBase64:S.bg?.url||'',logoBase64:LOGO})
     });
-    if(!r.ok) throw new Error('Export failed');
+    if(!r.ok)throw new Error('Export failed');
     const blob=await r.blob();
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download='TRT_'+pid+'_'+Date.now()+'.png'; a.click();
+    a.href=url;a.download='TRT_'+pid+'_'+Date.now()+'.png';a.click();
     URL.revokeObjectURL(url);
     setSt(p.label+' ✓','');
   }catch(e){setSt(t('errPfx')+e.message,'err');}
@@ -712,7 +855,9 @@ async function exportAll(){
   setSt(t('done'),'');
 }
 
+window.addEventListener('resize',()=>{if(S.hl)renderPreview();});
 setLang('ru');
+buildTplGrid();
 </script>
 </body>
 </html>
