@@ -261,7 +261,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
   <!-- ══ LEFT ══ -->
   <div class="left">
 
-    <!-- MODE -->
+    <!-- MODE SEÇİMİ -->
     <div class="sec">
       <div class="sec-lbl" id="lbl-mode">Режим</div>
       <div class="mode-tabs">
@@ -278,39 +278,26 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
       </div>
     </div>
 
-    <!-- CONTENT TYPE — всегда видно -->
+    <!-- ТИП КОНТЕНТА — всегда виден -->
     <div class="sec">
       <div class="sec-lbl" id="lbl-ctype">Тип контента</div>
-      <div class="ctype-grid" id="ctype-grid">
-        <button class="ct-btn on" data-ct="news" onclick="setCType('news')">
-          <div class="ct-icon">📰</div><span class="ct-name" id="ct-news">Новость</span>
-        </button>
-        <button class="ct-btn" data-ct="infographic" onclick="setCType('infographic')">
-          <div class="ct-icon">📊</div><span class="ct-name" id="ct-info">Инфографика</span>
-        </button>
-        <button class="ct-btn" data-ct="feature" onclick="setCType('feature')">
-          <div class="ct-icon">✦</div><span class="ct-name" id="ct-feat">Feature</span>
-        </button>
-        <button class="ct-btn" data-ct="video" onclick="setCType('video')">
-          <div class="ct-icon">▶</div><span class="ct-name" id="ct-vid">Видео</span>
-        </button>
-        <button class="ct-btn" data-ct="article" onclick="setCType('article')">
-          <div class="ct-icon">📄</div><span class="ct-name" id="ct-art">Статья</span>
-        </button>
-        <button class="ct-btn" data-ct="qa" onclick="setCType('qa')">
-          <div class="ct-icon">❓</div><span class="ct-name" id="ct-qa">Q&A</span>
-        </button>
+      <div class="ctype-grid">
+        <button class="ct-btn on" data-ct="news"        onclick="setCType('news')">        <div class="ct-icon">📰</div><span class="ct-name" id="ct-news">Новость</span></button>
+        <button class="ct-btn"    data-ct="infographic" onclick="setCType('infographic')"> <div class="ct-icon">📊</div><span class="ct-name" id="ct-info">Инфографика</span></button>
+        <button class="ct-btn"    data-ct="feature"     onclick="setCType('feature')">     <div class="ct-icon">✦</div><span class="ct-name"  id="ct-feat">Feature</span></button>
+        <button class="ct-btn"    data-ct="video"       onclick="setCType('video')">       <div class="ct-icon">▶</div><span class="ct-name"  id="ct-vid">Видео</span></button>
+        <button class="ct-btn"    data-ct="article"     onclick="setCType('article')">     <div class="ct-icon">📄</div><span class="ct-name" id="ct-art">Статья</span></button>
+        <button class="ct-btn"    data-ct="qa"          onclick="setCType('qa')">          <div class="ct-icon">❓</div><span class="ct-name" id="ct-qa">Q&amp;A</span></button>
       </div>
     </div>
 
-    <!-- METİN GİRİŞİ — her zaman görünür -->
+    <!-- ТЕКСТ — всегда виден -->
     <div class="sec">
       <div class="sec-lbl" id="lbl-input">Текст материала</div>
       <textarea id="txt" placeholder="Вставьте текст новости или брифа..."></textarea>
-      <button class="btn-main" id="analyze-btn" onclick="analyze()">🔍 Анализировать и создать превью</button>
     </div>
 
-    <!-- PHOTO MODE — ek fotoğraf yükleme -->
+    <!-- ══ ФОТО РЕЖИМ ══ -->
     <div id="photo-mode">
       <div class="sec">
         <div class="sec-lbl" id="lbl-upload">Фотография (AA / TRT World / Reuters)</div>
@@ -328,67 +315,64 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
             </div>
           </div>
         </div>
-        <div class="photo-warn" id="photo-warn">⚠ Проверьте: нет ли логотипов других СМИ в кадре</div>
+        <div class="photo-warn" id="photo-warn">⚠ Нет ли логотипов других СМИ в кадре?</div>
       </div>
-
-
-
-      <div class="sec" id="photo-meta-sec" style="display:none">
-        <div class="sec-lbl">Текст на обложке (опционально)</div>
-        <div class="meta-grid">
-          <div class="mf"><div class="mf-k" id="lbl-p-hl">Заголовок</div><input class="mf-v" id="p-hl" oninput="renderPreview()"></div>
-          <div class="mf"><div class="mf-k">Подзаголовок</div><input class="mf-v" id="p-sub" oninput="renderPreview()"></div>
-          <div class="row2">
-            <div class="mf"><div class="mf-k">Категория</div><input class="mf-v" id="p-cat" oninput="renderPreview()"></div>
-            <div class="mf"><div class="mf-k">Фото:</div><input class="mf-v" id="p-src" placeholder="AA" oninput="renderPreview()"></div>
-          </div>
-        </div>
-      </div>
-
       <div class="sec">
-        <button class="btn-main" onclick="photoPreview()" id="photo-preview-btn">👁 Создать превью с фото</button>
+        <button class="btn-main" onclick="photoPreview()" id="photo-preview-btn">
+          👁 Создать превью с фото
+        </button>
       </div>
     </div>
 
-    <!-- AI MODE — arka plan seçenekleri -->
+    <!-- ══ AI РЕЖИМ ══ -->
     <div id="ai-mode" style="display:none">
+      <div class="sec">
+        <button class="btn-main" id="analyze-btn" onclick="analyze()">
+          🔍 Анализировать и создать превью
+        </button>
+      </div>
 
-
-      <div class="sec" id="sec-meta" style="display:none">
-        <div class="sec-lbl">Данные материала</div>
-        <div class="meta-grid">
-          <div class="mf"><div class="mf-k" id="lbl-hl">Заголовок</div><input class="mf-v" id="m-hl" oninput="renderPreview()"></div>
-          <div class="mf"><div class="mf-k" id="lbl-sub">Подзаголовок</div><input class="mf-v" id="m-sub" oninput="renderPreview()"></div>
-          <div class="row2">
-            <div class="mf"><div class="mf-k" id="lbl-cat">Категория</div><input class="mf-v" id="m-cat" oninput="renderPreview()"></div>
-            <div class="mf"><div class="mf-k" id="lbl-src">Источник</div><input class="mf-v" id="m-src" oninput="renderPreview()"></div>
+      <!-- Editoryal analiz (analiz sonrası dolar) -->
+      <div id="sec-meta" style="display:none">
+        <div class="sec">
+          <div class="sec-lbl">Данные материала</div>
+          <div class="meta-grid">
+            <div class="mf"><div class="mf-k" id="lbl-hl">Заголовок</div><input class="mf-v" id="m-hl" oninput="renderPreview()"></div>
+            <div class="mf"><div class="mf-k" id="lbl-sub">Подзаголовок</div><input class="mf-v" id="m-sub" oninput="renderPreview()"></div>
+            <div class="row2">
+              <div class="mf"><div class="mf-k" id="lbl-cat">Категория</div><input class="mf-v" id="m-cat" oninput="renderPreview()"></div>
+              <div class="mf"><div class="mf-k" id="lbl-src">Источник</div><input class="mf-v" id="m-src" oninput="renderPreview()"></div>
+            </div>
+            <div class="mf" style="display:flex;align-items:center;justify-content:space-between">
+              <div class="mf-k" id="lbl-urg">Срочность</div>
+              <span id="ubadge" class="ubadge normal">Обычная</span>
+            </div>
           </div>
-          <div class="mf" style="display:flex;align-items:center;justify-content:space-between">
-            <div class="mf-k" id="lbl-urg">Срочность</div>
-            <span id="ubadge" class="ubadge normal">Обычная</span>
+        </div>
+      </div>
+
+      <div id="sec-policy" style="display:none">
+        <div class="sec">
+          <div class="sec-lbl">Редакционная политика</div>
+          <div class="policy-box">
+            <div id="pol-status" class="pol-ok">✓ Соответствует политике TRT</div>
+            <div id="pol-items"></div>
           </div>
         </div>
       </div>
 
-      <div class="sec" id="sec-policy" style="display:none">
-        <div class="sec-lbl">Редакционная политика</div>
-        <div class="policy-box">
-          <div id="pol-status" class="pol-ok">✓ Соответствует политике TRT</div>
-          <div id="pol-items"></div>
+      <div id="sec-bg" style="display:none">
+        <div class="sec">
+          <div class="sec-lbl">Фоновое изображение</div>
+          <div class="ph-grid" id="ph-grid">
+            <div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>
+          </div>
+          <button class="btn-sm" id="regen-btn" onclick="regenDalle()">↺ Перегенерировать AI-фон</button>
         </div>
       </div>
+    </div><!-- /ai-mode -->
 
-      <div class="sec" id="sec-bg" style="display:none">
-        <div class="sec-lbl">Фоновое изображение</div>
-        <div class="ph-grid" id="ph-grid">
-          <div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>
-        </div>
-        <button class="btn-sm" id="regen-btn" onclick="regenDalle()">↺ Перегенерировать AI-фон</button>
-      </div>
-    </div>
-
-  </div>
-
+  </div><!-- /left -->
   <!-- ══ CENTER ══ -->
   <div class="center">
     <div class="prev-hdr">
@@ -581,19 +565,18 @@ function setCType(ct){
 
 // ── MODE ──
 function setMode(mode){
-  S.mode=mode;
-  document.querySelectorAll('.mode-tab').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
-  // Fotoğraf ek paneli
-  document.getElementById('photo-mode').style.display=mode==='photo'?'':'none';
-  // AI sonuç paneli (textarea her zaman görünür)
-  document.getElementById('ai-mode').style.display=mode==='ai'?'':'none';
-  // Önizlemeyi sadece içerik yoksa sıfırla
-  if(!S.userPhotoB64&&!S.hl){
-    document.getElementById('empty').style.display='';
-    document.getElementById('single-wrap').style.display='none';
-    document.getElementById('prev-acts').style.display='none';
-    document.getElementById('lbl-hint').style.display='none';
-    document.getElementById('qc-bar').style.display='none';
+  S.mode = mode;
+  document.querySelectorAll('.mode-tab').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  document.getElementById('photo-mode').style.display = mode === 'photo' ? '' : 'none';
+  document.getElementById('ai-mode').style.display    = mode === 'ai'    ? '' : 'none';
+  // Önizlemeyi sıfırla
+  if(!S.userPhotoB64 && !S.hl){
+    document.getElementById('empty').style.display       = '';
+    document.getElementById('single-wrap').style.display = 'none';
+    document.getElementById('prev-acts').style.display   = 'none';
+    document.getElementById('lbl-hint').style.display    = 'none';
+    document.getElementById('qc-bar').style.display      = 'none';
+    document.getElementById('vqc-result').style.display  = 'none';
   }
 }
 
@@ -647,10 +630,13 @@ uz.addEventListener('drop',e=>{
 
 function photoPreview(){
   if(!S.userPhotoB64){alert('Сначала загрузите фотографию');return;}
-  S.hl=document.getElementById('p-hl').value;
-  S.sub=document.getElementById('p-sub').value;
-  S.cat=document.getElementById('p-cat').value;
-  S.src=document.getElementById('p-src').value;
+  // Metin alanından başlık al (varsa)
+  const txtEl = document.getElementById('txt');
+  if(txtEl && txtEl.value && !S.hl) S.hl = txtEl.value.split('\n')[0].slice(0,60).toUpperCase();
+  S.hl  = (document.getElementById('p-hl')  || {value:S.hl}).value  || S.hl  || '';
+  S.sub = (document.getElementById('p-sub') || {value:''}).value   || '';
+  S.cat = (document.getElementById('p-cat') || {value:''}).value   || '';
+  S.src = (document.getElementById('p-src') || {value:''}).value   || '';
   document.getElementById('empty').style.display='none';
   document.getElementById('single-wrap').style.display='flex';
   document.getElementById('prev-acts').style.display='';
@@ -830,7 +816,10 @@ async function analyze(){
     ub.className='ubadge '+S.urgency;
     ub.textContent=t('u'+S.urgency.charAt(0).toUpperCase()+S.urgency.slice(1))||S.urgency;
 
-    ['sec-meta','sec-bg'].forEach(id=>document.getElementById(id).style.display='');
+    ['sec-meta','sec-bg','sec-policy'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.style.display='';
+    });
     buildAiTplGrid();
 
     // Editoryal analiz panelini göster
