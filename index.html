@@ -232,6 +232,40 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
 .vqc-fix-lbl{font-weight:700;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;color:#C8960A;}
 .vqc-regen{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:.62rem;color:var(--red);font-weight:600;}
 
+
+/* Fast Mode toggle */
+.fast-toggle{display:flex;align-items:center;gap:7px;padding:4px 10px;border:1px solid var(--ui-b2);border-radius:4px;cursor:pointer;transition:all .2s;background:transparent;font-family:Manrope,sans-serif;}
+.fast-toggle.on{border-color:var(--trt-red,#CC0000);background:rgba(204,0,0,.1);}
+.fast-toggle-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .2s;}
+.fast-toggle.on .fast-toggle-dot{background:#CC0000;}
+.fast-toggle-label{font-size:.62rem;font-weight:700;color:var(--muted2);letter-spacing:.08em;transition:color .2s;}
+.fast-toggle.on .fast-toggle-label{color:#CC0000;}
+.fast-badge{display:none;font-size:.55rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:1px 6px;background:#CC0000;color:#fff;border-radius:2px;}
+.fast-toggle.on .fast-badge{display:inline;}
+
+
+/* Trend Panel */
+.trend-panel{background:var(--ui-p);border:1px solid var(--ui-b);border-radius:5px;overflow:hidden;}
+.trend-panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--ui-b);}
+.trend-panel-title{font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);}
+.trend-source-tabs{display:flex;gap:4px;}
+.trend-tab{padding:2px 8px;border:1px solid var(--ui-b2);border-radius:3px;font-size:.56rem;font-weight:700;cursor:pointer;background:transparent;color:var(--muted2);font-family:Manrope,sans-serif;transition:all .15s;}
+.trend-tab.on{background:var(--trt);border-color:var(--trt);color:#fff;}
+.trend-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;padding:6px;}
+.trend-thumb{aspect-ratio:16/9;border-radius:3px;overflow:hidden;cursor:pointer;position:relative;background:var(--ui-bg);}
+.trend-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .2s;}
+.trend-thumb:hover img{transform:scale(1.05);}
+.trend-thumb-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 50%);opacity:0;transition:opacity .2s;}
+.trend-thumb:hover .trend-thumb-overlay{opacity:1;}
+.trend-thumb-title{position:absolute;bottom:3px;left:3px;right:3px;font-size:.48rem;color:#fff;font-family:Manrope,sans-serif;font-weight:600;line-height:1.3;opacity:0;transition:opacity .2s;}
+.trend-thumb:hover .trend-thumb-title{opacity:1;}
+.trend-source-badge{position:absolute;top:3px;right:3px;font-size:.46rem;font-weight:800;padding:1px 4px;border-radius:2px;color:#fff;letter-spacing:.08em;}
+.trend-empty{padding:16px;text-align:center;color:var(--muted);font-size:.68rem;line-height:1.6;}
+.trend-summary{padding:7px 10px;font-size:.6rem;color:var(--muted2);line-height:1.45;border-top:1px solid var(--ui-b);display:none;}
+.trend-summary.visible{display:block;}
+.trend-footer{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;border-top:1px solid var(--ui-b);}
+.trend-age{font-size:.55rem;color:var(--muted);}
+
 .statusbar{display:flex;align-items:center;gap:7px;padding:6px 18px;background:var(--ui-s);border-top:1px solid var(--ui-b);flex-shrink:0;font-size:.63rem;color:var(--muted);}
 .sdot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
 .sdot.on{background:#27ae60;animation:pulse 1.4s ease infinite;}
@@ -250,7 +284,16 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
       <span class="badge-lbl">Russian Dijital</span>
     </div>
   </div>
-  <div style="display:flex;gap:7px">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="memory-counter" style="font-size:.58rem;color:var(--muted2);font-weight:600;display:none">
+      🧠 <span id="memory-count">0</span>
+      <button onclick="clearMemory()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.65rem;font-family:Manrope,sans-serif;padding:0 3px;">↺</button>
+    </span>
+    <button class="fast-toggle" id="fast-toggle-btn" onclick="toggleFastMode()">
+      <span class="fast-toggle-dot"></span>
+      <span class="fast-toggle-label">⚡ СРОЧНО</span>
+      <span class="fast-badge">ON</span>
+    </button>
     <button class="lang-btn on" onclick="setLang('ru')">RU</button>
     <button class="lang-btn" onclick="setLang('tr')">TR</button>
   </div>
@@ -370,6 +413,36 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
           <button class="btn-sm" id="regen-btn" onclick="regenDalle()">↺ Перегенерировать AI-фон</button>
         </div>
       </div>
+
+      <!-- Trend Panel -->
+      <div class="sec" id="sec-trends">
+        <div class="sec-lbl">
+          📈 Тренды недели
+          <button onclick="loadTrends(true)" id="trend-refresh-btn"
+            style="margin-left:auto;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:.65rem;font-family:Manrope,sans-serif;">↺</button>
+        </div>
+        <div class="trend-panel">
+          <div class="trend-panel-hdr">
+            <span class="trend-panel-title">Visual Trends</span>
+            <div class="trend-source-tabs">
+              <button class="trend-tab on" onclick="showTrendSource('dribbble')">Dribbble</button>
+              <button class="trend-tab" onclick="showTrendSource('youtube')">YouTube</button>
+            </div>
+          </div>
+          <div class="trend-grid" id="trend-grid">
+            <div class="trend-empty" style="grid-column:1/-1">
+              <div style="opacity:.3;font-size:1.2rem;margin-bottom:6px">📈</div>
+              Загрузка трендов...
+            </div>
+          </div>
+          <div class="trend-summary" id="trend-summary"></div>
+          <div class="trend-footer">
+            <span class="trend-age" id="trend-age"></span>
+            <span style="font-size:.55rem;color:var(--muted2)" id="trend-count"></span>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /ai-mode -->
 
   </div><!-- /left -->
@@ -462,7 +535,7 @@ const CTYPE_DEFAULTS = {
 };
 
 const S = {
-  lang:'ru', mode:'photo', contentType:'news',
+  lang:'ru', mode:'photo', contentType:'news', fastMode:false,
   photoTpl:'logo_only', aiTpl:'photo_panel',
   colorScheme:'dark', urgency:'normal',
   userPhotoB64:null, bg:null,
@@ -720,6 +793,8 @@ function renderEditorialPanel(d){
 
     if(d.selectionReason)
       html += '<div style="margin-top:6px;font-size:.6rem;color:#C8960A;font-style:italic;line-height:1.4;">→ '+d.selectionReason+'</div>';
+    if(d.memoryNote)
+      html += '<div style="margin-top:4px;font-size:.58rem;color:var(--muted);font-style:italic;line-height:1.4;">🧠 '+d.memoryNote+'</div>';
 
     // Quality gate
     if(d.qualityGate)
@@ -787,7 +862,7 @@ async function analyze(){
 
   try{
     const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text:txt,contentType:S.contentType})});
+      body:JSON.stringify({text:txt,contentType:S.contentType,_fastMode:S.fastMode})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Error');
 
@@ -837,21 +912,27 @@ async function analyze(){
     document.getElementById('lbl-hint').style.display='';
     document.getElementById('qc-bar').style.display='none';
 
-    setSt(t('genBg'),'on');
-    await loadBgs();
+    setSt(S.fastMode ? '⚡ Загружаю фото...' : t('genBg'), 'on');
+    await loadBgs(S.fastMode);
     renderPreview();
     const engine = d._engine ? ' [' + d._engine.toUpperCase() + ']' : '';
-    setSt(t('done') + engine,'');
+    const mc = d._memoryCount || 0;
+    if(mc > 0){
+      document.getElementById('memory-counter').style.display='';
+      document.getElementById('memory-clear-btn').style.display='';
+      document.getElementById('memory-count').textContent = mc;
+    }
+    setSt(t('done') + engine + (mc?' · 🧠 '+mc+' görsel':''),'');
   }catch(e){setSt(t('errPfx')+e.message,'err');}
   finally{S.analyzing=false;btn.disabled=false;btn.textContent=t('analyzeBtn');}
 }
 
-async function loadBgs(){
+async function loadBgs(fastMode){
   const g=document.getElementById('ph-grid');
   g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>';
   const [dall,pex]=await Promise.allSettled([
-    S.dallePrompt?genDalle(S.dallePrompt):Promise.resolve(null),
-    S.pexelsQ?searchPex(S.pexelsQ):Promise.resolve([])
+    (!fastMode && S.dallePrompt) ? genDalle(S.dallePrompt) : Promise.resolve(null),
+    S.pexelsQ ? searchPex(S.pexelsQ) : Promise.resolve([])
   ]);
   const items=[];
   if(dall.status==='fulfilled'&&dall.value){S.dalleB64=dall.value.base64;items.push({type:'dalle',url:dall.value.base64,thumb:dall.value.base64});}
@@ -1406,6 +1487,150 @@ function renderVisionQC(d){
     </div>\`;
 
   result.style.display = '';
+}
+
+async function clearMemory(){
+  if(!confirm('Görsel hafızasını sıfırla?')) return;
+  try{
+    await fetch('/api/style-memory',{method:'DELETE'});
+    document.getElementById('memory-counter').style.display='none';
+    document.getElementById('memory-clear-btn').style.display='none';
+    document.getElementById('memory-count').textContent='0';
+    setSt('Hafıza sıfırlandı ✓','');
+  }catch(e){setSt('Hata: '+e.message,'err');}
+}
+
+
+
+// ════════════════════════════════════════════
+//  FAST MODE — ⚡ СРОЧНО
+//  DALL-E atla, Pexels only, kısa analiz, 15sn
+// ════════════════════════════════════════════
+function toggleFastMode(){
+  S.fastMode = !S.fastMode;
+  const btn = document.getElementById('fast-toggle-btn');
+  btn.classList.toggle('on', S.fastMode);
+
+  // Analiz butonunu güncelle
+  const analyzeBtn = document.getElementById('analyze-btn');
+  if(analyzeBtn){
+    analyzeBtn.textContent = S.fastMode
+      ? '⚡ Срочно создать превью (15 сек)'
+      : '🔍 Анализировать и создать превью';
+    analyzeBtn.style.background = S.fastMode ? '#CC0000' : '';
+  }
+  setSt(S.fastMode ? '⚡ СРОЧНО режим активен — DALL-E отключен' : 'Обычный режим', '');
+}
+
+
+// ════════════════════════════════════════════════════════════════
+//  TREND ENGINE UI
+// ════════════════════════════════════════════════════════════════
+let _trendData = null;
+let _trendSource = 'dribbble';
+
+async function loadTrends(forceRefresh) {
+  const grid = document.getElementById('trend-grid');
+  if(!grid) return;
+
+  grid.innerHTML = '<div class="trend-empty" style="grid-column:1/-1">⏳ Загружаю тренды...</div>';
+
+  try {
+    const url = '/api/trend-feed' + (forceRefresh ? '?refresh=true' : '');
+    const r   = await fetch(url);
+    if(!r.ok) throw new Error('Trend API ' + r.status);
+    _trendData = await r.json();
+    renderTrends();
+  } catch(e) {
+    grid.innerHTML = '<div class="trend-empty" style="grid-column:1/-1">Тренды недоступны<br><small>Настройте DRIBBBLE_TOKEN или YOUTUBE_API_KEY</small></div>';
+  }
+}
+
+function renderTrends() {
+  if(!_trendData) return;
+  const grid    = document.getElementById('trend-grid');
+  const summary = document.getElementById('trend-summary');
+  const age     = document.getElementById('trend-age');
+  const count   = document.getElementById('trend-count');
+  if(!grid) return;
+
+  const items = _trendSource === 'dribbble'
+    ? (_trendData.dribbble || [])
+    : (_trendData.youtube  || []);
+
+  if(items.length === 0){
+    grid.innerHTML = '<div class="trend-empty" style="grid-column:1/-1">Нет данных — настройте API ключи</div>';
+    return;
+  }
+
+  grid.innerHTML = items.slice(0,9).map(item => {
+    const bgColor = item.color === 'dark' ? '#1a1a2e' : item.color === 'red' ? '#2e1a1a' : '#1a1e2e';
+    const srcColor = item.source === 'dribbble' ? '#EA4C89' : '#FF0000';
+    const srcLabel = item.source === 'dribbble' ? 'DR' : 'YT';
+    const thumb = item.thumb || '';
+    return \`<div class="trend-thumb" onclick="useTrendInspo('\${item.title?.replace(/'/g, '')}','\${item.source}')"
+      title="\${item.title}">
+      \${thumb ? \`<img src="\${thumb}" loading="lazy" onerror="this.style.display='none'">\` :
+        \`<div style="width:100%;height:100%;background:\${bgColor}"></div>\`}
+      <div class="trend-thumb-overlay"></div>
+      <div class="trend-thumb-title">\${(item.title||'').slice(0,40)}</div>
+      <span class="trend-source-badge" style="background:\${srcColor}">\${srcLabel}</span>
+    </div>\`;
+  }).join('');
+
+  // Summary
+  if(_trendData.summary && summary){
+    summary.textContent = _trendData.summary.slice(0,200) + '...';
+    summary.classList.add('visible');
+  }
+
+  // Age
+  if(_trendData.fetchedAt && age){
+    const h = Math.round((Date.now() - new Date(_trendData.fetchedAt).getTime()) / 3600000);
+    age.textContent = h < 24 ? h + ' ч назад' : Math.round(h/24) + ' дн назад';
+  }
+  if(count) count.textContent = (items.length) + ' трендов';
+}
+
+function showTrendSource(src){
+  _trendSource = src;
+  document.querySelectorAll('.trend-tab').forEach(b => b.classList.toggle('on', b.textContent.toLowerCase() === src));
+  renderTrends();
+}
+
+function useTrendInspo(title, source){
+  // Trend başlığını analiz notuna ekle
+  const txt = document.getElementById('txt');
+  if(txt && title){
+    const note = \`[Trend inspo: \${source} — "\${title}"]\`;
+    if(!txt.value.includes('[Trend inspo')) txt.value += '\n' + note;
+    txt.focus();
+    setSt('Тренд добавлен как контекст: ' + title.slice(0,40), '');
+  }
+}
+
+// Sayfa yüklenince trend'leri başlat
+setTimeout(() => {
+  if(document.getElementById('sec-trends')) loadTrends(false);
+}, 1500);
+
+// ── STYLE MEMORY RESET ──
+async function resetMemory(){
+  if(!confirm('Stil hafızası sıfırlansın mı?')) return;
+  try {
+    await fetch('/api/style-memory', {method:'DELETE'});
+    document.getElementById('memory-counter').style.display='none';
+    document.getElementById('memory-count').textContent='0';
+    setSt('Stil hafızası sıfırlandı','');
+  } catch(e) { setSt('Hata: '+e.message,'err'); }
+}
+
+// Analiz sonrası memory sayacını güncelle
+function updateMemoryCounter(count){
+  if(!count) return;
+  const el = document.getElementById('memory-counter');
+  const cnt = document.getElementById('memory-count');
+  if(el && cnt){ el.style.display=''; cnt.textContent=count; }
 }
 
 async function exportAll(){
