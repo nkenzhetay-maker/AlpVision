@@ -1,274 +1,1231 @@
-const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AlpVision — TRT Russian Visual Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --trt:#20A9CF;--trt-dk:#0D7A96;
+  --red:#CC0000;--red-dk:#990000;
+  --navy:#0D1B2E;--navy3:#1A3A6B;
+  --ui-bg:#0e0e0e;--ui-s:#141414;--ui-p:#1a1a1a;
+  --ui-b:#252525;--ui-b2:#333;
+  --muted:#5a5a5a;--muted2:#888;--txt:#e8e8e8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Manrope,sans-serif;background:var(--ui-bg);color:var(--txt);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Content-Type": "application/json"
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:46px;background:var(--ui-s);border-bottom:1px solid var(--ui-b);flex-shrink:0;}
+.brand{display:flex;align-items:center;gap:10px;}
+.wm{font-family:Oswald,sans-serif;font-size:1.4rem;font-weight:700;letter-spacing:1px;line-height:1;}
+.w-alp{color:var(--red);}.w-vis{color:var(--txt);}
+.badge{display:flex;align-items:center;gap:7px;border-left:1px solid var(--ui-b2);padding-left:10px;}
+.trt-box{background:var(--red);padding:2px 6px;border-radius:2px;font-family:Oswald,sans-serif;font-size:.68rem;font-weight:700;letter-spacing:1px;color:#fff;}
+.badge-lbl{font-size:.55rem;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--muted2);}
+.lang-btn{padding:4px 9px;border:1px solid var(--ui-b2);background:transparent;color:var(--muted2);font-size:.65rem;font-weight:700;cursor:pointer;border-radius:3px;transition:all .15s;font-family:Manrope,sans-serif;}
+.lang-btn.on,.lang-btn:hover{background:var(--trt);border-color:var(--trt);color:#fff;}
+
+/* 3-COLUMN LAYOUT */
+.ws{display:grid;grid-template-columns:300px 1fr 340px;flex:1;min-height:0;overflow:hidden;}
+
+/* LEFT */
+.left{background:var(--ui-s);border-right:1px solid var(--ui-b);overflow-y:auto;display:flex;flex-direction:column;}
+.sec{padding:12px 14px;border-bottom:1px solid var(--ui-b);}
+.sec-lbl{font-size:.56rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;display:flex;align-items:center;gap:7px;}
+.sec-lbl::after{content:"";flex:1;height:1px;background:var(--ui-b);}
+
+/* MODE TABS */
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.mode-tab{padding:8px 6px;border:2px solid var(--ui-b);border-radius:5px;background:var(--ui-p);cursor:pointer;text-align:center;transition:all .15s;}
+.mode-tab.on{border-color:var(--trt);background:rgba(32,169,207,.07);}
+.mode-tab-icon{font-size:1rem;margin-bottom:3px;}
+.mode-tab-name{font-size:.68rem;font-weight:700;color:var(--txt);display:block;}
+.mode-tab-sub{font-size:.55rem;color:var(--muted2);display:block;margin-top:2px;line-height:1.3;}
+
+/* CONTENT TYPE SELECTOR */
+.ctype-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
+.ct-btn{padding:7px 4px;border:2px solid var(--ui-b);border-radius:4px;background:var(--ui-p);cursor:pointer;text-align:center;transition:all .15s;font-family:Manrope,sans-serif;}
+.ct-btn.on{border-color:var(--trt);background:rgba(32,169,207,.08);}
+.ct-btn:hover{border-color:var(--ui-b2);}
+.ct-icon{font-size:.9rem;margin-bottom:2px;}
+.ct-name{font-size:.6rem;font-weight:700;color:var(--txt);display:block;}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--ui-b2);border-radius:6px;padding:14px;text-align:center;cursor:pointer;transition:all .2s;background:var(--ui-p);position:relative;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--trt);background:rgba(32,169,207,.04);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:1.4rem;opacity:.4;margin-bottom:5px;}
+.upload-txt{font-size:.7rem;color:var(--muted2);line-height:1.4;}
+.upload-hint{font-size:.58rem;color:var(--muted);margin-top:3px;}
+.upload-preview{width:100%;border-radius:4px;overflow:hidden;position:relative;}
+.upload-preview img{width:100%;display:block;border-radius:4px;}
+.change-btn{position:absolute;bottom:5px;right:5px;padding:3px 8px;background:rgba(0,0,0,.75);border:1px solid rgba(255,255,255,.2);border-radius:3px;font-size:.6rem;font-weight:600;color:#fff;cursor:pointer;}
+.photo-warn{margin-top:5px;padding:5px 8px;background:rgba(204,0,0,.1);border:1px solid rgba(204,0,0,.25);border-radius:4px;font-size:.6rem;color:#ff8080;display:none;}
+
+textarea{width:100%;background:var(--ui-p);border:1px solid var(--ui-b2);border-radius:4px;color:var(--txt);font-family:Manrope,sans-serif;font-size:.78rem;line-height:1.65;padding:9px 11px;resize:vertical;min-height:130px;outline:none;transition:border-color .15s;}
+textarea:focus{border-color:var(--trt);}
+textarea::placeholder{color:var(--muted);}
+
+.btn-main{width:100%;padding:10px;background:var(--trt);border:none;border-radius:4px;color:#fff;font-family:Manrope,sans-serif;font-weight:700;font-size:.8rem;cursor:pointer;transition:all .15s;margin-top:8px;}
+.btn-main:hover{background:var(--trt-dk);}
+.btn-main:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Template grid */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.tpl-btn{padding:8px 5px;border:2px solid var(--ui-b);border-radius:4px;background:var(--ui-p);cursor:pointer;text-align:center;transition:all .15s;}
+.tpl-btn.on{border-color:var(--trt);background:rgba(32,169,207,.07);}
+.tpl-icon{font-family:Oswald,sans-serif;color:var(--trt);font-size:.9rem;margin-bottom:2px;}
+.tpl-name{font-size:.65rem;font-weight:700;color:var(--txt);display:block;}
+.tpl-sub{font-size:.54rem;color:var(--muted2);display:block;margin-top:1px;line-height:1.3;}
+
+/* Meta */
+.meta-grid{display:grid;gap:5px;}
+.mf{background:var(--ui-p);border:1px solid var(--ui-b);border-radius:4px;padding:7px 9px;}
+.mf-k{font-size:.54rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font-family:Manrope,sans-serif;font-size:.76rem;font-weight:500;width:100%;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.ubadge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.ubadge.breaking{background:var(--red);color:#fff;}
+.ubadge.normal{background:var(--ui-b2);color:var(--muted2);}
+.ubadge.feature{background:#C8960A;color:#000;}
+
+/* Policy */
+.policy-box{background:rgba(32,169,207,.05);border:1px solid rgba(32,169,207,.15);border-radius:4px;padding:7px 9px;}
+.pol-ok{color:#27ae60;font-size:.68rem;font-weight:600;}
+.pol-warn{color:#e67e22;font-size:.68rem;font-weight:600;}
+.pol-item{font-size:.6rem;color:var(--muted2);display:flex;gap:4px;margin-top:2px;}
+
+/* Pexels grid */
+.ph-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
+.ph-thumb{aspect-ratio:16/9;border-radius:3px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;position:relative;}
+.ph-thumb:hover,.ph-thumb.on{border-color:var(--trt);}
+.ph-thumb img{width:100%;height:100%;object-fit:cover;}
+.ph-badge{position:absolute;top:2px;left:2px;font-size:.5rem;font-weight:700;padding:2px 4px;border-radius:2px;text-transform:uppercase;color:#fff;}
+.btn-sm{width:100%;padding:7px;background:transparent;border:1px solid var(--ui-b2);border-radius:3px;color:var(--muted2);font-family:Manrope,sans-serif;font-size:.68rem;font-weight:600;cursor:pointer;transition:all .15s;margin-top:5px;}
+.btn-sm:hover{border-color:var(--trt);color:var(--trt);}
+
+/* CENTER */
+.center{background:#0a0a0a;display:flex;flex-direction:column;overflow:hidden;}
+.prev-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--ui-s);border-bottom:1px solid var(--ui-b);flex-shrink:0;flex-wrap:wrap;gap:7px;}
+.prev-title{font-size:.58rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+.prev-acts{display:flex;gap:5px;flex-wrap:wrap;}
+.btn-act{padding:5px 11px;background:transparent;border:1px solid var(--ui-b2);border-radius:3px;color:var(--muted2);font-family:Manrope,sans-serif;font-weight:600;font-size:.65rem;cursor:pointer;transition:all .15s;}
+.btn-act:hover{border-color:var(--trt);color:var(--trt);}
+.btn-approve{padding:5px 12px;background:var(--trt);border:none;border-radius:3px;color:#fff;font-family:Manrope,sans-serif;font-weight:700;font-size:.65rem;cursor:pointer;transition:all .15s;}
+.btn-approve:hover{background:var(--trt-dk);}
+.btn-exp-all{padding:5px 12px;background:#C8960A;border:none;border-radius:3px;color:#000;font-family:Manrope,sans-serif;font-weight:700;font-size:.65rem;cursor:pointer;transition:all .15s;}
+.btn-exp-all:hover{background:#9A7A2E;color:#fff;}
+
+/* QC PANEL inside center header */
+.qc-bar{background:var(--ui-p);border-bottom:1px solid var(--ui-b);padding:8px 14px;display:none;gap:10px;flex-direction:column;}
+.qc-title{font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.qc-reviewers{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.qc-card{background:var(--ui-bg);border:1px solid var(--ui-b);border-radius:5px;padding:8px 10px;}
+.qc-reviewer-name{font-size:.65rem;font-weight:700;color:var(--txt);margin-bottom:2px;}
+.qc-reviewer-role{font-size:.55rem;color:var(--muted2);margin-bottom:6px;}
+.qc-score{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.qc-stars{color:#C8960A;font-size:.75rem;letter-spacing:1px;}
+.qc-score-num{font-size:.68rem;font-weight:700;color:var(--txt);}
+.qc-verdict{font-size:.62rem;line-height:1.45;color:var(--txt);}
+.qc-issues{margin-top:5px;}
+.qc-issue{font-size:.6rem;color:var(--muted2);display:flex;gap:4px;margin-top:2px;}
+.qc-issue.warn{color:#e67e22;}
+.qc-issue.fail{color:var(--red);}
+.qc-issue.ok{color:#27ae60;}
+.qc-loading{text-align:center;padding:12px;color:var(--muted2);font-size:.7rem;}
+.btn-qc{padding:5px 12px;background:transparent;border:1px solid #C8960A;border-radius:3px;color:#C8960A;font-family:Manrope,sans-serif;font-weight:700;font-size:.65rem;cursor:pointer;transition:all .15s;}
+.btn-qc:hover{background:#C8960A;color:#000;}
+
+.prev-body{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;}
+.single-canvas{position:relative;overflow:hidden;background:#111;border-radius:4px;box-shadow:0 8px 40px rgba(0,0,0,.6);max-height:calc(100vh - 160px);max-width:100%;}
+.prev-hint{padding:6px 14px;text-align:center;font-size:.6rem;color:var(--muted);background:var(--ui-s);border-top:1px solid var(--ui-b);flex-shrink:0;}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);text-align:center;gap:10px;}
+.empty-ic{font-size:2.2rem;opacity:.15;}
+.empty-tx{font-size:.75rem;line-height:1.7;}
+
+/* RIGHT */
+.right{background:var(--ui-s);border-left:1px solid var(--ui-b);display:flex;flex-direction:column;overflow:hidden;}
+.right-hdr{padding:9px 13px;border-bottom:1px solid var(--ui-b);font-size:.58rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);flex-shrink:0;}
+.plat-list{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:7px;}
+.plat-card{background:var(--ui-p);border:1px solid var(--ui-b);border-radius:5px;overflow:hidden;}
+.plat-card-hdr{display:flex;align-items:center;justify-content:space-between;padding:6px 9px;border-bottom:1px solid var(--ui-b);}
+.plat-name{font-size:.68rem;font-weight:700;display:flex;align-items:center;gap:4px;}
+.plat-sz{font-size:.56rem;color:var(--muted);font-weight:400;}
+.btn-dl{padding:3px 8px;background:var(--trt);border:none;border-radius:3px;color:#fff;font-size:.6rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:Manrope,sans-serif;}
+.btn-dl:hover{background:var(--trt-dk);}
+.plat-prev-wrap{padding:6px;background:#0d0d0d;}
+.plat-canvas{width:100%;position:relative;overflow:hidden;border-radius:2px;background:#111;}
+.right-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.7rem;text-align:center;padding:16px;line-height:1.6;}
+
+
+/* Editorial analysis panel */
+.editorial-panel{background:var(--ui-p);border:1px solid var(--ui-b);border-radius:6px;padding:10px 12px;margin-top:8px;}
+.ed-title{font-size:.56rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--trt);margin-bottom:7px;}
+.ed-text{font-size:.65rem;color:var(--muted2);line-height:1.5;}
+.concepts-grid{display:grid;gap:6px;margin-top:8px;}
+.concept-card{background:var(--ui-bg);border:2px solid var(--ui-b);border-radius:5px;padding:8px 10px;cursor:pointer;transition:all .15s;}
+.concept-card:hover{border-color:var(--ui-b2);}
+.concept-card.on{border-color:var(--trt);background:rgba(32,169,207,.06);}
+.concept-card.winner{border-color:#C8960A;}
+.concept-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.concept-type{font-size:.52rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--trt);padding:1px 6px;background:rgba(32,169,207,.1);border-radius:2px;}
+.concept-score{font-size:.6rem;font-weight:700;color:#C8960A;}
+.concept-title{font-size:.68rem;font-weight:700;color:var(--txt);margin-bottom:3px;}
+.concept-desc{font-size:.6rem;color:var(--muted2);line-height:1.4;}
+.score-bars{display:flex;gap:2px;margin-top:5px;}
+.score-bar{height:3px;border-radius:1px;background:var(--trt);opacity:.4;flex:1;}
+.score-bar.filled{opacity:1;}
+
+.statusbar{display:flex;align-items:center;gap:7px;padding:6px 18px;background:var(--ui-s);border-top:1px solid var(--ui-b);flex-shrink:0;font-size:.63rem;color:var(--muted);}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.sdot.on{background:#27ae60;animation:pulse 1.4s ease infinite;}
+.sdot.err{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="brand">
+    <span class="wm"><span class="w-alp">Alp</span><span class="w-vis">Vision</span></span>
+    <div class="badge">
+      <span class="trt-box">TRT</span>
+      <span class="badge-lbl">Russian Dijital</span>
+    </div>
+  </div>
+  <div style="display:flex;gap:7px">
+    <button class="lang-btn on" onclick="setLang('ru')">RU</button>
+    <button class="lang-btn" onclick="setLang('tr')">TR</button>
+  </div>
+</header>
+
+<div class="ws">
+
+  <!-- ══ LEFT ══ -->
+  <div class="left">
+
+    <!-- MODE -->
+    <div class="sec">
+      <div class="sec-lbl" id="lbl-mode">Режим</div>
+      <div class="mode-tabs">
+        <div class="mode-tab on" data-mode="photo" onclick="setMode('photo')">
+          <div class="mode-tab-icon">📷</div>
+          <span class="mode-tab-name" id="mn-photo">Фото</span>
+          <span class="mode-tab-sub" id="ms-photo">Загрузить фото → лого</span>
+        </div>
+        <div class="mode-tab" data-mode="ai" onclick="setMode('ai')">
+          <div class="mode-tab-icon">✨</div>
+          <span class="mode-tab-name" id="mn-ai">AI-генератор</span>
+          <span class="mode-tab-sub" id="ms-ai">Текст → AI-фон</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT TYPE — всегда видно -->
+    <div class="sec">
+      <div class="sec-lbl" id="lbl-ctype">Тип контента</div>
+      <div class="ctype-grid" id="ctype-grid">
+        <button class="ct-btn on" data-ct="news" onclick="setCType('news')">
+          <div class="ct-icon">📰</div><span class="ct-name" id="ct-news">Новость</span>
+        </button>
+        <button class="ct-btn" data-ct="infographic" onclick="setCType('infographic')">
+          <div class="ct-icon">📊</div><span class="ct-name" id="ct-info">Инфографика</span>
+        </button>
+        <button class="ct-btn" data-ct="feature" onclick="setCType('feature')">
+          <div class="ct-icon">✦</div><span class="ct-name" id="ct-feat">Feature</span>
+        </button>
+        <button class="ct-btn" data-ct="video" onclick="setCType('video')">
+          <div class="ct-icon">▶</div><span class="ct-name" id="ct-vid">Видео</span>
+        </button>
+        <button class="ct-btn" data-ct="article" onclick="setCType('article')">
+          <div class="ct-icon">📄</div><span class="ct-name" id="ct-art">Статья</span>
+        </button>
+        <button class="ct-btn" data-ct="qa" onclick="setCType('qa')">
+          <div class="ct-icon">❓</div><span class="ct-name" id="ct-qa">Q&A</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- METİN GİRİŞİ — her zaman görünür -->
+    <div class="sec">
+      <div class="sec-lbl" id="lbl-input">Текст материала</div>
+      <textarea id="txt" placeholder="Вставьте текст новости или брифа..."></textarea>
+      <button class="btn-main" id="analyze-btn" onclick="analyze()">🔍 Анализировать и создать превью</button>
+    </div>
+
+    <!-- PHOTO MODE — ek fotoğraf yükleme -->
+    <div id="photo-mode">
+      <div class="sec">
+        <div class="sec-lbl" id="lbl-upload">Фотография (AA / TRT World / Reuters)</div>
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" accept="image/*" onchange="onFileSelect(event)" id="file-input">
+          <div id="upload-empty">
+            <div class="upload-icon">🖼</div>
+            <div class="upload-txt" id="upload-txt">Перетащите фото или нажмите</div>
+            <div class="upload-hint">AA · TRT World · Reuters · AFP</div>
+          </div>
+          <div id="upload-preview-wrap" style="display:none">
+            <div class="upload-preview">
+              <img id="upload-img" src="" alt="">
+              <span class="change-btn" onclick="clearPhoto(event)">✕</span>
+            </div>
+          </div>
+        </div>
+        <div class="photo-warn" id="photo-warn">⚠ Проверьте: нет ли логотипов других СМИ в кадре</div>
+      </div>
+
+
+
+      <div class="sec" id="photo-meta-sec" style="display:none">
+        <div class="sec-lbl">Текст на обложке (опционально)</div>
+        <div class="meta-grid">
+          <div class="mf"><div class="mf-k" id="lbl-p-hl">Заголовок</div><input class="mf-v" id="p-hl" oninput="renderPreview()"></div>
+          <div class="mf"><div class="mf-k">Подзаголовок</div><input class="mf-v" id="p-sub" oninput="renderPreview()"></div>
+          <div class="row2">
+            <div class="mf"><div class="mf-k">Категория</div><input class="mf-v" id="p-cat" oninput="renderPreview()"></div>
+            <div class="mf"><div class="mf-k">Фото:</div><input class="mf-v" id="p-src" placeholder="AA" oninput="renderPreview()"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <button class="btn-main" onclick="photoPreview()" id="photo-preview-btn">👁 Создать превью с фото</button>
+      </div>
+    </div>
+
+    <!-- AI MODE — arka plan seçenekleri -->
+    <div id="ai-mode" style="display:none">
+      <div class="sec" id="sec-tpl" style="display:none">
+        <div class="sec-lbl">Стиль шаблона</div>
+        <div class="tpl-grid" id="ai-tpl-grid"></div>
+      </div>
+
+      <div class="sec" id="sec-meta" style="display:none">
+        <div class="sec-lbl">Данные материала</div>
+        <div class="meta-grid">
+          <div class="mf"><div class="mf-k" id="lbl-hl">Заголовок</div><input class="mf-v" id="m-hl" oninput="renderPreview()"></div>
+          <div class="mf"><div class="mf-k" id="lbl-sub">Подзаголовок</div><input class="mf-v" id="m-sub" oninput="renderPreview()"></div>
+          <div class="row2">
+            <div class="mf"><div class="mf-k" id="lbl-cat">Категория</div><input class="mf-v" id="m-cat" oninput="renderPreview()"></div>
+            <div class="mf"><div class="mf-k" id="lbl-src">Источник</div><input class="mf-v" id="m-src" oninput="renderPreview()"></div>
+          </div>
+          <div class="mf" style="display:flex;align-items:center;justify-content:space-between">
+            <div class="mf-k" id="lbl-urg">Срочность</div>
+            <span id="ubadge" class="ubadge normal">Обычная</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec" id="sec-policy" style="display:none">
+        <div class="sec-lbl">Редакционная политика</div>
+        <div class="policy-box">
+          <div id="pol-status" class="pol-ok">✓ Соответствует политике TRT</div>
+          <div id="pol-items"></div>
+        </div>
+      </div>
+
+      <div class="sec" id="sec-bg" style="display:none">
+        <div class="sec-lbl">Фоновое изображение</div>
+        <div class="ph-grid" id="ph-grid">
+          <div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>
+        </div>
+        <button class="btn-sm" id="regen-btn" onclick="regenDalle()">↺ Перегенерировать AI-фон</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ CENTER ══ -->
+  <div class="center">
+    <div class="prev-hdr">
+      <div class="prev-title" id="lbl-prev">Предпросмотр</div>
+      <div class="prev-acts" id="prev-acts" style="display:none">
+        <button class="btn-qc" onclick="runQC()" id="btn-qc">🎨 QC Проверка</button>
+        <button class="btn-act" onclick="generateAlt()">↻ Альтернатива</button>
+        <button class="btn-act" onclick="switchFmt()">⇄ Формат</button>
+        <button class="btn-approve" onclick="approveAll()">✓ Утвердить → Все форматы</button>
+      </div>
+      <div id="all-acts" style="display:none">
+        <button class="btn-act" onclick="backToPreview()">← Назад</button>
+        <button class="btn-exp-all" id="exp-all-btn" onclick="exportAll()">⬇ Скачать все (6 форматов)</button>
+      </div>
+    </div>
+
+    <!-- QC BAR -->
+    <div class="qc-bar" id="qc-bar">
+      <div class="qc-title">🎨 Редакция качества — 2 рецензента</div>
+      <div class="qc-reviewers" id="qc-reviewers">
+        <div class="qc-loading">Анализирую визуал...</div>
+      </div>
+    </div>
+
+    <div class="prev-body">
+      <div class="empty" id="empty">
+        <div class="empty-ic">🎨</div>
+        <div class="empty-tx" id="lbl-empty">Выберите тип контента,<br>загрузите фото или введите текст</div>
+      </div>
+      <div id="single-wrap" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;">
+        <div class="single-canvas" id="single-canvas"></div>
+      </div>
+    </div>
+
+    <div class="prev-hint" id="lbl-hint" style="display:none">
+      Проверьте дизайн. «QC» — экспертная оценка. «Альтернатива» — другой вариант. «Утвердить» — все форматы.
+    </div>
+  </div>
+
+  <!-- ══ RIGHT ══ -->
+  <div class="right">
+    <div class="right-hdr" id="lbl-plats">Платформы</div>
+    <div class="plat-list" id="plat-list">
+      <div class="right-empty" id="right-empty">После утверждения<br>здесь появятся все 6 форматов</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="statusbar">
+  <div class="sdot" id="sdot"></div>
+  <span id="stxt">AlpVision готов</span>
+</div>
+
+<script>
+const LOGO = 'data:image/jpeg;base64,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UjaS20cNJAN+SJgaM957z6V5L3pyxXp7JLpa6aqkYMNe5uHAd2Rg49CO1rpxq8yc1nr0w+z2H1atp7jUtXScaMlHGGubMc/Wedm3ndbeBwabWz7rrumsWn4aauoGx89XWNJLW9fqkbHzDO+59BUC0JpO36o1DqZtwfKBTSvEYjdjD5HyYd7OXIHQ5Vx2a0Wuz07oLXQwUkbjlwjbguPeT1PtX6ttrt1tdO6gooKZ1Q/nmdGwAvd3k+fqVjOxnWlGVZp4bbXZ02SNtLiC3sqVanYQcHKMVGW2cptuUvFp4wir9L1dcLdeuGl6eGVvg8sNuledpMtJDQe7oR6MjzLo8JtT2i3abNivNbT2utoZpGuZVSNi5g55dsScEgkgjrt6lOa+xWevuEVwrLdTzVcPL2czm/TZynIweowd18LzpfT95qPCLlaaaom2/SFuHnHTJGCVjCzr0pKUJJtbLOfs+PijZX12wu6cqVanKKm1KXLjaaWG1l7qS6p4w+/JA6+qi1jxctDrQ8VFBaWiSapZuzIcXHB84JDWjv3I2C4tktHz3ZtfUrWF0rKvwiIAZJcySVwHtGR7VcVotVttFN4NbKKCkiJyWxMA5j3nvPpK/VuttvtxnNDRwU5qJDJMY2AF7j5z3r56ulOXNUeW859qwseRkuJ6dGm6VvBpRUFDOM/VnzNy8+5bFSaLnqdW19df7gC4WqyeCQknIMhjdl49JHOSP7wUr4FHPD6Aj+0S/wC6ltrtNstdK+lt1BT0sEji58cTA0OJGCT37bL6Wu3UNrpBSW6khpYA4uEcTeVoJ67LZbWM6M4zk8vfPm8EfVtfo3tGrRpwcYtw5V3KKeV7W8nqREVkcoEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQH//Z';
+const PLATFORMS = [{"id": "instagram", "label": "Instagram", "w": 1080, "h": 1350, "ratio": "4/5", "tag": "4:5"}, {"id": "twitter", "label": "X/Twitter", "w": 1200, "h": 675, "ratio": "16/9", "tag": "16:9"}, {"id": "telegram", "label": "Telegram", "w": 1280, "h": 720, "ratio": "16/9", "tag": "16:9"}, {"id": "youtube", "label": "YouTube", "w": 1280, "h": 720, "ratio": "16/9", "tag": "16:9"}, {"id": "facebook", "label": "Facebook", "w": 1200, "h": 628, "ratio": "1.91/1", "tag": "1.9:1"}, {"id": "web", "label": "Web/\u0421\u0430\u0439\u0442", "w": 1920, "h": 600, "ratio": "3.2/1", "tag": "3.2:1"}];
+
+// TRT Policy rules
+const POLICY_RULES = [
+  {rx:/\bЦАХАЛ\b/gi,warn:'ЦАХАЛ → Армия Израиля'},
+  {rx:/\bИГИЛ\b|\bИГ\b/gi,warn:'ИГИЛ/ИГ → ДАЕШ'},
+  {rx:/\bбоевики ХАМАС\b/gi,warn:'боевики ХАМАС → бойцы сопротивления'},
+  {rx:/\bна Украине\b/gi,warn:'на Украине → в Украине'},
+  {rx:/\bИерусалим\b/gi,warn:'Иерусалим → Аль-Кудс'},
+  {rx:/\bСВО\b/gi,warn:'СВО — запрещённый российский нарратив'},
+  {rx:/\bпутинская война\b/gi,warn:'путинская война — запрещённый западный нарратив'},
+  {rx:/\bгеноцид\b.*1915|1915.*\bгеноцид\b/gi,warn:'геноцид 1915 → события 1915 года'},
+  {rx:/\bкрестовые походы\b/gi,warn:'крестовые походы → крестовые набеги'},
+  {rx:/\bПерсидский залив\b/gi,warn:'Персидский залив → Басрийский залив'},
+];
+
+// Content type → template + color defaults
+const CTYPE_DEFAULTS = {
+  news:       {tpl:'photo_panel',  scheme:'dark',  urgency:'normal'},
+  infographic:{tpl:'typographic',  scheme:'teal',  urgency:'normal'},
+  feature:    {tpl:'feature',      scheme:'gold',  urgency:'feature'},
+  video:      {tpl:'photo_panel',  scheme:'dark',  urgency:'normal'},
+  article:    {tpl:'split',        scheme:'grey',  urgency:'normal'},
+  qa:         {tpl:'typographic',  scheme:'teal',  urgency:'normal'},
 };
 
-// ════════════════════════════════════════════════════════════════════════
-//  ALPVISION — EDITORIAL INTELLIGENCE ENGINE
-//  Rol: Creative Director + Geopolitical Visual Editor + Thumbnail Psychologist
-//  Temel kural: Önce düşün. Sonra tasarla. Hiçbir zaman "fotoğraf + başlık" yapma.
-// ════════════════════════════════════════════════════════════════════════
+const S = {
+  lang:'ru', mode:'photo', contentType:'news',
+  photoTpl:'logo_only', aiTpl:'photo_panel',
+  colorScheme:'dark', urgency:'normal',
+  userPhotoB64:null, bg:null,
+  dalleB64:null, dallePrompt:'', pexelsQ:'',
+  hl:'', sub:'', cat:'', src:'',
+  approved:false, prevPlatIdx:0, altCount:0, analyzing:false,
+  qcDone:false,
+};
 
-const EDITORIAL_SYSTEM = `Sen AlpVision — TRT Russian Dijital'in yapay zekâ tabanlı Editorial Intelligence Engine'isin.
-
-Rolün: Creative Director + Art Director + Geopolitical Visual Editor + Thumbnail Psychologist
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TEMEL KURAL: ASLA doğrudan tasarıma geçme.
-Önce haberi analiz et. Sonra fikir üret. Sonra tasarla.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-════════════════════════════════════════════
-ADIM 1 — EDİTORYAL ANALİZ (zorunlu)
-════════════════════════════════════════════
-
-Her haber için şu soruları cevapla:
-
-1. HABERİN GERÇEK MERKEZİ NE?
-   Yüzey: Ne oldu?
-   Derinlik: Bu neden önemli? Kim kazandı, kim kaybetti?
-   Jeopolitik: Güç dengesi nasıl değişti?
-
-2. PSİKOLOJİK MERKEZ — İzleyicide hangi duygu tetiklenmeli?
-   GÜÇLÜ ↔ ZAYIF | KRİZ ↔ ÇÖZÜM | TEHDİT ↔ GÜVENLİK
-   İTTİFAK ↔ İHANET | SAVAŞ ↔ BARIŞ | GİZEM ↔ AÇIKLIK
-
-3. SOSYAL MEDYA PSİKOLOJİSİ
-   İnsanlar bu görseli paylaşır mı? Neden?
-   İlk 1.7 saniyede ne hissettirmeli?
-
-4. THUMBNAIL TESTİ
-   50x50 piksel küçültülünce ne kalır?
-   Tek güçlü element var mı?
-
-════════════════════════════════════════════
-ADIM 2 — YARATICI KONSEPT (zorunlu, 3 seçenek)
-════════════════════════════════════════════
-
-Doğrudan fotoğraf koyma. Önce 3 görsel fikir üret:
-
-KONSEPT TİPLERİ (dönüşümlü kullan, aynı tarz tekrar etme):
-─ THE ECONOMIST METAFORU: Soyut sembol, haberin özünü tek nesneyle anlatır
-  Örnek: İki liderin GÖLGESI harita üzerinde → Tokalaşma değil, GÜÇLER haritayı şekillendiriyor
-─ CİNEMATİK KROP: Dramatik açı, sinematik ışık, tek güçlü odak
-  Örnek: Savaş alanı üzerinden drone bakış, kırmızı ışık, duman
-─ SİMGESEL KOMPOZİSYON: Nesne = mesaj
-  Örnek: Çatlak satranç tahtası = bozulan denge; demir kapı + zeytin dalı = abluka
-─ BRUTALIST EDİTORYAL: Güçlü tipografi, minimal görsel, darbe etkisi
-  Örnek: Kırmızı zemin, tek kelime, tam sayfa → "ВОЙНА" veya "МИР"
-─ HARİTA + GÜÇLER: Jeopolitik görsel, coğrafya üzerinde güç gösterimi
-  Örnek: Harita üzerinde eller, harita üzerinde gölgeler, harita parçalanıyor
-─ MAGAZINE COVER: The Economist / Time kapak mantığı, tek nesne, ironi
-─ İNFOGRAFİK HİBRİT: Veri + görsel birlikte, grafik + fotoğraf
-─ REUTERS MODERN: Keskin fotoğrafçılık, minimal metin, güçlü an
-
-════════════════════════════════════════════
-ADIM 3 — SKORLAMA (her konsept için)
-════════════════════════════════════════════
-
-7 kriter, her biri 1-10:
-1. Yaratıcılık — sıradan agency haberi mi yoksa özgün fikir mi?
-2. Haber etkisi — haberin gerçek ağırlığını taşıyor mu?
-3. Thumbnail gücü — küçük boyutta da güçlü mü?
-4. TRT uygunluğu — kurumsal, profesyonel, siyasi risk yok
-5. Sosyal medya performansı — paylaşılır mı? tıklanır mı?
-6. Metafor gücü — "sadece fotoğraf değil, fikir anlatıyor" mu?
-7. Global medya standardı — BBC/Al Jazeera/Reuters seviyesi mi?
-
-Ortalama 80+ (10 üzerinden 8+) olmayan konsept seçilmez.
-
-════════════════════════════════════════════
-ADIM 4 — EN İYİ KONSEPTTEN TASARIM ÜRETİMİ
-════════════════════════════════════════════
-
-Seçilen konseptten:
-- DALL-E 3 prompt üret (sinematik, metaforik, insan yüzü yok)
-- Başlık yaz (The Economist cesareti + TRT kurumsal çerçevesi)
-- Şablon seç
-- Renk şeması seç
-
-════════════════════════════════════════════
-YASAKLAR (kesinlikle yapma)
-════════════════════════════════════════════
-✗ Sıradan tokalaşma fotoğrafı koyma
-✗ Standart agency görseli + gradient + başlık
-✗ Görsel fikri olmayan tasarım
-✗ Haberi tekrar eden görsel (görsel başlığı anlatmalı, değil kopyalamalı)
-✗ Aynı tarzı üst üste tekrar etme
-✗ İnsan yüzü/figür (DALL-E'de)
-✗ Başka medya logosu
-
-════════════════════════════════════════════
-TRT RUSSIAN BAŞLIK FELSEFESİ
-════════════════════════════════════════════
-МЕRAK BIRAK → "ЧТО СКРЫВАЕТ ДОГОВОР?" (diplomatik)
-SONUCU VER  → "ЭРДОГАН ПОБЕДИЛ" (breaking, Türkiye)
-ŞOK ET      → "ИЗРАИЛЬ СНОВА УБИВАЕТ" (kriz)
-SORU SOR    → "КТО ПЛАТИТ ЗА ВОЙНУ?" (analiz)
-İDDİA ET    → "СИРИЯ МЕНЯЕТСЯ" (feature)
-
-Max 7 kelime. Tamamen büyük harf. Eylem fiili içermeli.
-
-════════════════════════════════════════════
-TRT RUSSIAN POLİTİKA KURALLARI
-════════════════════════════════════════════
-ЦАХАЛ → Армия Израиля | ИГИЛ → ДАЕШ
-на Украине → в Украине | Иерусалим → Аль-Кудс
-Персидский залив → Басрийский залив
-СВО / денацификация → YASAK (Rus narratifi)
-путинская война → YASAK (Batı narratifi)
-геноцид 1915 → события 1915 года
-Турция → her zaman nötr veya olumlu çerçeve
-
-════════════════════════════════════════════
-ÇIKTI FORMATI — SADECE JSON, başka hiçbir şey yazma
-════════════════════════════════════════════
-
-{
-  "editorialAnalysis": {
-    "realCenter": "Haberin gerçek merkezi (yüzey değil, derinlik) — Rusça",
-    "psychologicalCore": "Tetiklenmesi gereken duygu ve neden — Rusça",
-    "socialMediaHook": "İnsanlar neden paylaşır/tıklar? — Rusça",
-    "thumbnailTest": "50x50'de ne kalır? Geçer mi? — Rusça"
+// ── TRANSLATIONS ──
+const T = {
+  ru:{
+    mode:'Режим',mnPhoto:'Фото',msPhoto:'Загрузить фото → лого',mnAi:'AI-генератор',msAi:'Текст → AI-фон',
+    ctype:'Тип контента',ctNews:'Новость',ctInfo:'Инфографика',ctFeat:'Feature',ctVid:'Видео',ctArt:'Статья',ctQa:'Q&A',
+    uploadLbl:'Фотография',uploadTxt:'Перетащите фото или нажмите',
+    photoTplLbl:'Стиль',pHlLbl:'Заголовок',photoPreviewBtn:'👁 Создать превью',
+    inputLbl:'Текст материала',ph:'Вставьте текст новости или брифа...',
+    analyzeBtn:'🔍 Анализировать и создать превью',
+    hlLbl:'Заголовок',subLbl:'Подзаголовок',srcLbl:'Источник',catLbl:'Категория',urgLbl:'Срочность',
+    bgLbl:'Фоновое изображение',regenBtn:'↺ Перегенерировать AI-фон',
+    prevLbl:'Предпросмотр',platsLbl:'Платформы',
+    expAll:'⬇ Скачать все (6 форматов)',
+    emptyLbl:'Выберите тип контента,\nзагрузите фото или введите текст',
+    ready:'AlpVision готов',analyzing:'Анализирую текст...',genBg:'Генерирую фоны...',
+    done:'Готово',errPfx:'Ошибка: ',
+    uBreaking:'🔴 Срочно',uNormal:'Обычная',uFeature:'⭐ Feature',
+    dl:'Скачать',ai:'AI',photo:'Фото',
+    hint:'«QC» — экспертная оценка. «Альтернатива» — другой вариант.',
+    policyOk:'✓ Соответствует политике TRT',policyWarn:'замечания',
+    rightEmpty:'После утверждения\nздесь появятся все 6 форматов',
+    photoWarn:'⚠ Проверьте: нет ли логотипов других СМИ в кадре',
+    exporting:'Экспортирую...',
   },
-  "concepts": [
-    {
-      "id": 1,
-      "type": "economist_metaphor|cinematic_crop|symbolic|brutalist|map_power|magazine|infographic|reuters_modern",
-      "title": "Konsept başlığı — Rusça",
-      "description": "Görsel fikir açıklaması — Rusça, 2-3 cümle",
-      "scores": {
-        "creativity": 0,
-        "newsImpact": 0,
-        "thumbnailPower": 0,
-        "trtCompliance": 0,
-        "socialMedia": 0,
-        "metaphorStrength": 0,
-        "globalStandard": 0,
-        "total": 0
-      }
-    },
-    {"id": 2, "...": "..."},
-    {"id": 3, "...": "..."}
-  ],
-  "selectedConcept": 1,
-  "selectionReason": "Neden bu konsept seçildi — Rusça",
-  "headline": "RUSÇA MAX 7 KELİME TAMAMEN BÜYÜK HARF",
-  "subheadline": "Rusça alt başlık max 12 kelime normal harf",
-  "category": "TEK KELİME Rusça",
-  "source": "AA|Reuters|TRT World|AFP",
-  "urgency": "breaking|normal|feature",
-  "colorScheme": "dark|red|teal|gold|grey",
-  "template": "typographic|photo_panel|split|feature",
-  "dallePrompt": "İngilizce DALL-E 3 prompt — seçilen konsepti görselleştir. Sinematik, dramatik, tek güçlü odak. KESİNLİKLE insan yüzü/figür yok. Max 80 kelime. 'photorealistic cinematic, no people no faces, dramatic lighting' ile bitir.",
-  "pexelsQuery": "İngilizce 4 kelime max — konseptle uyumlu",
-  "visualNote": "Editöre not: bu görsel neden güçlü — Rusça 1 cümle"
-}`;
+  tr:{
+    mode:'Mod',mnPhoto:'Fotoğraf',msPhoto:'Foto yükle → logo',mnAi:'AI üretici',msAi:'Metin → AI arka plan',
+    ctype:'İçerik türü',ctNews:'Haber',ctInfo:'İnfografik',ctFeat:'Feature',ctVid:'Video',ctArt:'Makale',ctQa:'Q&A',
+    uploadLbl:'Fotoğraf (AA / TRT World / Reuters)',uploadTxt:'Fotoğrafı sürükleyin veya tıklayın',
+    photoTplLbl:'Stil',pHlLbl:'Başlık',photoPreviewBtn:'👁 Önizleme oluştur',
+    inputLbl:'İçerik metni',ph:'Haber veya brief metnini yapıştırın...',
+    analyzeBtn:'🔍 Analiz et ve önizleme oluştur',
+    hlLbl:'Başlık',subLbl:'Alt başlık',srcLbl:'Kaynak',catLbl:'Kategori',urgLbl:'Aciliyet',
+    bgLbl:'Arka plan',regenBtn:'↺ AI arka planı yeniden üret',
+    prevLbl:'Önizleme',platsLbl:'Platformlar',
+    expAll:'⬇ Hepsini indir (6 format)',
+    emptyLbl:'İçerik türü seçin,\nfotoğraf yükleyin veya metin girin',
+    ready:'AlpVision hazır',analyzing:'Analiz ediliyor...',genBg:'Arka plan oluşturuluyor...',
+    done:'Tamamlandı',errPfx:'Hata: ',
+    uBreaking:'🔴 Son dakika',uNormal:'Normal',uFeature:'⭐ Feature',
+    dl:'İndir',ai:'AI',photo:'Fotoğraf',
+    hint:'«QC» — uzman değerlendirmesi. «Alternatif» — farklı varyant.',
+    policyOk:'✓ TRT yayın politikasına uygun',policyWarn:'uyarı',
+    rightEmpty:'Onaylandıktan sonra\ntüm 6 format burada',
+    photoWarn:'⚠ Fotoğrafta başka medya logosu olmamasına dikkat',
+    exporting:'Dışa aktarılıyor...',
+  }
+};
+
+function t(k){ return T[S.lang]?.[k] ?? k; }
+
+function setSt(msg,type){
+  document.getElementById('sdot').className='sdot'+(type==='on'?' on':type==='err'?' err':'');
+  document.getElementById('stxt').textContent=msg;
+}
+
+function setLang(l){
+  S.lang=l;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('on',b.textContent===l.toUpperCase()));
+  const ids=[
+    ['lbl-mode','mode'],['mn-photo','mnPhoto'],['ms-photo','msPhoto'],['mn-ai','mnAi'],['ms-ai','msAi'],
+    ['lbl-ctype','ctype'],['ct-news','ctNews'],['ct-info','ctInfo'],['ct-feat','ctFeat'],
+    ['ct-vid','ctVid'],['ct-art','ctArt'],['ct-qa','ctQa'],
+    ['lbl-upload','uploadLbl'],['upload-txt','uploadTxt'],['lbl-p-hl','pHlLbl'],['photo-preview-btn','photoPreviewBtn'],
+    ['lbl-input','inputLbl'],['analyze-btn','analyzeBtn'],
+    ['lbl-hl','hlLbl'],['lbl-sub','subLbl'],['lbl-src','srcLbl'],['lbl-cat','catLbl'],['lbl-urg','urgLbl'],
+    ['regen-btn','regenBtn'],['lbl-prev','prevLbl'],['lbl-plats','platsLbl'],
+    ['exp-all-btn','expAll'],['lbl-hint','hint'],['stxt','ready'],
+    ['right-empty','rightEmpty'],['photo-warn','photoWarn'],
+  ];
+  ids.forEach(([id,key])=>{
+    const el=document.getElementById(id); if(!el) return;
+    if(el.tagName==='TEXTAREA'||el.tagName==='INPUT') el.placeholder=t(key);
+    else el.innerHTML=t(key).replace(/\n/g,'<br>');
+  });
+  document.getElementById('txt').placeholder=t('ph');
+  document.getElementById('lbl-empty').innerHTML=t('emptyLbl').replace(/\n/g,'<br>');
+  buildAiTplGrid();
+}
+
+// ── CONTENT TYPE ──
+function setCType(ct){
+  S.contentType=ct;
+  document.querySelectorAll('.ct-btn').forEach(b=>b.classList.toggle('on',b.dataset.ct===ct));
+  const def=CTYPE_DEFAULTS[ct]||CTYPE_DEFAULTS.news;
+  if(S.mode==='photo') S.photoTpl=def.tpl;
+  else { S.aiTpl=def.tpl; buildAiTplGrid(); }
+  S.colorScheme=def.scheme;
+  S.urgency=def.urgency;
+  if(S.userPhotoB64||S.hl) renderPreview();
+}
+
+// ── MODE ──
+function setMode(mode){
+  S.mode=mode;
+  document.querySelectorAll('.mode-tab').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode));
+  // Fotoğraf ek paneli
+  document.getElementById('photo-mode').style.display=mode==='photo'?'':'none';
+  // AI sonuç paneli (textarea her zaman görünür)
+  document.getElementById('ai-mode').style.display=mode==='ai'?'':'none';
+  // Önizlemeyi sadece içerik yoksa sıfırla
+  if(!S.userPhotoB64&&!S.hl){
+    document.getElementById('empty').style.display='';
+    document.getElementById('single-wrap').style.display='none';
+    document.getElementById('prev-acts').style.display='none';
+    document.getElementById('lbl-hint').style.display='none';
+    document.getElementById('qc-bar').style.display='none';
+  }
+}
+
+// ── PHOTO MODE ──
+function setPhotoTpl(id){ S.photoTpl=id; if(S.userPhotoB64) renderPreview(); }
+
+function onFileSelect(e){
+  const file=e.target.files?.[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    S.userPhotoB64=ev.target.result;
+    document.getElementById('upload-empty').style.display='none';
+    document.getElementById('upload-preview-wrap').style.display='';
+    document.getElementById('upload-img').src=S.userPhotoB64;
+    document.getElementById('photo-warn').style.display='';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPhoto(e){
+  e.stopPropagation();
+  S.userPhotoB64=null;
+  document.getElementById('upload-empty').style.display='';
+  document.getElementById('upload-preview-wrap').style.display='none';
+  document.getElementById('photo-warn').style.display='none';
+  document.getElementById('file-input').value='';
+  document.getElementById('empty').style.display='';
+  document.getElementById('single-wrap').style.display='none';
+  document.getElementById('prev-acts').style.display='none';
+  document.getElementById('qc-bar').style.display='none';
+}
+
+const uz=document.getElementById('upload-zone');
+uz.addEventListener('dragover',e=>{e.preventDefault();uz.classList.add('drag');});
+uz.addEventListener('dragleave',()=>uz.classList.remove('drag'));
+uz.addEventListener('drop',e=>{
+  e.preventDefault();uz.classList.remove('drag');
+  const file=e.dataTransfer.files?.[0];
+  if(file&&file.type.startsWith('image/')){
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      S.userPhotoB64=ev.target.result;
+      document.getElementById('upload-empty').style.display='none';
+      document.getElementById('upload-preview-wrap').style.display='';
+      document.getElementById('upload-img').src=S.userPhotoB64;
+      document.getElementById('photo-warn').style.display='';
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+function photoPreview(){
+  if(!S.userPhotoB64){alert('Сначала загрузите фотографию');return;}
+  S.hl=document.getElementById('p-hl').value;
+  S.sub=document.getElementById('p-sub').value;
+  S.cat=document.getElementById('p-cat').value;
+  S.src=document.getElementById('p-src').value;
+  document.getElementById('empty').style.display='none';
+  document.getElementById('single-wrap').style.display='flex';
+  document.getElementById('prev-acts').style.display='';
+  document.getElementById('lbl-hint').style.display='';
+  S.qcDone=false;
+  document.getElementById('qc-bar').style.display='none';
+  renderPreview();
+  setSt('Превью создано','');
+}
+
+// ── AI MODE ──
+
+// ── EDITORIAL ANALYSIS PANEL ──
+function renderEditorialPanel(d){
+  const existing = document.getElementById('editorial-panel-sec');
+  if(existing) existing.remove();
+
+  const a = d.editorialAnalysis || {};
+  const concepts = d.concepts || [];
+  const selected = d.selectedConcept || 1;
+
+  let html = '<div class="sec" id="editorial-panel-sec">';
+  html += '<div class="sec-lbl">🧠 Редакционный анализ</div>';
+
+  // Analiz kutusu
+  if(a.realCenter || a.psychologicalCore){
+    html += '<div class="editorial-panel">';
+    const rows = [
+      ['Суть',         a.realCenter],
+      ['Власть',       a.powerDynamic],
+      ['Психология',   a.psychologicalCore],
+      ['Соцсети',      a.socialMediaHook],
+      ['Геополитика',  a.geopoliticalWeight],
+      ['Thumbnail',    a.thumbnailTest],
+    ];
+    rows.forEach(([label, val]) => {
+      if(!val || val === '—') return;
+      html += '<div class="ed-title">'+label+'</div>';
+      html += '<div class="ed-text">'+val+'</div>';
+    });
+    html += '</div>';
+  }
+
+  // Konsept kartları
+  if(concepts.length > 0){
+    html += '<div class="ed-title" style="margin-top:10px;">Концепции ('+concepts.length+')</div>';
+    html += '<div class="concepts-grid">';
+    concepts.forEach(c => {
+      const isSelected = c.id === selected;
+      const sc = c.scores || {};
+      const total = sc.total || 0;
+      const gateColor = total >= 80 ? '#27ae60' : total >= 65 ? '#C8960A' : '#CC0000';
+      const gateLabel = total >= 80 ? '✓ '+total : total >= 65 ? '⚠ '+total : '✗ '+total;
+
+      // 10 kriter mini bar
+      const criteria = ['creativity','newsImpact','thumbnailPower','trtCompliance',
+        'mobileReadability','metaphorStrength','premiumLook','globalStandard',
+        'socialPerformance','editorialIntel'];
+      const bars = criteria.map(k => {
+        const v = sc[k] || 0;
+        const w = v * 10;
+        const col = v >= 8 ? '#27ae60' : v >= 6 ? '#C8960A' : '#CC0000';
+        return '<div style="height:3px;border-radius:1px;background:#222;flex:1;overflow:hidden;">'
+          + '<div style="height:100%;width:'+w+'%;background:'+col+';"></div></div>';
+      }).join('');
+
+      html += '<div class="concept-card'+(isSelected?' on winner':'')+'" onclick="selectConcept('+c.id+')">';
+      html += '<div class="concept-hdr">';
+      html += '<span class="concept-type">'+(c.type||'').replace(/_/g,' ')+'</span>';
+      html += '<span class="concept-score" style="color:'+gateColor+'">'+gateLabel+'/100</span>';
+      html += '</div>';
+      html += '<div class="concept-title">'+(isSelected?'★ ':'')+c.title+'</div>';
+      html += '<div class="concept-desc">'+c.description+'</div>';
+      if(c.whyStrong) html += '<div style="font-size:.57rem;color:var(--trt);margin-top:3px;font-style:italic;">'+c.whyStrong+'</div>';
+      html += '<div style="display:flex;gap:2px;margin-top:5px;">'+bars+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    if(d.selectionReason)
+      html += '<div style="margin-top:6px;font-size:.6rem;color:#C8960A;font-style:italic;line-height:1.4;">→ '+d.selectionReason+'</div>';
+
+    // Quality gate
+    if(d.qualityGate)
+      html += '<div style="margin-top:5px;font-size:.62rem;font-weight:700;color:'
+        +(d.qualityGate==='passed'?'#27ae60':'#e67e22')+'">'
+        +(d.qualityGate==='passed'?'✓ Quality gate: PASSED':'⚠ Quality gate: FAILED — альтернативы рекомендованы')+'</div>';
+  }
+
+  html += '</div>';
+
+  const aiMode = document.getElementById('ai-mode');
+  if(aiMode) aiMode.insertAdjacentHTML('afterbegin', html);
+}
+function selectConcept(id){
+  const d = S.editorialData;
+  if(!d || !d.concepts) return;
+  const c = d.concepts.find(x => x.id === id);
+  if(!c) return;
+
+  // Seçimi güncelle
+  document.querySelectorAll('.concept-card').forEach(el => {
+    const cid = parseInt(el.getAttribute('onclick').match(/\d+/)[0]);
+    el.classList.toggle('on', cid === id);
+    el.classList.toggle('winner', cid === id);
+  });
+
+  // Bu konseptin DALL-E promptunu ve diğer verilerini güncelle
+  // Her konseptin kendi prompt'u yoksa genel prompt kullan
+  setSt('Концепция #'+id+' выбрана','');
+  // Önizlemeyi yenile
+  if(S.hl) renderPreview();
+}
+
+function buildAiTplGrid(){
+  const g=document.getElementById('ai-tpl-grid');if(!g)return;
+  g.innerHTML='';
+  [
+    {id:'typographic',label:'Типографский',sub:'Крупный заголовок',icon:'Аа'},
+    {id:'photo_panel',label:'Фото + Панель',sub:'Фото + белый блок',icon:'▣'},
+    {id:'split',label:'Сплит',sub:'Текст / Фото',icon:'◫'},
+    {id:'feature',label:'Feature',sub:'AI-фон + блок',icon:'✦'},
+  ].forEach(tpl=>{
+    const b=document.createElement('button');
+    b.className='tpl-btn'+(S.aiTpl===tpl.id?' on':'');
+    b.dataset.id=tpl.id;
+    b.innerHTML=`<div class="tpl-icon">${tpl.icon}</div><span class="tpl-name">${tpl.label}</span><span class="tpl-sub">${tpl.sub}</span>`;
+    b.onclick=()=>{S.aiTpl=tpl.id;document.querySelectorAll('#ai-tpl-grid .tpl-btn').forEach(x=>x.classList.toggle('on',x.dataset.id===tpl.id));if(S.hl)renderPreview();};
+    g.appendChild(b);
+  });
+}
+buildAiTplGrid();
+
+function checkPolicy(text){
+  return POLICY_RULES.filter(r=>r.rx.test(text)).map(r=>r.warn);
+}
+
+async function analyze(){
+  const txt=document.getElementById('txt').value.trim();
+  if(txt.length<20){alert('Текст слишком короткий');return;}
+  if(S.analyzing)return;
+  S.analyzing=true;
+  const btn=document.getElementById('analyze-btn');
+  btn.disabled=true;btn.textContent='⏳...';
+  setSt(t('analyzing'),'on');S.approved=false;S.qcDone=false;
+
+  try{
+    const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:txt,contentType:S.contentType})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Error');
+
+    // Yeni editoryal JSON yapısını işle
+    S.hl  = d.headline    || '';
+    S.sub = d.subheadline || '';
+    S.cat = d.category    || '';
+    S.src = d.source      || '';
+    S.urgency    = d.urgency     || 'normal';
+    S.dallePrompt= d.dallePrompt || '';
+    S.pexelsQ    = d.pexelsQuery || '';
+    S.editorialData = d; // tam veriyi sakla
+
+    // Şablon/renk seçimi
+    const sm={dark:'typographic',teal:'split',red:'photo_panel',gold:'feature',grey:'typographic'};
+    if(d.colorScheme && sm[d.colorScheme]) S.aiTpl = sm[d.colorScheme];
+    if(d.template) S.aiTpl = d.template;
+
+    // platformNotes varsa güncelle
+    if(d.platformNotes) S.platformNotes = d.platformNotes;
+    document.getElementById('m-hl').value = S.hl;
+    document.getElementById('m-sub').value= S.sub;
+    document.getElementById('m-cat').value= S.cat;
+    document.getElementById('m-src').value= S.src;
+    const ub=document.getElementById('ubadge');
+    ub.className='ubadge '+S.urgency;
+    ub.textContent=t('u'+S.urgency.charAt(0).toUpperCase()+S.urgency.slice(1))||S.urgency;
+
+    ['sec-tpl','sec-meta','sec-bg'].forEach(id=>document.getElementById(id).style.display='');
+    buildAiTplGrid();
+
+    // Editoryal analiz panelini göster
+    if(d.editorialAnalysis || d.concepts) renderEditorialPanel(d);
+
+    const issues=checkPolicy(txt+' '+S.hl+' '+S.sub);
+    document.getElementById('sec-policy').style.display='';
+    const ps=document.getElementById('pol-status'),pi=document.getElementById('pol-items');
+    if(!issues.length){ps.className='pol-ok';ps.textContent=t('policyOk');pi.innerHTML='';}
+    else{ps.className='pol-warn';ps.textContent='⚠ '+issues.length+' '+t('policyWarn');pi.innerHTML=issues.map(i=>'<div class="pol-item">• '+i+'</div>').join('');}
+
+    document.getElementById('empty').style.display='none';
+    document.getElementById('single-wrap').style.display='flex';
+    document.getElementById('prev-acts').style.display='';
+    document.getElementById('lbl-hint').style.display='';
+    document.getElementById('qc-bar').style.display='none';
+
+    setSt(t('genBg'),'on');
+    await loadBgs();
+    renderPreview();
+    setSt(t('done'),'');
+  }catch(e){setSt(t('errPfx')+e.message,'err');}
+  finally{S.analyzing=false;btn.disabled=false;btn.textContent=t('analyzeBtn');}
+}
+
+async function loadBgs(){
+  const g=document.getElementById('ph-grid');
+  g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>';
+  const [dall,pex]=await Promise.allSettled([
+    S.dallePrompt?genDalle(S.dallePrompt):Promise.resolve(null),
+    S.pexelsQ?searchPex(S.pexelsQ):Promise.resolve([])
+  ]);
+  const items=[];
+  if(dall.status==='fulfilled'&&dall.value){S.dalleB64=dall.value.base64;items.push({type:'dalle',url:dall.value.base64,thumb:dall.value.base64});}
+  if(pex.status==='fulfilled'&&pex.value?.length) pex.value.slice(0,5).forEach(p=>items.push({type:'pexels',url:p.src_large,thumb:p.src_medium}));
+  if(!items.length){g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">Нет изображений</div>';return;}
+  S.bg=items[0];
+  g.innerHTML='';
+  items.forEach((item,i)=>{
+    const d=document.createElement('div');
+    d.className='ph-thumb'+(i===0?' on':'');d.dataset.type=item.type;
+    d.innerHTML='<img src="'+item.thumb+'" loading="lazy"><span class="ph-badge" style="background:'+(item.type==='dalle'?'var(--trt)':'rgba(0,0,0,.7)')+'">'+t(item.type==='dalle'?'ai':'photo')+'</span>';
+    d.onclick=()=>{S.bg=item;document.querySelectorAll('.ph-thumb').forEach(x=>x.classList.remove('on'));d.classList.add('on');renderPreview();};
+    g.appendChild(d);
+  });
+}
+
+async function genDalle(prompt){
+  const r=await fetch('/api/generate-bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,size:'1792x1024'})});
+  const d=await r.json();if(!r.ok)throw new Error(d.error);return d;
+}
+async function searchPex(query){
+  const r=await fetch('/api/search-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,orientation:'landscape'})});
+  const d=await r.json();return d.photos||[];
+}
+async function regenDalle(){
+  const btn=document.getElementById('regen-btn');
+  btn.disabled=true;btn.textContent='⏳...';setSt(t('genBg'),'on');
+  try{
+    const res=await genDalle(S.dallePrompt);
+    if(res){S.dalleB64=res.base64;const f=document.querySelector('.ph-thumb[data-type="dalle"]');if(f)f.querySelector('img').src=res.base64;if(S.bg?.type==='dalle'){S.bg.url=res.base64;renderPreview();}}
+    setSt(t('done'),'');
+  }catch(e){setSt(t('errPfx')+e.message,'err');}
+  finally{btn.disabled=false;btn.textContent=t('regenBtn');}
+}
 
 // ════════════════════════════════════════════════════════════
 // QC SYSTEM — 2 UZMAN HAKEMİ
 // ════════════════════════════════════════════════════════════
-const QC_SYSTEM = `Sen TRT Russian Dijital için 2 kişilik kalite kontrol ekibisin.
+async function runQC(){
+  const bar=document.getElementById('qc-bar');
+  bar.style.display='flex';
+  document.getElementById('qc-reviewers').innerHTML='<div class="qc-loading">⏳ Эксперты анализируют визуал...</div>';
+  setSt('QC анализирует...','on');
 
-RESESENT 1 — СЕЗАР (Арт-директор / Editorial Thinking):
-Ankaralı. The Economist illustration style uzmanı. Türk kültürünü, halk dilini, yerel mecazları içten biliyor.
-Güçlü görsel fikirler, dramatik kompozisyon, sosyal medya psikolojisi, metafor kalitesi, thumbnail gücü değerlendirir.
-Sesi: samimi, doğrudan, bazen sert ama yapıcı. "Bu sıradan" demekten çekinmez.
+  const currentBg=getActiveBg();
+  const currentTpl=getActiveTpl();
 
-RESESENT 2 — ГЮЛЬНАРА (TRT Görsel Standart / 10 yıl):
-TRT'nin görsel DNA'sını içselleştirmiş. Kurumsal kimlik, marka uyumu, redaksiyonel politika uzmanı.
-Logo kullanımı, renk standartları, TRT kuralları, yasal riskler, kurumsal ses değerlendirir.
-Sesi: kurumsal, net, somut kriterlerle konuşur.
+  const prompt=`Ты — система контроля качества визуального контента для TRT Russian Dijital.
+Тебе нужно оценить обложку новости от имени ДВУХ рецензентов.
 
-Her ikisi de Rusça konuşur. Değerlendirmeleri samimi, somut, yapıcı.
+ДАННЫЕ ОБЛОЖКИ:
+- Тип контента: ${S.contentType}
+- Шаблон: ${currentTpl}
+- Заголовок: ${S.hl||'(не указан)'}
+- Подзаголовок: ${S.sub||'(не указан)'}
+- Категория: ${S.cat||'(не указана)'}
+- Источник: ${S.src||'(не указан)'}
+- Режим: ${S.mode==='photo'?'реальное фото':'AI-генерация'}
+- Фон: ${currentBg?'загружен':'отсутствует'}
 
-Skorlama (her kriter 1-10):
-Сезар: Yaratıcılık · Metafor gücü · Thumbnail etkisi · Sosyal medya · Görsel zeka
-Гюльнара: TRT uyumu · Marka standartları · Redaksiyonel doğruluk · Yasal risk · Kurumsal ses
+РЕЦЕНЗЕНТ 1 — Арт-директор «Сезар»:
+Турецкий визуальный директор с опытом The Economist illustration style.
+Родился в Анкаре, знает турецкий менталитет, народный язык, местные образы и метафоры.
+Оценивает: визуальная сила, метафора, The Economist эстетика, композиция, типографика, эмоциональный удар, тренды.
 
-SADECE JSON döndür:
+РЕЦЕНЗЕНТ 2 — Гюльнара, TRT визуальный стандарт:
+10 лет в TRT, эксперт по фирменному стилю TRT Russian.
+Оценивает: соответствие TRT Russian правилам, редакционная политика, корпоративный стиль, юридические риски, лого, цвета.
+
+Ответь ТОЛЬКО в этом JSON формате (никакого другого текста):
 {
   "reviewer1": {
     "name": "Сезар",
-    "role": "Арт-директор · Editorial Thinking",
-    "score": 0,
-    "verdict": "2-3 cümle samimi değerlendirme — Rusça",
-    "strengths": ["güçlü nokta"],
-    "issues": [{"type": "ok|warn|fail", "text": "not"}],
-    "suggestion": "somut öneri — Rusça"
+    "role": "Арт-директор / The Economist style",
+    "score": <число 1-10>,
+    "verdict": "<2-3 предложения оценки на русском>",
+    "strengths": ["<сильная сторона 1>", "<сильная сторона 2>"],
+    "issues": [
+      {"type": "warn|fail|ok", "text": "<замечание>"}
+    ],
+    "suggestion": "<конкретная рекомендация по улучшению>"
   },
   "reviewer2": {
     "name": "Гюльнара",
     "role": "TRT Russian · 10 лет",
-    "score": 0,
-    "verdict": "2-3 cümle kurumsal değerlendirme — Rusça",
-    "strengths": ["güçlü nokta"],
-    "issues": [{"type": "ok|warn|fail", "text": "not"}],
-    "suggestion": "somut öneri — Rusça"
+    "score": <число 1-10>,
+    "verdict": "<2-3 предложения оценки на русском>",
+    "strengths": ["<сильная сторона 1>"],
+    "issues": [
+      {"type": "warn|fail|ok", "text": "<замечание>"}
+    ],
+    "suggestion": "<конкретная рекомендация>"
   },
-  "overallScore": 0,
-  "approved": true,
-  "finalVerdict": "bir cümle sonuç — Rusça"
+  "overallScore": <среднее>,
+  "approved": <true|false>,
+  "finalVerdict": "<итог одной фразой>"
 }`;
 
-exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers: CORS, body: "" };
-  if (event.httpMethod !== "POST") return { statusCode: 405, headers: CORS, body: "{}" };
+  try{
+    const r=await fetch('/api/analyze',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:prompt,_qcMode:true})
+    });
+    const raw=await r.json();
 
-  let body;
-  try { body = JSON.parse(event.body); } catch {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Invalid JSON" }) };
+    // If analyze.js returns it as a string in qcResult, parse; otherwise use directly
+    let qcData=raw;
+    if(raw.qcResult) qcData=typeof raw.qcResult==='string'?JSON.parse(raw.qcResult):raw.qcResult;
+
+    renderQC(qcData);
+    S.qcDone=true;
+    setSt('QC завершён — счёт: '+qcData.overallScore+'/10','');
+  }catch(e){
+    document.getElementById('qc-reviewers').innerHTML='<div class="qc-loading" style="color:var(--red)">Ошибка QC: '+e.message+'</div>';
+    setSt('QC ошибка','err');
+  }
+}
+
+function renderQC(data){
+  if(!data||!data.reviewer1){
+    document.getElementById('qc-reviewers').innerHTML='<div class="qc-loading" style="color:var(--red)">Не удалось разобрать ответ QC</div>';
+    return;
+  }
+  function stars(n){return '★'.repeat(Math.round(n/2))+'☆'.repeat(5-Math.round(n/2));}
+  function reviewerCard(rv){
+    const issues=(rv.issues||[]).map(i=>`<div class="qc-issue ${i.type}">
+      ${i.type==='ok'?'✓':i.type==='fail'?'✗':'⚠'} ${i.text}
+    </div>`).join('');
+    const strengths=(rv.strengths||[]).map(s=>`<div class="qc-issue ok">✓ ${s}</div>`).join('');
+    return `<div class="qc-card">
+      <div class="qc-reviewer-name">${rv.name}</div>
+      <div class="qc-reviewer-role">${rv.role}</div>
+      <div class="qc-score">
+        <span class="qc-stars">${stars(rv.score)}</span>
+        <span class="qc-score-num">${rv.score}/10</span>
+      </div>
+      <div class="qc-verdict">${rv.verdict}</div>
+      <div class="qc-issues">${strengths}${issues}</div>
+      ${rv.suggestion?`<div style="margin-top:6px;font-size:.6rem;color:var(--trt);font-style:italic;">→ ${rv.suggestion}</div>`:''}
+    </div>`;
+  }
+  const finalColor=data.approved?'#27ae60':'#e67e22';
+  document.getElementById('qc-reviewers').innerHTML=`
+    ${reviewerCard(data.reviewer1)}
+    ${reviewerCard(data.reviewer2)}
+    <div style="grid-column:1/-1;text-align:center;padding:6px;background:var(--ui-bg);border-radius:4px;border:1px solid var(--ui-b);">
+      <span style="font-size:.7rem;font-weight:700;color:${finalColor};">
+        ${data.approved?'✓ ОДОБРЕНО':'⚠ ТРЕБУЕТ ДОРАБОТКИ'} — Итоговый балл: ${data.overallScore}/10
+      </span>
+      ${data.finalVerdict?`<div style="font-size:.62rem;color:var(--muted2);margin-top:3px;">${data.finalVerdict}</div>`:''}
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// CARD BUILDER — Per-platform responsive design
+// ════════════════════════════════════════════════════════════
+function getActiveBg(){ return S.mode==='photo'?S.userPhotoB64||'':S.bg?.url||''; }
+function getActiveTpl(){ return S.mode==='photo'?S.photoTpl:S.aiTpl; }
+
+function trtLogo(isDark, scale){
+  // scale: 1=preview, higher=export
+  const c=isDark?'rgba(255,255,255,0.92)':'rgba(0,0,0,0.85)';
+  const fs=scale?Math.round(scale*13)+'px':'clamp(.52rem,1.2vw,.72rem)';
+  const fsn=scale?Math.round(scale*11)+'px':'clamp(.47rem,1vw,.62rem)';
+  return `<div style="position:absolute;top:3.5%;left:4%;z-index:10;display:flex;align-items:center;gap:4px;">
+    <span style="font-family:Oswald,sans-serif;font-size:${fs};font-weight:700;color:${c};letter-spacing:.5px;">TRT</span>
+    <span style="font-family:Manrope,sans-serif;font-size:${fsn};font-weight:600;color:${c};letter-spacing:.08em;">НА РУССКОМ</span>
+  </div>`;
+}
+
+// Platform-aware card: typography adapts to each platform's actual ratio
+function buildCard(tpl, bg, platform, forExport){
+  const isPt  = platform.id==='instagram';
+  const isWeb = platform.id==='web';
+  const isSq  = platform.id==='facebook';
+  const ratio = platform.w / platform.h;
+  const accent = (S.urgency==='breaking'||S.contentType==='video')?'#CC0000':'#20A9CF';
+
+  // Font scaling: relative to platform aspect ratio
+  // Portrait → bigger text relative to height
+  // Ultra-wide (web) → bigger text for readability
+  const headScale = isPt ? 1.1 : isWeb ? 0.75 : 1.0;
+  const subScale  = isPt ? 1.0 : isWeb ? 0.8  : 0.9;
+
+  const bgCss = bg ? `url(${bg}) center/cover no-repeat` : 'linear-gradient(160deg,#1a2a3a 0%,#060d14 100%)';
+
+  if(tpl==='logo_only') return `
+    <div style="position:absolute;inset:0;background:${bgCss};"></div>
+    ${trtLogo(true)}`;
+
+  if(tpl==='typographic') return `
+    <div style="position:absolute;inset:0;background:${bgCss};filter:${bg?'brightness(.42) contrast(1.15) grayscale(20%)':'none'};"></div>
+    <div style="position:absolute;inset:0;background:${bg?'rgba(8,12,20,.55)':''};"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;${isPt?'bottom:11%':'bottom:10%'};left:5%;right:5%;z-index:2;">
+      ${S.cat?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.34rem,.82vw,.54rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(5px,1.1vw,10px);">${S.cat}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(${isPt?'1.4rem':'1rem'},${isPt?'8.5vw':'6vw'},4rem);font-weight:700;line-height:.92;color:#fff;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:clamp(7px,1.5vw,16px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.52rem,1.4vw,.86rem);font-weight:400;color:rgba(255,255,255,.62);line-height:1.4;max-width:88%;">${S.sub}</div>`:''}
+      <div style="margin-top:clamp(7px,1.6vw,14px);display:flex;align-items:center;gap:7px;">
+        <div style="width:22px;height:2px;background:${accent};border-radius:1px;"></div>
+        <span style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.78vw,.48rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${S.src||'TRT RUSSIAN'}</span>
+      </div>
+    </div>`;
+
+  if(tpl==='photo_panel') {
+    // Panel height adapts to platform
+    const ph = isPt?'38%' : isWeb?'44%' : '48%';
+    return `
+    <div style="position:absolute;inset:0;background:${bgCss};"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;bottom:0;left:0;right:0;height:${ph};background:#f5f4f0;z-index:2;border-top:3px solid ${accent};display:flex;flex-direction:column;justify-content:center;padding:${isPt?'3.5% 5% 4%':isWeb?'2.5% 4% 3%':'3% 4.5% 3.5%'};">
+      ${S.cat?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.76vw,.48rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.7vw,7px);">${S.cat}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.78rem,${isPt?'5vw':isWeb?'3.2vw':'3.6vw'},2.4rem);font-weight:700;line-height:1.0;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(3px,.65vw,7px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.25vw,.74rem);font-weight:400;color:#555;line-height:1.3;">${S.sub}</div>`:''}
+      ${S.src?`<div style="margin-top:clamp(2px,.55vw,5px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.7vw,.44rem);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#bbb;">Фото: ${S.src}</div>`:''}
+    </div>`;
   }
 
-  const isQC = body._qcMode === true;
-  const text = body.text || "";
-
-  if (!text || text.length < 10) {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Текст слишком короткий" }) };
+  if(tpl==='split') {
+    const pw = isPt?'68%':isWeb?'36%':'40%';
+    return `
+    <div style="position:absolute;inset:0;background:${bgCss};"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;top:${isPt?'14%':'0'};left:0;bottom:0;width:${pw};background:#f5f4f0;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:${isPt?'4.5% 5% 7%':'4.5% 4% 5%'};">
+      ${S.cat?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.46rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.8vw,9px);">${S.cat}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.8vw':'4.3vw'},2.5rem);font-weight:700;line-height:.97;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(3px,.72vw,8px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="font-family:Oswald,sans-serif;font-size:clamp(.65rem,2.5vw,1.4rem);font-weight:300;line-height:1.1;color:#1A3A6B;text-transform:uppercase;">${S.sub}</div>`:''}
+      <div style="margin-top:clamp(5px,1.2vw,12px);width:26px;height:3px;background:${accent};border-radius:2px;"></div>
+    </div>`;
   }
 
-  const systemPrompt = isQC ? QC_SYSTEM : EDITORIAL_SYSTEM;
+  // feature
+  return `
+    <div style="position:absolute;inset:0;background:${bgCss};"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.06) 0%,rgba(8,14,24,.88) 50%,rgba(8,14,24,1) 100%);"></div>
+    ${trtLogo(true)}
+    ${S.cat?`<div style="position:absolute;top:3.5%;right:4%;z-index:2;font-family:Manrope,sans-serif;font-size:clamp(.3rem,.74vw,.48rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;padding:2px 8px;border-radius:2px;background:${accent};color:#fff;">${S.cat}</div>`:''}
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'4.5% 5% 5%':isWeb?'3% 4.5% 3.5%':'3.2% 4.5% 4%'};z-index:2;">
+      <div style="width:20px;height:3px;background:${accent};border-radius:2px;margin-bottom:clamp(5px,1.2vw,11px);"></div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.5vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(4px,.95vw,10px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.25vw,.74rem);font-weight:400;color:rgba(255,255,255,.65);line-height:1.4;">${S.sub}</div>`:''}
+      <div style="margin-top:clamp(4px,.95vw,9px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.46rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${S.src||'TRT RUSSIAN'}</div>
+    </div>`;
+}
 
-  const userContent = isQC
-    ? text
-    : `İçerik türü: ${body.contentType || 'news'}\n\nHaber metni:\n${text.slice(0, 5000)}`;
+// ── RENDER PREVIEW (responsive to container) ──
+function renderPreview(){
+  if(S.mode==='ai'){S.hl=document.getElementById('m-hl').value;S.sub=document.getElementById('m-sub').value;S.cat=document.getElementById('m-cat').value;S.src=document.getElementById('m-src').value;}
+  else{S.hl=document.getElementById('p-hl').value;S.sub=document.getElementById('p-sub').value;S.cat=document.getElementById('p-cat').value;S.src=document.getElementById('p-src').value;}
+
+  const p=PLATFORMS[S.prevPlatIdx]||PLATFORMS[0];
+  const canvas=document.getElementById('single-canvas');
+  const center=document.querySelector('.center');
+  const prevBody=document.querySelector('.prev-body');
+  const vw=center.offsetWidth-32;
+  const vh=prevBody.offsetHeight-32;
+  const [rw,rh]=p.ratio.includes('/')?p.ratio.split('/').map(Number):[parseFloat(p.ratio),1];
+  const ratio=rw/rh;
+  let cw=Math.min(vw,vh*ratio);
+  let ch=cw/ratio;
+  if(ch>vh){ch=vh;cw=ch*ratio;}
+  canvas.style.width=cw+'px';
+  canvas.style.height=ch+'px';
+  canvas.innerHTML=buildCard(getActiveTpl(),getActiveBg(),p,false);
+  document.getElementById('lbl-prev').textContent=t('prevLbl')+' — '+p.label+' ('+p.tag+')';
+  document.getElementById('single-wrap').style.display='flex';
+}
+
+function switchFmt(){S.prevPlatIdx=(S.prevPlatIdx+1)%PLATFORMS.length;renderPreview();}
+
+async function generateAlt(){
+  S.altCount++;
+  setSt('Генерирую альтернативу #' + S.altCount + '...', 'on');
+
+  // Fotoğraf modunda sadece şablon döndür
+  if(S.mode === 'photo'){
+    const tpls = ['photo_panel','typographic','split','logo_only'];
+    S.photoTpl = tpls[S.altCount % tpls.length];
+    document.getElementById('photo-meta-sec').style.display = S.photoTpl === 'logo_only' ? 'none' : '';
+    renderPreview();
+    setSt('Альтернатива #' + S.altCount + ' — другой стиль', '');
+    return;
+  }
+
+  // AI modunda: yeni DALL-E görsel + farklı şablon
+  const altVariations = [
+    ', dramatic overhead view, different angle',
+    ', close-up symbolic detail, high contrast',
+    ', wide cinematic establishing shot',
+    ', abstract metaphorical composition',
+    ', brutal minimal graphic style',
+  ];
+  const variation = altVariations[S.altCount % altVariations.length];
+
+  // Paralel: yeni DALL-E + yeni Pexels arama
+  const [dall, pex] = await Promise.allSettled([
+    S.dallePrompt ? genDalle(S.dallePrompt + variation) : Promise.resolve(null),
+    S.pexelsQ     ? searchPex(S.pexelsQ)                : Promise.resolve([])
+  ]);
+
+  // Yeni arka planı seç
+  if(dall.status === 'fulfilled' && dall.value){
+    S.dalleB64 = dall.value.base64;
+    S.bg = { type:'dalle', url: dall.value.base64, thumb: dall.value.base64 };
+  } else if(pex.status === 'fulfilled' && pex.value?.length){
+    // Pexels'tan farklı fotoğraf seç
+    const idx = S.altCount % pex.value.length;
+    const ph  = pex.value[idx];
+    S.bg = { type:'pexels', url: ph.src_large, thumb: ph.src_medium };
+  }
+
+  // Şablonu döndür
+  const tpls = ['photo_panel','typographic','split','feature'];
+  S.aiTpl = tpls[S.altCount % tpls.length];
+  buildAiTplGrid();
+
+  // Fotoğraf grid'ini güncelle
+  renderBgGrid();
+  renderPreview();
+  setSt('Альтернатива #' + S.altCount + ' готова', '');
+}
+
+// Arka plan grid'ini güncelle
+function renderBgGrid(){
+  const g = document.getElementById('ph-grid');
+  if(!g || !S.bg) return;
+  // Mevcut seçili thumbu güncelle
+  const thumbs = g.querySelectorAll('.ph-thumb');
+  thumbs.forEach(t => t.classList.remove('on'));
+  const dalle = g.querySelector('.ph-thumb[data-type="dalle"]');
+  if(dalle && S.bg.type === 'dalle'){
+    const img = dalle.querySelector('img');
+    if(img) img.src = S.bg.thumb || S.bg.url;
+    dalle.classList.add('on');
+  }
+}
+
+function approveAll(){
+  S.approved=true;
+  document.getElementById('prev-acts').style.display='none';
+  document.getElementById('all-acts').style.display='';
+  document.getElementById('lbl-hint').style.display='none';
+  renderAllPlatforms();
+}
+
+function backToPreview(){
+  S.approved=false;
+  document.getElementById('prev-acts').style.display='';
+  document.getElementById('all-acts').style.display='none';
+  document.getElementById('lbl-hint').style.display='';
+  document.getElementById('plat-list').innerHTML='<div class="right-empty">'+t('rightEmpty').replace(/\n/g,'<br>')+'</div>';
+}
+
+function renderAllPlatforms(){
+  if(S.mode==='ai'){S.hl=document.getElementById('m-hl').value;S.sub=document.getElementById('m-sub').value;S.cat=document.getElementById('m-cat').value;S.src=document.getElementById('m-src').value;}
+  else{S.hl=document.getElementById('p-hl').value;S.sub=document.getElementById('p-sub').value;S.cat=document.getElementById('p-cat').value;S.src=document.getElementById('p-src').value;}
+  const list=document.getElementById('plat-list');
+  list.innerHTML='';
+  PLATFORMS.forEach(p=>{
+    const card=document.createElement('div');
+    card.className='plat-card';
+    card.innerHTML=`
+      <div class="plat-card-hdr">
+        <div class="plat-name">${p.label}<span class="plat-sz">${p.w}×${p.h}</span></div>
+        <button class="btn-dl" onclick="exp1('${p.id}')">${t('dl')}</button>
+      </div>
+      <div class="plat-prev-wrap">
+        <div class="plat-canvas" style="aspect-ratio:${p.ratio};position:relative;overflow:hidden;">
+          ${buildCard(getActiveTpl(),getActiveBg(),p,false)}
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+// ── EXPORT — HTML Canvas based (no server needed for basic export) ──
+async function exp1(pid){
+  const p = PLATFORMS.find(x => x.id === pid);
+  if(!p) return;
+  setSt('Подготовка ' + p.label + ' (' + p.w + 'x' + p.h + ')...', 'on');
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: isQC ? 1500 : 2000,
-        system: systemPrompt,
-        messages: [{ role: "user", content: userContent }]
-      })
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:-99999px;top:0;width:' + p.w + 'px;height:' + p.h + 'px;overflow:hidden;background:#111;';
+    container.innerHTML = '<div style="position:relative;width:' + p.w + 'px;height:' + p.h + 'px;overflow:hidden;">'
+      + buildCard(getActiveTpl(), getActiveBg(), p, true) + '</div>';
+    document.body.appendChild(container);
+
+    await new Promise(r => setTimeout(r, 800));
+
+    const canvas = await html2canvas(container, {
+      width: p.w, height: p.h, scale: 1,
+      useCORS: true, allowTaint: true,
+      backgroundColor: '#111', logging: false,
     });
+    document.body.removeChild(container);
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || "API error");
+    canvas.toBlob(blob => {
+      if(!blob){ setSt('Ошибка: blob пустой','err'); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'TRT_' + p.id + '_' + Date.now() + '.png';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+      setSt(p.label + ' ' + p.w + 'x' + p.h + ' ✓', '');
+    }, 'image/png');
 
-    const raw = data.content[0]?.text || "{}";
-    const clean = raw.replace(/```json|```/g, "").trim();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(clean);
-    } catch {
-      const match = clean.match(/\{[\s\S]*\}/);
-      try { parsed = match ? JSON.parse(match[0]) : {}; }
-      catch { parsed = { error: "JSON parse failed", raw: clean.slice(0, 200) }; }
-    }
-
-    return { statusCode: 200, headers: CORS, body: JSON.stringify(parsed) };
-  } catch (err) {
-    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: err.message }) };
+  } catch(e) {
+    setSt('Ошибка: ' + e.message, 'err');
+    console.error('Export error:', e);
   }
-};
+}
+async function exportAll(){
+  for(const p of PLATFORMS){await exp1(p.id);await new Promise(r=>setTimeout(r,600));}
+  setSt(t('done')+' — 6 форматов','');
+}
+
+window.addEventListener('resize',()=>{if(S.userPhotoB64||S.hl)renderPreview();});
+setLang('ru');
+</script>
+</body>
+</html>
