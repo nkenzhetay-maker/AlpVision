@@ -233,6 +233,65 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
 .vqc-regen{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:.62rem;color:var(--red);font-weight:600;}
 
 
+
+/* ── ANALYSIS PROGRESS TIMER ── */
+.analysis-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.65);z-index:1000;
+  align-items:center;justify-content:center;
+}
+.analysis-overlay.active{display:flex;}
+.analysis-card{
+  background:#161616;border:1px solid #2a2a2a;
+  border-radius:12px;padding:32px 40px;
+  width:360px;text-align:center;
+  box-shadow:0 24px 80px rgba(0,0,0,.8);
+}
+.analysis-icon{
+  font-size:2.4rem;margin-bottom:16px;
+  animation:spin-slow 3s linear infinite;
+  display:inline-block;
+}
+@keyframes spin-slow{
+  0%{transform:rotate(0deg);}
+  25%{transform:rotate(10deg);}
+  75%{transform:rotate(-10deg);}
+  100%{transform:rotate(0deg);}
+}
+.analysis-stage{
+  font-family:Manrope,sans-serif;font-size:.82rem;
+  font-weight:600;color:#e8e8e8;margin-bottom:6px;
+  min-height:1.2em;
+}
+.analysis-substage{
+  font-family:Manrope,sans-serif;font-size:.68rem;
+  color:#666;margin-bottom:20px;min-height:1em;
+}
+.analysis-bar-track{
+  width:100%;height:4px;background:#252525;
+  border-radius:2px;overflow:hidden;margin-bottom:12px;
+}
+.analysis-bar-fill{
+  height:100%;border-radius:2px;
+  background:linear-gradient(90deg,#20A9CF,#0D7A96);
+  transition:width .5s ease;width:0%;
+}
+.analysis-timer{
+  font-family:Oswald,sans-serif;font-size:1.1rem;
+  font-weight:400;color:#444;letter-spacing:.05em;
+}
+.analysis-timer span{color:#20A9CF;font-weight:600;}
+.analysis-stages-list{
+  display:flex;gap:6px;justify-content:center;
+  margin-top:16px;flex-wrap:wrap;
+}
+.stage-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#252525;transition:all .3s;
+}
+.stage-dot.done{background:#27ae60;}
+.stage-dot.active{background:#20A9CF;animation:pulse 1s infinite;}
+
 /* Fast Mode toggle */
 .fast-toggle{display:flex;align-items:center;gap:7px;padding:4px 10px;border:1px solid var(--ui-b2);border-radius:4px;cursor:pointer;transition:all .2s;background:transparent;font-family:Manrope,sans-serif;}
 .fast-toggle.on{border-color:var(--trt-red,#CC0000);background:rgba(204,0,0,.1);}
@@ -559,6 +618,8 @@ const T = {
     prevLbl:'Предпросмотр',platsLbl:'Платформы',
     expAll:'⬇ Скачать все (6 форматов)',
     emptyLbl:'Выберите тип контента,\nзагрузите фото или введите текст',
+    fastOn:'⚡ ВКЛ',
+    fastOff:'⚡ СРОЧНО',
     ready:'AlpVision готов',analyzing:'Анализирую текст...',genBg:'Генерирую фоны...',
     done:'Готово',errPfx:'Ошибка: ',
     uBreaking:'🔴 Срочно',uNormal:'Обычная',uFeature:'⭐ Feature',
@@ -581,6 +642,8 @@ const T = {
     prevLbl:'Önizleme',platsLbl:'Platformlar',
     expAll:'⬇ Hepsini indir (6 format)',
     emptyLbl:'İçerik türü seçin,\nfotoğraf yükleyin veya metin girin',
+    fastOn:'⚡ SON DAKİKA',
+    fastOff:'⚡ СРОЧНО',
     ready:'AlpVision hazır',analyzing:'Analiz ediliyor...',genBg:'Arka plan oluşturuluyor...',
     done:'Tamamlandı',errPfx:'Hata: ',
     uBreaking:'🔴 Son dakika',uNormal:'Normal',uFeature:'⭐ Feature',
@@ -857,12 +920,25 @@ async function analyze(){
   if(S.analyzing)return;
   S.analyzing=true;
   const btn=document.getElementById('analyze-btn');
-  btn.disabled=true;btn.textContent='⏳...';
-  setSt(t('analyzing'),'on');S.approved=false;S.qcDone=false;
+  btn.disabled=true;
+  btn.textContent=S.fastMode?'⚡ Анализирую...':'🔍 Анализирую...';
+  setSt(t('analyzing'),'on');
+  S.approved=false;S.qcDone=false;
+  
+  // Timer başlat
+  startTimer(S.fastMode);
 
   try{
-    const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text:txt,contentType:S.contentType,_fastMode:S.fastMode})});
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), S.fastMode ? 20000 : 55000);
+    
+    const r=await fetch('/api/analyze',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:txt,contentType:S.contentType,_fastMode:S.fastMode}),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Error');
 
@@ -922,9 +998,18 @@ async function analyze(){
       document.getElementById('memory-clear-btn').style.display='';
       document.getElementById('memory-count').textContent = mc;
     }
+    stopTimer(true);
     setSt(t('done') + engine + (mc?' · 🧠 '+mc+' görsel':''),'');
-  }catch(e){setSt(t('errPfx')+e.message,'err');}
-  finally{S.analyzing=false;btn.disabled=false;btn.textContent=t('analyzeBtn');}
+  }catch(e){
+    const msg = e.name==='AbortError' ? 'Превышено время ожидания — попробуйте ещё раз' : e.message;
+    stopTimer(false);
+    setSt(t('errPfx')+msg,'err');
+  }
+  finally{
+    S.analyzing=false;
+    btn.disabled=false;
+    btn.textContent=S.fastMode?'⚡ Срочно создать превью (15 сек)':t('analyzeBtn');
+  }
 }
 
 async function loadBgs(fastMode){
@@ -1633,6 +1718,114 @@ function updateMemoryCounter(count){
   if(el && cnt){ el.style.display=''; cnt.textContent=count; }
 }
 
+
+// ════════════════════════════════════════════════════════════════
+//  ANALYSIS PROGRESS TIMER
+//  Her aşama için gerçekçi süre + animasyon
+// ════════════════════════════════════════════════════════════════
+const ANALYSIS_STAGES = [
+  {label:'Читаю текст',        sub:'Определяю суть и контекст',       pct:8,  icon:'📖'},
+  {label:'Анализирую хабар',   sub:'Политика, эмоция, геополитика',   pct:20, icon:'🧠'},
+  {label:'Генерирую концепции',sub:'3 разных визуальных идеи',         pct:38, icon:'💡'},
+  {label:'Оцениваю по 10 критериям', sub:'Thumbnail, TRT, соцсети...', pct:52, icon:'📊'},
+  {label:'Выбираю лучший',     sub:'Редакционное решение',            pct:65, icon:'✦'},
+  {label:'Создаю DALL-E промпт', sub:'Синематическая композиция',     pct:75, icon:'🎨'},
+  {label:'Загружаю фоны',      sub:'AI-генерация + фотобанк',         pct:88, icon:'🖼'},
+  {label:'Финальная проверка', sub:'TRT политика + качество',         pct:96, icon:'✓'},
+];
+
+const FAST_STAGES = [
+  {label:'Быстрый анализ',  sub:'Срочный режим',               pct:30, icon:'⚡'},
+  {label:'Заголовок',       sub:'Краткий и чёткий',            pct:60, icon:'📝'},
+  {label:'Ищу фотографию',  sub:'Pexels фотобанк',             pct:90, icon:'📷'},
+];
+
+let _timerInterval = null;
+let _timerSec = 0;
+let _timerStageIdx = 0;
+let _timerStages = [];
+
+function startTimer(isFast) {
+  _timerStages = isFast ? FAST_STAGES : ANALYSIS_STAGES;
+  _timerSec = 0;
+  _timerStageIdx = 0;
+
+  const overlay = document.getElementById('analysis-overlay');
+  const dots    = document.getElementById('analysis-dots');
+  
+  // Dots oluştur
+  dots.innerHTML = _timerStages.map((_, i) => 
+    `<div class="stage-dot" id="dot-${i}"></div>`
+  ).join('');
+
+  document.getElementById('dot-0')?.classList.add('active');
+  updateTimerUI(0);
+  overlay.classList.add('active');
+
+  _timerInterval = setInterval(() => {
+    _timerSec++;
+    document.getElementById('analysis-seconds').textContent = _timerSec;
+
+    // Aşama ilerlemesi — saniyeye göre otomatik
+    const totalExpected = isFast ? 8 : 45;
+    const pct = Math.min(95, (_timerSec / totalExpected) * 100);
+    document.getElementById('analysis-bar').style.width = pct + '%';
+
+    // Hangi aşamadayız?
+    const newIdx = _timerStages.findIndex(s => s.pct > pct);
+    const stageIdx = newIdx === -1 ? _timerStages.length - 1 : Math.max(0, newIdx - 1);
+    
+    if (stageIdx !== _timerStageIdx) {
+      _timerStageIdx = stageIdx;
+      updateTimerUI(stageIdx);
+      // Dots güncelle
+      _timerStages.forEach((_, i) => {
+        const dot = document.getElementById('dot-' + i);
+        if (!dot) return;
+        dot.classList.remove('done', 'active');
+        if (i < stageIdx)      dot.classList.add('done');
+        else if (i === stageIdx) dot.classList.add('active');
+      });
+    }
+  }, 1000);
+}
+
+function updateTimerUI(idx) {
+  const stage = _timerStages[Math.min(idx, _timerStages.length - 1)];
+  if (!stage) return;
+  document.getElementById('analysis-icon').textContent  = stage.icon;
+  document.getElementById('analysis-stage').textContent = stage.label;
+  document.getElementById('analysis-substage').textContent = stage.sub;
+}
+
+function stopTimer(success) {
+  if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+  
+  const overlay = document.getElementById('analysis-overlay');
+  const bar     = document.getElementById('analysis-bar');
+  
+  if (success) {
+    bar.style.width = '100%';
+    bar.style.background = '#27ae60';
+    document.getElementById('analysis-stage').textContent = '✓ Готово!';
+    document.getElementById('analysis-substage').textContent = 
+      'Создано за ' + _timerSec + ' сек';
+    document.getElementById('analysis-icon').textContent = '✅';
+    // Tüm dotları yeşil yap
+    _timerStages.forEach((_, i) => {
+      const dot = document.getElementById('dot-' + i);
+      if (dot) { dot.classList.remove('active'); dot.classList.add('done'); }
+    });
+    setTimeout(() => overlay.classList.remove('active'), 1200);
+  } else {
+    bar.style.background = '#CC0000';
+    document.getElementById('analysis-stage').textContent = 'Ошибка анализа';
+    document.getElementById('analysis-icon').textContent = '❌';
+    setTimeout(() => overlay.classList.remove('active'), 2000);
+  }
+}
+
+
 async function exportAll(){
   for(const p of PLATFORMS){await exp1(p.id);await new Promise(r=>setTimeout(r,600));}
   setSt(t('done')+' — 6 форматов','');
@@ -1641,5 +1834,22 @@ async function exportAll(){
 window.addEventListener('resize',()=>{if(S.userPhotoB64||S.hl)renderPreview();});
 setLang('ru');
 </script>
+
+<!-- ANALYSIS PROGRESS OVERLAY -->
+<div class="analysis-overlay" id="analysis-overlay">
+  <div class="analysis-card">
+    <div class="analysis-icon" id="analysis-icon">⏳</div>
+    <div class="analysis-stage" id="analysis-stage">Анализирую материал...</div>
+    <div class="analysis-substage" id="analysis-substage">Читаю текст и определяю суть</div>
+    <div class="analysis-bar-track">
+      <div class="analysis-bar-fill" id="analysis-bar"></div>
+    </div>
+    <div class="analysis-timer">
+      <span id="analysis-seconds">0</span>с
+    </div>
+    <div class="analysis-stages-list" id="analysis-dots"></div>
+  </div>
+</div>
+
 </body>
 </html>
