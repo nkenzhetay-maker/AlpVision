@@ -179,6 +179,59 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
 .score-bar{height:3px;border-radius:1px;background:var(--trt);opacity:.4;flex:1;}
 .score-bar.filled{opacity:1;}
 
+
+/* Vision QC Results */
+.vqc-bar{background:var(--ui-p);border-bottom:1px solid var(--ui-b);padding:10px 14px;display:none;flex-direction:column;gap:8px;}
+.vqc-title{font-size:.58rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.vqc-eyes{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vqc-eye{background:var(--ui-bg);border:1px solid var(--ui-b);border-radius:5px;padding:8px 10px;}
+.vqc-eye-name{font-size:.65rem;font-weight:700;color:var(--txt);margin-bottom:2px;}
+.vqc-eye-role{font-size:.54rem;color:var(--muted2);margin-bottom:5px;}
+.vqc-eye-text{font-size:.6rem;color:var(--muted2);line-height:1.45;}
+.vqc-eye-risk{font-size:.58rem;color:var(--red);margin-top:3px;}
+.vqc-scores{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.vqc-score-row{display:flex;align-items:center;gap:6px;padding:2px 0;}
+.vqc-score-label{font-size:.54rem;color:var(--muted2);min-width:80px;}
+.vqc-score-bar-wrap{flex:1;height:3px;background:var(--ui-b);border-radius:2px;overflow:hidden;}
+.vqc-score-bar{height:100%;border-radius:2px;transition:width .4s ease;}
+.vqc-score-val{font-size:.54rem;font-weight:700;min-width:20px;text-align:right;}
+.vqc-gate{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:4px;margin-top:2px;}
+.vqc-gate.pass{background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.3);}
+.vqc-gate.fail{background:rgba(204,0,0,.1);border:1px solid rgba(204,0,0,.3);}
+.vqc-gate-icon{font-size:1rem;}
+.vqc-gate-text{font-size:.65rem;font-weight:700;}
+.vqc-gate-sub{font-size:.6rem;color:var(--muted2);margin-top:2px;line-height:1.4;}
+.vqc-fix{margin-top:5px;font-size:.6rem;color:var(--trt);font-style:italic;line-height:1.4;}
+.vqc-loading{text-align:center;padding:14px;color:var(--muted2);font-size:.72rem;}
+.btn-vqc{padding:5px 12px;background:transparent;border:1px solid #C8960A;border-radius:3px;color:#C8960A;font-family:Manrope,sans-serif;font-weight:700;font-size:.65rem;cursor:pointer;transition:all .15s;}
+.btn-vqc:hover{background:#C8960A;color:#000;}
+.btn-vqc.running{opacity:.5;cursor:not-allowed;}
+
+
+/* Vision QC panel */
+.vqc-panel{margin-top:8px;background:var(--ui-bg);border:1px solid var(--ui-b);border-radius:6px;overflow:hidden;}
+.vqc-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--ui-p);border-bottom:1px solid var(--ui-b);}
+.vqc-title{font-size:.6rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;}
+.vqc-title.passed{color:#27ae60;}
+.vqc-title.warning{color:#C8960A;}
+.vqc-title.failed{color:var(--red);}
+.vqc-score{font-size:.75rem;font-weight:800;}
+.vqc-body{padding:10px 12px;}
+.vqc-summary{font-size:.65rem;color:var(--muted2);line-height:1.5;margin-bottom:8px;}
+.vqc-bars{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:8px;}
+.vqc-bar-row{display:flex;align-items:center;gap:6px;}
+.vqc-bar-label{font-size:.54rem;color:var(--muted2);white-space:nowrap;min-width:72px;}
+.vqc-bar-track{flex:1;height:4px;background:var(--ui-b2);border-radius:2px;overflow:hidden;}
+.vqc-bar-fill{height:100%;border-radius:2px;transition:width .4s ease;}
+.vqc-extremes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.vqc-extreme{padding:6px 8px;border-radius:4px;font-size:.6rem;line-height:1.4;}
+.vqc-extreme.best{background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.2);color:#27ae60;}
+.vqc-extreme.worst{background:rgba(204,0,0,.08);border:1px solid rgba(204,0,0,.2);color:var(--red);}
+.vqc-extreme-lbl{font-weight:700;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}
+.vqc-fix{padding:7px 9px;background:rgba(200,150,10,.08);border:1px solid rgba(200,150,10,.2);border-radius:4px;font-size:.62rem;color:#C8960A;line-height:1.45;}
+.vqc-fix-lbl{font-weight:700;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;color:#C8960A;}
+.vqc-regen{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:.62rem;color:var(--red);font-weight:600;}
+
 .statusbar{display:flex;align-items:center;gap:7px;padding:6px 18px;background:var(--ui-s);border-top:1px solid var(--ui-b);flex-shrink:0;font-size:.63rem;color:var(--muted);}
 .sdot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
 .sdot.on{background:#27ae60;animation:pulse 1.4s ease infinite;}
@@ -341,6 +394,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
     <div class="prev-hdr">
       <div class="prev-title" id="lbl-prev">Предпросмотр</div>
       <div class="prev-acts" id="prev-acts" style="display:none">
+        <button class="btn-qc" onclick="runVisionQC()" id="btn-vqc" style="border-color:#27ae60;color:#27ae60;">👁 Vision QC</button>
         <button class="btn-qc" onclick="runQC()" id="btn-qc">🎨 QC Проверка</button>
         <button class="btn-act" onclick="generateAlt()">↻ Альтернатива</button>
         <button class="btn-act" onclick="switchFmt()">⇄ Формат</button>
@@ -350,6 +404,11 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
         <button class="btn-act" onclick="backToPreview()">← Назад</button>
         <button class="btn-exp-all" id="exp-all-btn" onclick="exportAll()">⬇ Скачать все (6 форматов)</button>
       </div>
+    </div>
+
+    <!-- VISION QC RESULT -->
+    <div id="vqc-result" style="display:none;padding:10px 14px;border-bottom:1px solid var(--ui-b);background:var(--ui-s);">
+      <div class="vqc-panel" id="vqc-panel"></div>
     </div>
 
     <!-- QC BAR -->
@@ -1235,6 +1294,131 @@ async function exp1(pid){
     console.error('Export error:', e);
   }
 }
+
+// ════════════════════════════════════════════════════════════
+//  VISION QC — Claude görseli görüp değerlendiriyor
+// ════════════════════════════════════════════════════════════
+async function runVisionQC(){
+  const canvas = document.getElementById('single-canvas');
+  if(!canvas || canvas.offsetWidth === 0){
+    alert('Önce bir görsel oluşturun');
+    return;
+  }
+
+  const btn = document.getElementById('btn-vqc');
+  btn.textContent = '👁 Analiz...';
+  btn.disabled = true;
+  setSt('Vision QC — görsel okunuyor...', 'on');
+
+  try {
+    // Canvas'ı PNG'ye dönüştür
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = canvas.offsetWidth;
+    offscreen.height = canvas.offsetHeight;
+    const ctx = offscreen.getContext('2d');
+
+    // Canvas içeriğini html2canvas ile çek
+    const snap = await html2canvas(canvas, {
+      width:   canvas.offsetWidth,
+      height:  canvas.offsetHeight,
+      scale:   1,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#111',
+      logging: false,
+    });
+    const imageBase64 = snap.toDataURL('image/png');
+
+    // Vision QC API'ye gönder
+    const r = await fetch('/api/vision-qc', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        imageBase64,
+        context: {
+          headline:    S.hl,
+          category:    getDisplayCat(),
+          contentType: S.contentType,
+          template:    getActiveTpl()
+        }
+      })
+    });
+
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || 'Vision QC hatası');
+
+    renderVisionQC(d);
+    const verdict = d.verdict || 'warning';
+    const total   = d.scores?.total || 0;
+    setSt('Vision QC: ' + total + '/100 — ' + (verdict==='passed'?'✓ Одобрено':verdict==='warning'?'⚠ Замечания':'✗ Нужна доработка'), '');
+
+  } catch(e){
+    setSt('Vision QC ошибка: ' + e.message, 'err');
+    console.error('Vision QC:', e);
+  } finally {
+    btn.textContent = '👁 Vision QC';
+    btn.disabled = false;
+  }
+}
+
+function renderVisionQC(d){
+  const result = document.getElementById('vqc-result');
+  const panel  = document.getElementById('vqc-panel');
+  if(!result || !panel) return;
+
+  const sc      = d.scores || {};
+  const total   = sc.total || 0;
+  const verdict = d.verdict || 'warning';
+  const vColor  = verdict==='passed'?'#27ae60':verdict==='warning'?'#C8960A':'#CC0000';
+  const vLabel  = verdict==='passed'?'✓ ОДОБРЕНО':verdict==='warning'?'⚠ ЗАМЕЧАНИЯ':'✗ НУЖНА ДОРАБОТКА';
+
+  // Kriter isim haritası
+  const labels = {
+    visualIdea:'Görsel Fikir', trtCompliance:'TRT Uyumu',
+    thumbnailPower:'Thumbnail', typography:'Tipografi',
+    composition:'Kompozisyon', colorImpact:'Renk Etkisi',
+    premiumLook:'Premium Görünüm', noAiFeel:'AI Hissi Yok',
+    noStockFeel:'Stok Hissi Yok', socialPerformance:'Sosyal Medya'
+  };
+
+  // Puan çubukları
+  const bars = Object.entries(labels).map(([key, label]) => {
+    const val = sc[key] || 0;
+    const w   = val * 10;
+    const col = val >= 8 ? '#27ae60' : val >= 6 ? '#C8960A' : '#CC0000';
+    return \`<div class="vqc-bar-row">
+      <span class="vqc-bar-label">\${label}</span>
+      <div class="vqc-bar-track">
+        <div class="vqc-bar-fill" style="width:\${w}%;background:\${col};"></div>
+      </div>
+      <span style="font-size:.55rem;font-weight:700;color:\${col};min-width:20px;">\${val}</span>
+    </div>\`;
+  }).join('');
+
+  panel.innerHTML = \`
+    <div class="vqc-hdr">
+      <span class="vqc-title \${verdict}">\${vLabel}</span>
+      <span class="vqc-score" style="color:\${vColor}">\${total}/100</span>
+    </div>
+    <div class="vqc-body">
+      \${d.oneLineSummary ? \`<div class="vqc-summary">\${d.oneLineSummary}</div>\` : ''}
+      <div class="vqc-bars">\${bars}</div>
+      \${(d.strongest || d.weakest) ? \`
+      <div class="vqc-extremes">
+        \${d.strongest ? \`<div class="vqc-extreme best"><div class="vqc-extreme-lbl">✓ Сильнейший</div>\${d.strongest}</div>\` : ''}
+        \${d.weakest   ? \`<div class="vqc-extreme worst"><div class="vqc-extreme-lbl">✗ Слабейший</div>\${d.weakest}</div>\` : ''}
+      </div>\` : ''}
+      \${d.fixSuggestion ? \`
+      <div class="vqc-fix">
+        <div class="vqc-fix-lbl">→ Рекомендация</div>
+        \${d.fixSuggestion}
+      </div>\` : ''}
+      \${d.needsRegeneration ? \`<div class="vqc-regen">⟳ Рекомендуется перегенерация</div>\` : ''}
+    </div>\`;
+
+  result.style.display = '';
+}
+
 async function exportAll(){
   for(const p of PLATFORMS){await exp1(p.id);await new Promise(r=>setTimeout(r,600));}
   setSt(t('done')+' — 6 форматов','');
