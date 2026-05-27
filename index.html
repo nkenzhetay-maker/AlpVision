@@ -185,6 +185,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
 .sdot.err{background:var(--red);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -277,31 +278,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
         <div class="photo-warn" id="photo-warn">⚠ Проверьте: нет ли логотипов других СМИ в кадре</div>
       </div>
 
-      <div class="sec">
-        <div class="sec-lbl" id="lbl-photo-tpl">Стиль оформления</div>
-        <div class="tpl-grid" id="photo-tpl-grid">
-          <button class="tpl-btn on" data-id="logo_only" onclick="setPhotoTpl('logo_only')">
-            <div class="tpl-icon">◎</div>
-            <span class="tpl-name">Только лого</span>
-            <span class="tpl-sub">Фото + лого TRT</span>
-          </button>
-          <button class="tpl-btn" data-id="photo_panel" onclick="setPhotoTpl('photo_panel')">
-            <div class="tpl-icon">▣</div>
-            <span class="tpl-name">Фото + Панель</span>
-            <span class="tpl-sub">+ белый блок</span>
-          </button>
-          <button class="tpl-btn" data-id="typographic" onclick="setPhotoTpl('typographic')">
-            <div class="tpl-icon">Аа</div>
-            <span class="tpl-name">Заголовок</span>
-            <span class="tpl-sub">Текст поверх фото</span>
-          </button>
-          <button class="tpl-btn" data-id="split" onclick="setPhotoTpl('split')">
-            <div class="tpl-icon">◫</div>
-            <span class="tpl-name">Сплит</span>
-            <span class="tpl-sub">Текст / Фото</span>
-          </button>
-        </div>
-      </div>
+
 
       <div class="sec" id="photo-meta-sec" style="display:none">
         <div class="sec-lbl">Текст на обложке (опционально)</div>
@@ -517,8 +494,7 @@ function setLang(l){
     ['lbl-mode','mode'],['mn-photo','mnPhoto'],['ms-photo','msPhoto'],['mn-ai','mnAi'],['ms-ai','msAi'],
     ['lbl-ctype','ctype'],['ct-news','ctNews'],['ct-info','ctInfo'],['ct-feat','ctFeat'],
     ['ct-vid','ctVid'],['ct-art','ctArt'],['ct-qa','ctQa'],
-    ['lbl-upload','uploadLbl'],['upload-txt','uploadTxt'],['lbl-photo-tpl','photoTplLbl'],['lbl-p-hl','pHlLbl'],
-    ['lbl-p-hl','pHlLbl'],['photo-preview-btn','photoPreviewBtn'],
+    ['lbl-upload','uploadLbl'],['upload-txt','uploadTxt'],['lbl-p-hl','pHlLbl'],['photo-preview-btn','photoPreviewBtn'],
     ['lbl-input','inputLbl'],['analyze-btn','analyzeBtn'],
     ['lbl-hl','hlLbl'],['lbl-sub','subLbl'],['lbl-src','srcLbl'],['lbl-cat','catLbl'],['lbl-urg','urgLbl'],
     ['regen-btn','regenBtn'],['lbl-prev','prevLbl'],['lbl-plats','platsLbl'],
@@ -544,7 +520,6 @@ function setCType(ct){
   else { S.aiTpl=def.tpl; buildAiTplGrid(); }
   S.colorScheme=def.scheme;
   S.urgency=def.urgency;
-  document.querySelectorAll('#photo-tpl-grid .tpl-btn').forEach(b=>b.classList.toggle('on',b.dataset.id===S.photoTpl));
   if(S.userPhotoB64||S.hl) renderPreview();
 }
 
@@ -567,12 +542,7 @@ function setMode(mode){
 }
 
 // ── PHOTO MODE ──
-function setPhotoTpl(id){
-  S.photoTpl=id;
-  document.querySelectorAll('#photo-tpl-grid .tpl-btn').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
-  document.getElementById('photo-meta-sec').style.display=id==='logo_only'?'none':'';
-  if(S.userPhotoB64) renderPreview();
-}
+function setPhotoTpl(id){ S.photoTpl=id; if(S.userPhotoB64) renderPreview(); }
 
 function onFileSelect(e){
   const file=e.target.files?.[0]; if(!file) return;
@@ -639,59 +609,86 @@ function photoPreview(){
 
 // ── EDITORIAL ANALYSIS PANEL ──
 function renderEditorialPanel(d){
-  // Mevcut varsa kaldır
   const existing = document.getElementById('editorial-panel-sec');
   if(existing) existing.remove();
 
-  const a = d.editorialAnalysis;
+  const a = d.editorialAnalysis || {};
   const concepts = d.concepts || [];
   const selected = d.selectedConcept || 1;
 
-  // Analiz bölümü HTML
   let html = '<div class="sec" id="editorial-panel-sec">';
   html += '<div class="sec-lbl">🧠 Редакционный анализ</div>';
 
-  if(a){
+  // Analiz kutusu
+  if(a.realCenter || a.psychologicalCore){
     html += '<div class="editorial-panel">';
-    if(a.realCenter) html += '<div class="ed-title">Суть</div><div class="ed-text">'+a.realCenter+'</div>';
-    if(a.psychologicalCore) html += '<div class="ed-title" style="margin-top:7px;">Психология</div><div class="ed-text">'+a.psychologicalCore+'</div>';
-    if(a.socialMediaHook) html += '<div class="ed-title" style="margin-top:7px;">Соцсети</div><div class="ed-text">'+a.socialMediaHook+'</div>';
+    const rows = [
+      ['Суть',         a.realCenter],
+      ['Власть',       a.powerDynamic],
+      ['Психология',   a.psychologicalCore],
+      ['Соцсети',      a.socialMediaHook],
+      ['Геополитика',  a.geopoliticalWeight],
+      ['Thumbnail',    a.thumbnailTest],
+    ];
+    rows.forEach(([label, val]) => {
+      if(!val || val === '—') return;
+      html += '<div class="ed-title">'+label+'</div>';
+      html += '<div class="ed-text">'+val+'</div>';
+    });
     html += '</div>';
   }
 
+  // Konsept kartları
   if(concepts.length > 0){
     html += '<div class="ed-title" style="margin-top:10px;">Концепции ('+concepts.length+')</div>';
     html += '<div class="concepts-grid">';
     concepts.forEach(c => {
       const isSelected = c.id === selected;
-      const score = c.scores?.total || 0;
-      const scoreColor = score >= 80 ? '#27ae60' : score >= 65 ? '#C8960A' : '#CC0000';
-      const bars = [1,2,3,4,5,6,7,8,9,10].map(i =>
-        '<div class="score-bar'+(i <= Math.round(score/10)?' filled':'')+'" style="'+(i<=Math.round(score/10)?'background:'+scoreColor+';opacity:1':'')+'"></div>'
-      ).join('');
+      const sc = c.scores || {};
+      const total = sc.total || 0;
+      const gateColor = total >= 80 ? '#27ae60' : total >= 65 ? '#C8960A' : '#CC0000';
+      const gateLabel = total >= 80 ? '✓ '+total : total >= 65 ? '⚠ '+total : '✗ '+total;
+
+      // 10 kriter mini bar
+      const criteria = ['creativity','newsImpact','thumbnailPower','trtCompliance',
+        'mobileReadability','metaphorStrength','premiumLook','globalStandard',
+        'socialPerformance','editorialIntel'];
+      const bars = criteria.map(k => {
+        const v = sc[k] || 0;
+        const w = v * 10;
+        const col = v >= 8 ? '#27ae60' : v >= 6 ? '#C8960A' : '#CC0000';
+        return '<div style="height:3px;border-radius:1px;background:#222;flex:1;overflow:hidden;">'
+          + '<div style="height:100%;width:'+w+'%;background:'+col+';"></div></div>';
+      }).join('');
+
       html += '<div class="concept-card'+(isSelected?' on winner':'')+'" onclick="selectConcept('+c.id+')">';
       html += '<div class="concept-hdr">';
-      html += '<span class="concept-type">'+(c.type||'').replace('_',' ')+'</span>';
-      html += '<span class="concept-score" style="color:'+scoreColor+'">'+score+'/100</span>';
+      html += '<span class="concept-type">'+(c.type||'').replace(/_/g,' ')+'</span>';
+      html += '<span class="concept-score" style="color:'+gateColor+'">'+gateLabel+'/100</span>';
       html += '</div>';
       html += '<div class="concept-title">'+(isSelected?'★ ':'')+c.title+'</div>';
       html += '<div class="concept-desc">'+c.description+'</div>';
-      html += '<div class="score-bars">'+bars+'</div>';
+      if(c.whyStrong) html += '<div style="font-size:.57rem;color:var(--trt);margin-top:3px;font-style:italic;">'+c.whyStrong+'</div>';
+      html += '<div style="display:flex;gap:2px;margin-top:5px;">'+bars+'</div>';
       html += '</div>';
     });
     html += '</div>';
-    if(d.selectionReason){
-      html += '<div style="margin-top:7px;font-size:.6rem;color:var(--trt);font-style:italic;line-height:1.4;">→ '+d.selectionReason+'</div>';
-    }
+
+    if(d.selectionReason)
+      html += '<div style="margin-top:6px;font-size:.6rem;color:#C8960A;font-style:italic;line-height:1.4;">→ '+d.selectionReason+'</div>';
+
+    // Quality gate
+    if(d.qualityGate)
+      html += '<div style="margin-top:5px;font-size:.62rem;font-weight:700;color:'
+        +(d.qualityGate==='passed'?'#27ae60':'#e67e22')+'">'
+        +(d.qualityGate==='passed'?'✓ Quality gate: PASSED':'⚠ Quality gate: FAILED — альтернативы рекомендованы')+'</div>';
   }
 
   html += '</div>';
 
-  // AI mode panelinin içine ekle
   const aiMode = document.getElementById('ai-mode');
   if(aiMode) aiMode.insertAdjacentHTML('afterbegin', html);
 }
-
 function selectConcept(id){
   const d = S.editorialData;
   if(!d || !d.concepts) return;
@@ -765,6 +762,8 @@ async function analyze(){
     if(d.colorScheme && sm[d.colorScheme]) S.aiTpl = sm[d.colorScheme];
     if(d.template) S.aiTpl = d.template;
 
+    // platformNotes varsa güncelle
+    if(d.platformNotes) S.platformNotes = d.platformNotes;
     document.getElementById('m-hl').value = S.hl;
     document.getElementById('m-sub').value= S.sub;
     document.getElementById('m-cat').value= S.cat;
@@ -1076,24 +1075,70 @@ function renderPreview(){
 function switchFmt(){S.prevPlatIdx=(S.prevPlatIdx+1)%PLATFORMS.length;renderPreview();}
 
 async function generateAlt(){
-  if(S.mode==='photo'){
-    const tpls=['logo_only','photo_panel','typographic','split'];
-    const ci=tpls.indexOf(S.photoTpl);
-    S.photoTpl=tpls[(ci+1)%tpls.length];
-    document.querySelectorAll('#photo-tpl-grid .tpl-btn').forEach(b=>b.classList.toggle('on',b.dataset.id===S.photoTpl));
-    document.getElementById('photo-meta-sec').style.display=S.photoTpl==='logo_only'?'none':'';
-    renderPreview();return;
-  }
   S.altCount++;
-  const tpls=['photo_panel','typographic','split','feature'];
-  S.aiTpl=tpls[(tpls.indexOf(S.aiTpl)+1)%tpls.length];
-  buildAiTplGrid();
-  if(S.aiTpl==='feature'&&S.dallePrompt){
-    setSt('Генерирую альтернативу...','on');
-    try{const r=await genDalle(S.dallePrompt+', alternative cinematic angle');if(r){S.dalleB64=r.base64;S.bg={type:'dalle',url:r.base64};}}catch(e){}
+  setSt('Генерирую альтернативу #' + S.altCount + '...', 'on');
+
+  // Fotoğraf modunda sadece şablon döndür
+  if(S.mode === 'photo'){
+    const tpls = ['photo_panel','typographic','split','logo_only'];
+    S.photoTpl = tpls[S.altCount % tpls.length];
+    document.getElementById('photo-meta-sec').style.display = S.photoTpl === 'logo_only' ? 'none' : '';
+    renderPreview();
+    setSt('Альтернатива #' + S.altCount + ' — другой стиль', '');
+    return;
   }
+
+  // AI modunda: yeni DALL-E görsel + farklı şablon
+  const altVariations = [
+    ', dramatic overhead view, different angle',
+    ', close-up symbolic detail, high contrast',
+    ', wide cinematic establishing shot',
+    ', abstract metaphorical composition',
+    ', brutal minimal graphic style',
+  ];
+  const variation = altVariations[S.altCount % altVariations.length];
+
+  // Paralel: yeni DALL-E + yeni Pexels arama
+  const [dall, pex] = await Promise.allSettled([
+    S.dallePrompt ? genDalle(S.dallePrompt + variation) : Promise.resolve(null),
+    S.pexelsQ     ? searchPex(S.pexelsQ)                : Promise.resolve([])
+  ]);
+
+  // Yeni arka planı seç
+  if(dall.status === 'fulfilled' && dall.value){
+    S.dalleB64 = dall.value.base64;
+    S.bg = { type:'dalle', url: dall.value.base64, thumb: dall.value.base64 };
+  } else if(pex.status === 'fulfilled' && pex.value?.length){
+    // Pexels'tan farklı fotoğraf seç
+    const idx = S.altCount % pex.value.length;
+    const ph  = pex.value[idx];
+    S.bg = { type:'pexels', url: ph.src_large, thumb: ph.src_medium };
+  }
+
+  // Şablonu döndür
+  const tpls = ['photo_panel','typographic','split','feature'];
+  S.aiTpl = tpls[S.altCount % tpls.length];
+  buildAiTplGrid();
+
+  // Fotoğraf grid'ini güncelle
+  renderBgGrid();
   renderPreview();
-  setSt('Альтернатива #'+S.altCount,'');
+  setSt('Альтернатива #' + S.altCount + ' готова', '');
+}
+
+// Arka plan grid'ini güncelle
+function renderBgGrid(){
+  const g = document.getElementById('ph-grid');
+  if(!g || !S.bg) return;
+  // Mevcut seçili thumbu güncelle
+  const thumbs = g.querySelectorAll('.ph-thumb');
+  thumbs.forEach(t => t.classList.remove('on'));
+  const dalle = g.querySelector('.ph-thumb[data-type="dalle"]');
+  if(dalle && S.bg.type === 'dalle'){
+    const img = dalle.querySelector('img');
+    if(img) img.src = S.bg.thumb || S.bg.url;
+    dalle.classList.add('on');
+  }
 }
 
 function approveAll(){
@@ -1136,90 +1181,44 @@ function renderAllPlatforms(){
 
 // ── EXPORT — HTML Canvas based (no server needed for basic export) ──
 async function exp1(pid){
-  const p=PLATFORMS.find(x=>x.id===pid);if(!p)return;
-  setSt(t('exporting')+' '+p.label+'...','on');
+  const p = PLATFORMS.find(x => x.id === pid);
+  if(!p) return;
+  setSt('Подготовка ' + p.label + ' (' + p.w + 'x' + p.h + ')...', 'on');
 
-  try{
-    // Try server export first
-    const r=await fetch('/api/export',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        platform:p,headline:S.hl,sub:S.sub,cat:S.cat,src:S.src,
-        template:getActiveTpl(),bgBase64:getActiveBg(),logoBase64:LOGO,
-        urgency:S.urgency,contentType:S.contentType
-      })
+  try {
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;left:-99999px;top:0;width:' + p.w + 'px;height:' + p.h + 'px;overflow:hidden;background:#111;';
+    container.innerHTML = '<div style="position:relative;width:' + p.w + 'px;height:' + p.h + 'px;overflow:hidden;">'
+      + buildCard(getActiveTpl(), getActiveBg(), p, true) + '</div>';
+    document.body.appendChild(container);
+
+    await new Promise(r => setTimeout(r, 800));
+
+    const canvas = await html2canvas(container, {
+      width: p.w, height: p.h, scale: 1,
+      useCORS: true, allowTaint: true,
+      backgroundColor: '#111', logging: false,
     });
+    document.body.removeChild(container);
 
-    if(r.ok){
-      const blob=await r.blob();
-      if(blob.size>1000){
-        // Valid image received
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url;a.download='TRT_'+pid+'_'+Date.now()+'.png';
-        document.body.appendChild(a);a.click();
-        setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
-        setSt(p.label+' ✓','');
-        return;
-      }
-    }
-    // Fallback: client-side export via html2canvas-like approach
-    await clientExport(p);
-  }catch(e){
-    // Fallback to client export
-    await clientExport(p);
+    canvas.toBlob(blob => {
+      if(!blob){ setSt('Ошибка: blob пустой','err'); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'TRT_' + p.id + '_' + Date.now() + '.png';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+      setSt(p.label + ' ' + p.w + 'x' + p.h + ' ✓', '');
+    }, 'image/png');
+
+  } catch(e) {
+    setSt('Ошибка: ' + e.message, 'err');
+    console.error('Export error:', e);
   }
 }
-
-async function clientExport(p){
-  setSt('Экспорт (клиент)...','on');
-  try{
-    // Create offscreen iframe with the card HTML
-    const iframe=document.createElement('iframe');
-    iframe.style.cssText='position:fixed;left:-9999px;top:0;width:'+p.w+'px;height:'+p.h+'px;border:none;';
-    document.body.appendChild(iframe);
-
-    const bg=getActiveBg();
-    const tpl=getActiveTpl();
-
-    // Build standalone HTML for the card
-    const cardHTML=`<!DOCTYPE html><html><head>
-      <meta charset="UTF-8">
-      <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
-      <style>*{margin:0;padding:0;box-sizing:border-box;}body{width:${p.w}px;height:${p.h}px;overflow:hidden;}.card{width:100%;height:100%;position:relative;overflow:hidden;}</style>
-    </head><body><div class="card">
-      ${buildCard(tpl,bg,p,true)}
-    </div></body></html>`;
-
-    iframe.contentDocument.write(cardHTML);
-    iframe.contentDocument.close();
-
-    await new Promise(r=>setTimeout(r,1500));
-
-    // Use html2canvas if available, otherwise prompt user
-    if(window.html2canvas){
-      const canvas=await html2canvas(iframe.contentDocument.body,{width:p.w,height:p.h,scale:1});
-      canvas.toBlob(blob=>{
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url;a.download='TRT_'+p.id+'_'+Date.now()+'.png';
-        document.body.appendChild(a);a.click();
-        setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},100);
-        setSt(p.label+' ✓','');
-      });
-    }else{
-      // Open in new tab for manual save
-      const win=window.open('');
-      win.document.write(cardHTML);
-      win.document.close();
-      setSt(p.label+' — сохраните вручную (Ctrl+S)','');
-    }
-    document.body.removeChild(iframe);
-  }catch(e){
-    setSt('Ошибка экспорта: '+e.message,'err');
-  }
-}
-
 async function exportAll(){
   for(const p of PLATFORMS){await exp1(p.id);await new Promise(r=>setTimeout(r,600));}
   setSt(t('done')+' — 6 форматов','');
