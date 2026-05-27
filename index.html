@@ -975,6 +975,15 @@ function trtLogo(isDark, scale){
 }
 
 // Platform-aware card: typography adapts to each platform's actual ratio
+// ── KATEGORİ FİLTRESİ — içerik tipi görselde gösterilmez ──
+function getDisplayCat(){
+  if(!S.cat) return '';
+  const blocked = ['НОВОСТИ','NEWS','HABER','VIDEO','ВИДЕО',
+    'FEATURE','СТАТЬЯ','ARTICLE','INFOGRAPHIC','ИНФОГРАФИКА',
+    'Q&A','QA','BREAKING','СРОЧНО'];
+  return blocked.includes(S.cat.toUpperCase().trim()) ? '' : S.cat;
+}
+
 function buildCard(tpl, bg, platform, forExport){
   const isPt  = platform.id==='instagram';
   const isWeb = platform.id==='web';
