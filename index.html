@@ -495,7 +495,7 @@ const S = {
 // ══ TRANSLATIONS ══
 const T = {
   ru:{
-    ct:'Тип контента', txt:'Текст материала', ph:'Вставьте текст новости или брифа...',
+    ct:'Тип контента', ctn:'Новость', cti:'Инфографика', ctf:'Feature', ctv:'Видео', cta:'Статья', ctq:'Q&A', txt:'Текст материала', ph:'Вставьте текст новости или брифа...',
     photo:'Фотография (AA / TRT World / Reuters)',
     uploadTxt:'Перетащите фото или нажмите',
     mainBtn:'🔍 Анализировать и создать превью',
@@ -517,7 +517,7 @@ const T = {
     dl:'Скачать',
   },
   tr:{
-    ct:'İçerik türü', txt:'İçerik metni', ph:'Haber veya brief metnini yapıştırın...',
+    ct:'İçerik türü', ctn:'Haber', cti:'İnfografik', ctf:'Feature', ctv:'Video', cta:'Makale', ctq:'S\u0026A', txt:'İçerik metni', ph:'Haber veya brief metnini yapıştırın...',
     photo:'Fotoğraf (AA / TRT World / Reuters)',
     uploadTxt:'Fotoğrafı sürükleyin veya tıklayın',
     mainBtn:'🔍 Analiz et ve önizleme oluştur',
@@ -625,7 +625,9 @@ function setLang(l){
   document.getElementById('txt').placeholder=t('ph');
   document.getElementById('upload-txt').textContent=t('uploadTxt');
   const ids=[
-    ['lbl-ct','ct'],['lbl-txt','txt'],['lbl-photo','photo'],
+    ['lbl-ct','ct'],
+    ['ct-n','ctn'],['ct-i','cti'],['ct-f','ctf'],['ct-v','ctv'],['ct-a','cta'],['ct-q','ctq'],
+    ['lbl-txt','txt'],['lbl-photo','photo'],
     ['lbl-meta','meta'],['lbl-hl','hl'],['lbl-sub','sub'],
     ['lbl-cat','cat'],['lbl-src','src'],['lbl-urg','urg'],
     ['lbl-policy','policy'],['lbl-bg','bg'],['regen-btn','regen'],
@@ -778,7 +780,7 @@ async function doAnalyze(){
     document.getElementById('results-sec').style.display='';
     document.getElementById('empty').style.display='none';
     document.getElementById('single-wrap').style.display='flex';
-    document.getElementById('prev-acts').style.display='';
+    document.getElementById('prev-acts').style.display='flex';
     document.getElementById('lbl-hint').style.display='';
     document.getElementById('sec-editorial').style.display='';
     
@@ -834,8 +836,10 @@ async function loadBgs(){
     const d=document.createElement('div');
     d.className='ph-thumb'+(i===0?' on':'');
     d.dataset.type=item.type;
-    d.innerHTML=`<img src="${item.thumb}" loading="lazy">
-      <span class="ph-badge" style="background:${item.type==='dalle'?'var(--trt)':'rgba(0,0,0,.7)}">${item.type==='dalle'?'AI':'Фото'}</span>`;
+        const bgColor = item.type==='dalle' ? 'var(--trt)' : 'rgba(0,0,0,.7)';
+    const label   = item.type==='dalle' ? 'AI' : 'Фото';
+    d.innerHTML = '<img src="' + item.thumb + '" loading="lazy">'
+      + '<span class="ph-badge" style="background:' + bgColor + '">' + label + '</span>';;
     d.onclick=()=>{S.bg=item;document.querySelectorAll('.ph-thumb').forEach(x=>x.classList.remove('on'));d.classList.add('on');renderPreview();};
     g.appendChild(d);
   });
@@ -1034,13 +1038,13 @@ async function doAlt(){
 function approveAll(){
   S.approved=true;
   document.getElementById('prev-acts').style.display='none';
-  document.getElementById('all-acts').style.display='';
+  document.getElementById('all-acts').style.display='flex';
   document.getElementById('lbl-hint').style.display='none';
   renderAllPlatforms();
 }
 function backToPreview(){
   S.approved=false;
-  document.getElementById('prev-acts').style.display='';
+  document.getElementById('prev-acts').style.display='flex';
   document.getElementById('all-acts').style.display='none';
   document.getElementById('lbl-hint').style.display='';
   document.getElementById('plat-list').innerHTML='<div class="right-empty">'+t('rightEmpty').replace('\n','<br>')+'</div>';
