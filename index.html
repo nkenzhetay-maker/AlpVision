@@ -848,6 +848,42 @@ async function doAnalyze(){
 }
 
 // ══ BACKGROUNDS ══
+
+// ══ LUMA + AI ENGINE FUNCTIONS ══
+async function genLuma(prompt){
+  const r = await fetch('/api/luma-bg',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ prompt, model:'photon-flash-1' })
+  });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.error||'Luma error');
+  return d;
+}
+
+async function genBackground(prompt){
+  if(S.aiEngine === 'luma'){
+    setSt('🎬 Luma Dream Machine üretiyor (~20-40sn)...','on');
+    return await genLuma(prompt);
+  }
+  return await genDalle(prompt);
+}
+
+function toggleAiEngine(){
+  S.aiEngine = (S.aiEngine === 'luma') ? 'dalle' : 'luma';
+  const btn   = document.getElementById('ai-engine-btn');
+  const label = document.getElementById('ai-engine-label');
+  if(S.aiEngine === 'luma'){
+    btn && btn.classList.add('luma');
+    if(label) label.textContent = 'Luma';
+    setSt('🎬 Luma Dream Machine aktif','');
+  } else {
+    btn && btn.classList.remove('luma');
+    if(label) label.textContent = 'DALL-E';
+    setSt('🎨 DALL-E 3 aktif','');
+  }
+}
+
 async function loadBgs(){
   const g=document.getElementById('ph-grid');
   g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>';
