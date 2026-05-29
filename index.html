@@ -889,9 +889,15 @@ async function loadBgs(){
   g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>';
   document.getElementById('sec-bg').style.display='';
   
+  // Feature/Analysis → stok fotoğraf YASAK, sadece AI
+  const isFeatureContent = ['feature','article','qa'].includes(S.ct);
+  const aestheticSuffix = isFeatureContent
+    ? ', editorial illustration matte gouache texture flat colors intellectual metaphor no plastic no 3D render serious journalistic tone not AI-looking'
+    : '';
+
   const [dall,pex]=await Promise.allSettled([
-    (!S.fast&&S.dallePrompt)?genBackground(S.dallePrompt):Promise.resolve(null),
-    S.pexelsQ?searchPex(S.pexelsQ):Promise.resolve([])
+    (!S.fast&&S.dallePrompt)?genBackground(S.dallePrompt+aestheticSuffix):Promise.resolve(null),
+    (S.pexelsQ&&!isFeatureContent)?searchPex(S.pexelsQ):Promise.resolve([]) // Feature'da yasak
   ]);
   
   const items=[];
@@ -1708,6 +1714,38 @@ async function exportCarousel(){
   setSt('Карусель экспортирована — '+cards.length+' стр.','');
 }
 
+
+// ══ MANUEL ONAY MODU ══
+// 3 denemede 80 geçilemezse editöre uyarı göster
+function showManualApprovalWarning(score, reason){
+  // Mevcut önizlemeyi sil, uyarı göster
+  const wrap = document.getElementById('single-wrap');
+  if(!wrap) return;
+
+  const warn = document.createElement('div');
+  warn.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:20px;text-align:center;';
+  var approveBtn = document.createElement('button');
+  approveBtn.textContent = '✓ Onaylıyorum';
+  approveBtn.style.cssText = 'padding:7px 16px;background:#27ae60;border:none;border-radius:4px;color:#fff;font-family:Manrope,sans-serif;font-size:.68rem;font-weight:700;cursor:pointer;';
+  approveBtn.onclick = function(){ warn.remove(); setSt('Editör onayladı — yayına hazır',''); };
+
+  var retryBtn = document.createElement('button');
+  retryBtn.textContent = '↺ Yeniden üret';
+  retryBtn.style.cssText = 'padding:7px 16px;background:#CC0000;border:none;border-radius:4px;color:#fff;font-family:Manrope,sans-serif;font-size:.68rem;font-weight:700;cursor:pointer;';
+  retryBtn.onclick = function(){ warn.remove(); S._vqcRetryCount=0; regenDalle(); };
+
+  warn.innerHTML = '<div style="font-size:2rem;margin-bottom:12px;">⚠️</div>'
+    + '<div style="font-family:Manrope,sans-serif;font-size:.82rem;font-weight:700;color:#fff;margin-bottom:8px;">Manuel Onay Gerekli</div>'
+    + '<div style="font-family:Manrope,sans-serif;font-size:.68rem;color:rgba(255,255,255,.6);margin-bottom:6px;">3 denemede 80 barajı geçilemedi (Son: '+score+'/100)</div>'
+    + (reason?'<div style="font-family:Manrope,sans-serif;font-size:.65rem;color:#f39c12;margin-bottom:14px;max-width:260px;">'+reason+'</div>':'')
+    + '<div id="manual-btn-row" style="display:flex;gap:8px;"></div>';
+  var row = warn.querySelector('#manual-btn-row');
+  row.appendChild(approveBtn);
+  row.appendChild(retryBtn);
+  wrap.style.position='relative';
+  wrap.appendChild(warn);
+}
+
 async function clearMemory(){
   if(!confirm('Сбросить стиль-память?')) return;
   try{
@@ -1737,7 +1775,34 @@ async function runVisionQC(){
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Vision QC error');
     renderVisionQC(d);
-    setSt('Vision QC: '+d.scores?.total+'/100','');
+    const total = d.scores?.total || 0;
+    setSt('Vision QC: '+total+'/100','');
+
+        // ── AUTO-RETRY: max 3 deneme ──
+    var MAX_RETRIES = 3;
+    if(!S._vqcRetryCount) S._vqcRetryCount = 0;
+
+    if(total < 80 && S.dallePrompt && S._vqcRetryCount < MAX_RETRIES){
+      S._vqcRetryCount++;
+      var noText = ', no text no letters no alphabets on any surface';
+      var retryVariants = [', different metaphor more minimalist', ', alternative symbolic composition', ', completely abstract approach'];
+      var variant = retryVariants[(S._vqcRetryCount-1) % retryVariants.length];
+      var isFeature2 = ['feature','article','qa'].indexOf(S.ct) > -1;
+      var suffix = (isFeature2 ? ', editorial illustration matte gouache flat colors intellectual metaphor not AI-looking' : '') + noText + variant;
+      setSt('QC FAIL ('+total+') — Retry '+S._vqcRetryCount+'/'+MAX_RETRIES,'on');
+      try{
+        var res = await genBackground(S.dallePrompt + suffix);
+        if(res){ S.bg={type:S.aiEngine,url:res.base64,thumb:res.base64}; renderPreview(); }
+      }catch(e){ if(!isFeature2) await loadBgs(); }
+      renderPreview();
+    } else if(total < 80 && S._vqcRetryCount >= MAX_RETRIES){
+      S._vqcRetryCount = 0;
+      showManualApprovalWarning(total, d.fixSuggestion);
+      setSt('⚠ Manuel onay — 3 denemede geçilemedi','err');
+    } else if(total >= 80){
+      S._vqcRetryCount = 0;
+      setSt('✅ Vision QC PASSED ('+total+'/80)','');
+    }
   }catch(e){setSt('Vision QC ошибка: '+e.message,'err');}
   finally{btn.textContent='👁 Vision QC';btn.disabled=false;}
 }
