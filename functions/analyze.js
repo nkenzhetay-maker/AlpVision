@@ -152,6 +152,22 @@ SORU 13 — SON KARAR: "BBC paylaşır mıydı?" Hayırsa → yeniden üret
 
 BAŞLIK: Max 7 kelime. TAMAMEN BÜYÜK HARF. Güçlü eylem fiili.
 DALL-E — TRT YARATICILIK ANAYASASI:
+
+İÇERİK TİPİ KURALI (KESİN):
+- feature/article/qa içeriklerinde → stok fotoğraf YASAK
+  Sistem sadece AI kavramsal illüstrasyon üretecek (DALL-E veya Luma)
+- news/video içeriklerinde → Pexels/Unsplash kullanılabilir
+  Ama AI fotoğraf tercih edilir
+
+ESTETİK FİLTRE (Feature/Analysis için zorunlu):
+Ekle: "An editorial illustration for a premium international magazine.
+Matte texture, gouache and ink overlay, minimalist composition,
+corporate surrealism, intellectual metaphor. No plastic gradients,
+no generic 3D renders. Flat colors, fine lines, sophisticated negative space.
+Style must evoke hand-drawn intellectual political cartoons,
+high credibility, serious journalistic tone."
+
+
 Asla klişe: el sıkışma, yanan bina, küre, bayrak, stok görsel hissi.
 Her zaman: özgün metafor, editöryal illüstrasyon tarzı, entelektüel hiciv.
 Konsept tipine göre:
@@ -214,6 +230,20 @@ Kısa analiz yap, hızlı karar ver. SADECE JSON:
 }
 TRT POLİTİKA: ЦАХАЛ→Армия Израиля | ИГИЛ→ДАЕШ | на Украине→в Украине | СВО=YASAK`;
 
+
+// ════════════════════════════════════════════════
+//  VİSYON QC KRİTERLERİ — Acımasız Baş Öğretmen
+//  Sezar + Гюльнара → 80 altı = FAIL → yeniden üret
+// ════════════════════════════════════════════════
+const VQC_PROTOCOL = {
+  stockCliches:  {detect: "globe, handshake, suit, burning building, magnifier", penalty: -30},
+  aiPlastic:     {detect: "plastic 3D render, oversaturated, artificial glow", penalty: -25},
+  trtCompliance: {detect: "neon colors, absurd, marginal", action: "REJECT"},
+  metaphorScore: {require: "clever subtext", maxIfLiteral: 60},
+  failThreshold: 80,
+  onFail: "TRIGGER_REGEN", // Otomatik yeniden üretim
+};
+
 const QC_SYSTEM = `Sen TRT Russian QC panelinin 2 uzman hakemisin.
 СЕЗАР (Арт-директор, Анкара): The Economist tarzı, görsel zeka, thumbnail psikolojisi. Samimi, doğrudan.
 ГЮЛЬНАРА (TRT 10 yıl): Kurumsal kimlik, TRT kuralları, marka standartları. Net, kurumsal.
@@ -230,7 +260,7 @@ async function callClaude(system, content, maxTok) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"},
-    body: JSON.stringify({ model:"claude-haiku-4-5-20251001", max_tokens:maxTok, system, messages:[{role:"user",content}] })
+    body: JSON.stringify({ model: isFast ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6", max_tokens:maxTok, system, messages:[{role:"user",content}] })
   });
   if (!r.ok) { const e = await r.text(); throw new Error(`Claude ${r.status}: ${e.slice(0,200)}`); }
   const d = await r.json();
