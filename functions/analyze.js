@@ -134,7 +134,10 @@ SORU 1 — HABERİ ANLAMA: Gerçek merkez? Yüzey değil derinlik. Kim kazandı/
 SORU 2 — DUYGU: Tek duygu seç: Güç|Tehdit|Barış|Kaos|Kontrol|Strateji|Yakınlaşma|Çatışma|Zafer
 SORU 3 — JEOPOLİTİK: Hangi bölgeler? Harita gerekli mi? Dominant ülke? Semboller?
 SORU 4 — SOSYAL MEDYA: Scroll-stopper ne? Thumbnail 50x50'de çalışır mı? 1.7 saniye testi?
-SORU 5 — 3 KONSEPT (farklı tipte, birbirini tekrar etmez)
+SORU 5 — 3 ZORUNLU KONSEPT (her biri farklı gazetecilik tarzı):
+  ALT-1 (METAFORİK): The Economist tarzı — tek güçlü sembol/nesne metaforu
+  ALT-2 (ANALİTİK): Veri/harita odaklı — haberin kritik sayısı veya coğrafyası
+  ALT-3 (EDİTÖRYEL): Tipografi + renk + form — güçlü kelime/sayı ön plana
 SORU 6 — METAFOR: Satranç|Harita|Gölge|Çatlak|Bayrak|Köprü|Yangın|Maske|Duvar|Ayna
 SORU 7 — KOMPOZİSYON: Ana odak? Göz akışı? Crop? Denge?
 SORU 8 — TRT KONTROLÜ: TRT estetiği? Clickbait değil? Devlet yayıncısı tonu?
@@ -148,7 +151,17 @@ SORU 12 — FORMAT: Instagram 4:5 güçlü merkez? Telegram koyu mod? Twitter sc
 SORU 13 — SON KARAR: "BBC paylaşır mıydı?" Hayırsa → yeniden üret
 
 BAŞLIK: Max 7 kelime. TAMAMEN BÜYÜK HARF. Güçlü eylem fiili.
-DALL-E: Kesinlikle insan yüzü/figür YOK. Sinematik, dramatik, tek odak. Max 80 kelime. "photorealistic cinematic, no people no faces" ile bitir.
+DALL-E — TRT YARATICILIK ANAYASASI:
+Asla klişe: el sıkışma, yanan bina, küre, bayrak, stok görsel hissi.
+Her zaman: özgün metafor, editöryal illüstrasyon tarzı, entelektüel hiciv.
+Konsept tipine göre:
+  economist_metaphor → sade pastel zemin, TEK güçlü nesne (satranç taşı, terazi, bozuk para, kapı)
+  map_power → haritalı kompozisyon, ışık dramatik, güç hissi
+  cinematic_crop → sinematik kare, derin gölge, tek odak
+  symbolic → soyut sembol, kavramsal, net ama düşündürücü
+  brutalist → güçlü tipografik form, geometrik sertlik
+Max 80 kelime. "editorial illustration, no people no faces, photorealistic" ile bitir.
+Kurumsal tonlar: lacivert, koyu kırmızı, asil gri — neon veya pastel kaçın.
 KALİTE: creativity+newsImpact+thumbnailPower+trtCompliance+mobileReadability+metaphorStrength+premiumLook+globalStandard+socialPerformance+editorialIntel → 80+ = passed
 ${avoidSection}
 
