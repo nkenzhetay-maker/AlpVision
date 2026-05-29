@@ -769,6 +769,9 @@ async function doAnalyze(){
   startTimer();
   setSt(t('analyzing'),'on');
 
+  // DEBUG: API durumunu göster
+  setSt('API çağrılıyor: /api/analyze ['+( S.fast?'Haiku':'Sonnet')+']','on');
+  
   try{
     const ctrl=new AbortController();
     const tout=setTimeout(()=>ctrl.abort(), S.fast?20000:55000);
@@ -901,8 +904,22 @@ async function loadBgs(){
   ]);
   
   const items=[];
-  if(dall.status==='fulfilled'&&dall.value)
-    items.push({type:'dalle',url:dall.value.base64,thumb:dall.value.base64});
+  if(dall.status==='fulfilled'&&dall.value){
+    const dv = dall.value;
+    // Prompt yeniden yazıldı mı? Kullanıcıya göster
+    if(dv.wasRewritten && dv.revisedPrompt){
+      console.warn('OpenAI rewrote:', dv.revisedPrompt.slice(0,150));
+      setSt('⚠ OpenAI prompt değiştirdi: '+dv.revisedPrompt.slice(0,80)+'...','on');
+    } else {
+      setSt('✓ DALL-E orijinal prompt kullandı','on');
+    }
+    items.push({type:'dalle',url:dv.base64,thumb:dv.base64,revisedPrompt:dv.revisedPrompt});
+  } else if(dall.status==='rejected'){
+    const errMsg = dall.reason?.message || String(dall.reason);
+    console.error('DALL-E failed:', errMsg);
+    // Visible hata — kullanıcı görsün
+    setSt('❌ DALL-E hata: '+errMsg.slice(0,60)+' — Pexels yedek','err');
+  }
   if(pex.status==='fulfilled'&&pex.value?.length)
     pex.value.slice(0,5).forEach(p=>items.push({type:'pexels',url:p.src_large,thumb:p.src_medium}));
   
@@ -917,7 +934,7 @@ async function loadBgs(){
     const label   = item.type==='dalle' ? 'AI' : 'Фото';
     d.innerHTML = '<img src="' + item.thumb + '" loading="lazy">'
       + '<span class="ph-badge" style="background:' + bgColor + '">' + label + '</span>';;
-    d.onclick=()=>{S.bg=item;document.querySelectorAll('.ph-thumb').forEach(x=>x.classList.remove('on'));d.classList.add('on');renderPreview();};
+    d.onclick=()=>{S.bg=item;document.querySelectorAll('.ph-thumb').forEach(x=>x.classList.remove('on'));d.classList.add('on');renderPreview();setSt('Arka plan: '+(item.type||item.source||'?')+' — '+item.url.slice(0,40),'');};
     g.appendChild(d);
   });
 }
