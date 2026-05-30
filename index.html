@@ -1213,13 +1213,41 @@ async function generateAlt(){
   S.altCount++;
   var tpls=['photo_panel','typographic','ec_text_only','ec_color_block','ec_illustrated','ec_split_v','ec_data','ec_invitation','feature','split','red_breaking','dark_magazine','brutalist','bottom_caption','ec_big_number','duotone','diagonal','cover_dark','stripe','logo_only'];
   var scms=['dark','teal','red','gold','green','navy','dark','teal','red','gold','red','navy','dark','teal','red','gold','teal','navy','gold','dark'];
-  S.tpl=tpls[S.altCount%tpls.length]; S.scheme=scms[S.altCount%scms.length];
-  var vars=[' extreme close-up of central object same style',' bird-eye view light gray background',' aftermath scene calm cream background',' bold geometric flat colors',' night navy background dramatic',' opposite perspective ironic',' fully abstract color fields only'];
-  setSt('🎨 Alt #'+S.altCount+' — '+S.tpl,'on');
-  if(S.dallePrompt&&!S.fast){
-    try{var res=await genBg(S.dallePrompt+vars[S.altCount%vars.length]);if(res&&res.base64)S.bg={type:'dalle',url:res.base64,thumb:res.base64};}catch(e){}
+  S.tpl=tpls[S.altCount%tpls.length];
+  S.scheme=scms[S.altCount%scms.length];
+  var vars=[
+    ' extreme close-up of central metaphor only matte gouache',
+    ' bird-eye view aerial perspective light gray background',
+    ' aftermath consequence scene calm cream background',
+    ' bold geometric shapes flat colors no gradients',
+    ' night scene deep navy background dramatic shadows',
+    ' opposite perspective weaker side as central figure ironic',
+    ' fully abstract color fields geometry only no objects'
+  ];
+  var v = vars[S.altCount%vars.length];
+  setSt('🎨 Alt #'+S.altCount+' — '+S.tpl+' — генерирую фон...','on');
+
+  // dallePrompt yoksa headline'dan üret
+  var prompt = S.dallePrompt || (S.hl
+    ? 'A minimalist editorial illustration for a premium news magazine. Abstract metaphor for: '+S.hl+'. Matte gouache texture, flat colors, fine ink lines, 40% negative space, solid cream background, no text no letters anywhere, no plastic 3D rendering, editorial cartoon style inspired by The Economist.'
+    : '');
+
+  if(prompt){
+    try{
+      var res = await genBg(prompt + v);
+      if(res && res.base64){
+        S.bg = {type:'dalle', url:res.base64, thumb:res.base64};
+        setSt('✓ Alt #'+S.altCount+': '+S.tpl+' — новый AI-фон','');
+      } else {
+        setSt('⚠ DALL-E boş döndü — prompt: '+prompt.slice(0,40),'err');
+      }
+    } catch(e){
+      setSt('❌ DALL-E hatası: '+e.message.slice(0,50),'err');
+    }
+  } else {
+    setSt('⚠ dallePrompt boş — önce analiz yapın','err');
   }
-  renderPreview(); setSt('✓ Alt #'+S.altCount+': '+S.tpl,'');
+  renderPreview();
 }
 
 // Arka plan grid'ini güncelle
