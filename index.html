@@ -1,97 +1,244 @@
-async function generateAlt() {
-  const btn = document.getElementById('alt-btn') || document.querySelector('.btn-act');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Альтернатива...';
-  }
-  
-  // Orijinal input text kontrolü ve hafızaya alma
-  var txt = _currentNewsText || document.getElementById('txt')?.value?.trim();
-  if (!txt) {
-    setSt('⚠ Önce analiz yapın — metin boş', 'err');
-    if (btn) { btn.disabled = false; btn.textContent = '🔄 Альтернатива'; }
-    return;
-  }
-  _currentNewsText = txt;
-  _currentCType = document.querySelector('.ct-btn.on')?.dataset?.ct || S.ct || 'news';
-
-  // Arka arkaya basıldığında dönecek 7 editoryal Economist stratejisi
-  var strategies = [
-    'different metaphor, more minimalist and sharp, extreme negative space',
-    'alternative symbolic composition with heavy white space and irony',
-    'completely abstract approach using political geometry and color contrast',
-    'highly ironic visual contradiction, surreal scale asymmetry like a Magritte painting',
-    'data-driven composition, one dominant number or statistic as central element',
-    'silhouette composition, single dark shape against solid color background',
-    'diptych concept, two contrasting elements side by side on split background'
-  ];
-  
-  var strategy = strategies[_altStrategyIdx % strategies.length];
-  _altStrategyIdx++; // Bir sonraki tıklama için endeksi artır
-
-  // Orijinal sistem promptuna eklenecek yönlendirme talimatı
-  var finalSystemInstruction = `\n\n[CRITICAL ALTERNATIVE STRATEGY]: For this execution, you MUST use this specific aesthetic/conceptual strategy: "${strategy}". Avoid previous literal concepts. Force a completely different metaphorical approach.`;
-
-  setSt('Применение стратегии: ' + strategy.slice(0,30) + '...', 'on');
-
-  try {
-    const response = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: _currentNewsText,        // Orijinal backend'in beklediği parametre (text)
-        contentType: _currentCType,
-        _altMode: true,
-        _strategy: strategy,
-        finalSystem: finalSystemInstruction // Strateji komutu arka plana aktarılıyor
-      })
-    });
-
-    if (!response.ok) throw new Error('API hatası: ' + response.status);
-    const data = await response.json();
-    
-    // Gelen yeni editoryal verileri orijinal state yapına yediriyoruz
-    if (data && data.headline) {
-      S.hl = data.headline;
-      S.sub = data.subheading || '';
-      S.cat = data.category;
-      if (data.colorScheme) S.colorScheme = data.colorScheme;
-      if (data.template) S.aiTpl = data.template;
-      
-      // Orijinal arayüz elementlerini besle
-      if (document.getElementById('m-hl')) document.getElementById('m-hl').value = S.hl;
-      if (document.getElementById('m-sub')) document.getElementById('m-sub').value = S.sub;
-      if (document.getElementById('m-cat')) document.getElementById('m-cat').value = S.cat;
-      if (document.getElementById('v-meta')) document.getElementById('v-meta').innerText = data.economistMetaphor || "";
-      if (document.getElementById('v-colors')) document.getElementById('v-colors').innerText = data.colorScheme || "";
-      
-      // Orijinal hafıza sayacını tetikle (Eğer index'te mevcutsa)
-      if (typeof updateMemoryCounter === 'function' && data.styleMemoryCount) {
-        updateMemoryCounter(data.styleMemoryCount);
-      }
-      
-      // Orijinal panel render ve DALL-E görsel tetikleyicisi
-      if (typeof renderEditorialPanel === 'function') {
-        renderEditorialPanel(data);
-      } else if (data.dallePrompt && typeof generateDalleBg === 'function') {
-        generateDalleBg(data.dallePrompt);
-      } else if (data.dallePrompt && typeof generateDalleBackground === 'function') {
-        generateDalleBackground(data.dallePrompt);
-      } else {
-        if (typeof renderPreview === 'function') renderPreview();
-      }
-      
-      setSt('Новая альтернативная концепция создана', '');
-    } else {
-      throw new Error('Geçersiz analiz verisi döndü');
-    }
-  } catch (e) {
-    setSt('Alternatif üretilemedi: ' + e.message, 'err');
-    console.error('generateAlt Error:', e);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '🔄 Альтернатива';
-    }
-  }
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlpVision — TRT Russian Visual Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700&family=Playfair+Display:ital,wght=0,700;0,900;1,700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --trt:#20A9CF;--trt-dk:#0D7A96;
+  --red:#CC0000;--red-dk:#990000;
+  --navy:#0D1B2E;--navy3:#1A3A6B;
+  --ui-bg:#0e0e0e;--ui-s:#141414;--ui-p:#1a1a1a;
+  --ui-b:#252525;--ui-b2:#333;
+  --muted:#5a5a5a;--muted2:#888;--txt:#e8e8e8;
 }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Manrope,sans-serif;background:var(--ui-bg);color:var(--txt);padding:20px;overflow-x:hidden;}
+.app-container{max-width:1600px;margin:0 auto;display:grid;grid-template-columns:380px 1fr 420px;gap:20px;height:calc(100vh - 40px);min-height:700px;}
+.panel{background:var(--ui-p);border:1px solid var(--ui-b);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;}
+.p-hd{padding:15px 20px;background:var(--ui-s);border-bottom:1px solid var(--ui-b);display:flex;justify-content:space-between;align-items:center;}
+.p-hd h2{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);font-weight:800;}
+.p-bd{padding:20px;flex:1;overflow-y:auto;}
+
+/* Form Elemanları */
+textarea, input, select{width:100%;background:var(--ui-s);border:1px solid var(--ui-b);border-radius:6px;color:#fff;padding:12px;font-family:inherit;font-size:13px;transition:all .2s;margin-bottom:15px;resize:none;}
+textarea:focus, input:focus, select:focus{border-color:var(--trt);outline:none;}
+label{display:block;font-size:10px;text-transform:uppercase;color:var(--muted2);margin-bottom:6px;font-weight:800;letter-spacing:.5px;}
+
+/* Butonlar */
+.btn-group{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;}
+.btn{background:var(--trt);color:#fff;border:none;padding:12px 20px;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-transform:uppercase;letter-spacing:.5px;}
+.btn:hover{background:var(--trt-dk);}
+.btn:disabled{background:var(--ui-b);color:var(--muted);cursor:not-allowed;}
+.btn-sec{background:var(--ui-b);color:#fff;}
+.btn-sec:hover{background:var(--ui-b2);}
+.btn-act{background:#CC0000;color:#fff;}
+.btn-act:hover{background:#990000;}
+
+/* Content Type Selector */
+.ct-selector{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:15px;}
+.ct-btn{background:var(--ui-s);border:1px solid var(--ui-b);padding:10px 4px;border-radius:6px;font-size:10px;text-transform:uppercase;font-weight:800;color:var(--muted2);cursor:pointer;text-align:center;transition:all .2s;}
+.ct-btn:hover{border-color:var(--ui-b2);color:#fff;}
+.ct-btn.on{background:var(--trt);border-color:var(--trt);color:#fff;}
+
+/* Arka Plan Seçenekleri */
+.bg-options{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:15px;}
+.bg-opt{background:var(--ui-s);border:1px solid var(--ui-b);padding:10px 4px;border-radius:6px;font-size:11px;text-align:center;cursor:pointer;color:var(--muted2);font-weight:700;text-transform:uppercase;}
+.bg-opt.on{border-color:var(--trt);color:#fff;background:rgba(32,169,207,.05);}
+
+/* Orta Önizleme Alanı */
+.preview-panel{background:#050505;display:flex;flex-direction:column;position:relative;}
+.canvas-container{flex:1;display:flex;align-items:center;justify-content:center;padding:40px;position:relative;overflow:hidden;}
+.editorial-canvas{width:500px;height:500px;background:#111;box-shadow:0 30px 70px rgba(0,0,0,.8);position:relative;overflow:hidden;transition:all .3s;}
+
+/* Status Bar */
+.status-bar{background:var(--ui-s);border-top:1px solid var(--ui-b);padding:12px 20px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted2);font-weight:600;}
+.sdot{width:8px;height:8px;background:var(--muted);border-radius:50%;transition:all .3s;}
+.sdot.on{background:#00cc66;box-shadow:0 0 10px #00cc66;animation:pulse 1.5s infinite;}
+.sdot.err{background:var(--red);box-shadow:0 0 10px var(--red);}
+@keyframes pulse{0%{opacity:1;}50%{opacity:.4;}100%{opacity:1;}}
+
+/* Sağ Editoryal Panel */
+.meta-item{background:var(--ui-s);border:1px solid var(--ui-b);border-radius:6px;padding:12px;margin-bottom:12px;font-size:12px;}
+.meta-title{font-weight:800;color:var(--muted2);text-transform:uppercase;font-size:9px;margin-bottom:4px;letter-spacing:.5px;}
+.meta-val{color:#fff;line-height:1.4;}
+
+/* Trend Kartları */
+.trend-section{margin-top:20px;border-top:1px solid var(--ui-b);padding-top:20px;}
+.trend-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.trend-card{background:var(--ui-s);border:1px solid var(--ui-b);border-radius:6px;overflow:hidden;cursor:pointer;position:relative;transition:all .2s;}
+.trend-card:hover{border-color:var(--muted);}
+.trend-thumb{width:100%;height:90px;background-size:cover;background-position:center;background-color:#222;}
+.trend-info{padding:8px;font-size:11px;font-weight:600;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+#memory-counter{display:inline-flex;align-items:center;gap:4px;background:rgba(212,175,55,0.1);border:1px solid #d4af37;color:#d4af37;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:800;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="panel">
+    <div class="p-hd">
+      <h2>Входные данные</h2>
+    </div>
+    <div class="p-bd">
+      <label>Тип контента</label>
+      <div class="ct-selector">
+        <div class="ct-btn on" data-ct="news">News</div>
+        <div class="ct-btn" data-ct="feature">Feature</div>
+        <div class="ct-btn" data-ct="article">Article</div>
+        <div class="ct-btn" data-ct="qa">Q&A</div>
+      </div>
+
+      <label>Текст новости / Сюжет</label>
+      <textarea id="txt" style="height:180px;" placeholder="Вставьте сюда текст новости или тезисы для аналитики..."></textarea>
+
+      <div class="btn-group">
+        <button class="btn" id="btn-an" onclick="runAnalysis()">✨ Анализ</button>
+        <button class="btn btn-act" id="alt-btn" onclick="generateAlt()">🔄 Альтернатива</button>
+      </div>
+
+      <hr style="border:0;border-top:1px solid var(--ui-b);margin:20px 0;">
+
+      <label>Режим бэкграунда</label>
+      <div class="bg-options">
+        <div class="bg-opt on" data-bg="ai">DALL-E</div>
+        <div class="bg-opt" data-bg="luma">Luma</div>
+        <div class="bg-opt" data-bg="photo">Фото</div>
+        <div class="bg-opt" data-bg="solid">Заливка</div>
+      </div>
+
+      <div id="ai-prompt-area">
+        <label>DALL-E Prompt</label>
+        <textarea id="ai-prompt" style="height:110px;" placeholder="Промпт для генерации..."></textarea>
+        <button class="btn btn-sec" style="width:100%;" onclick="triggerBgRegen()">🎨 Сгенерировать заново</button>
+      </div>
+
+      <div id="photo-search-area" style="display:none;">
+        <label>Поиск фото (English)</label>
+        <input type="text" id="photo-query" placeholder="e.g. moscow building winter...">
+        <button class="btn btn-sec" style="width:100%;" onclick="triggerPhotoSearch()">🔍 Искать фото</button>
+        <div id="photo-results" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel preview-panel">
+    <div class="p-hd">
+      <h2>Эскиз обложки</h2>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sec" style="padding:6px 12px;font-size:11px;" onclick="changeAspectRatio('1:1')">1:1</button>
+        <button class="btn btn-sec" style="padding:6px 12px;font-size:11px;" onclick="changeAspectRatio('16:9')">16:9</button>
+      </div>
+    </div>
+    <div class="canvas-container">
+      <div class="editorial-canvas" id="canvas"></div>
+    </div>
+    <div class="status-bar">
+      <div class="sdot" id="sdot"></div>
+      <span id="stxt">Система готова к работе</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="p-hd">
+      <h2>Эдиториал Анализ</h2>
+      <div id="memory-counter" style="display:none;">🧠 Hafıza: <span id="memory-count">0</span></div>
+    </div>
+    <div class="p-bd">
+      <label>Заголовок (Headline)</label>
+      <input type="text" id="m-hl" oninput="syncStateAndRender()">
+
+      <label>Подзаголовок (Subheading)</label>
+      <textarea id="m-sub" style="height:70px;" oninput="syncStateAndRender()"></textarea>
+
+      <label>Категория (Category)</label>
+      <input type="text" id="m-cat" oninput="syncStateAndRender()">
+
+      <div class="meta-item">
+        <div class="meta-title">Визуальная Метафора (Claude)</div>
+        <div class="meta-val" id="v-meta">Ожидание анализа...</div>
+      </div>
+
+      <div class="meta-item">
+        <div class="meta-title">Цветовая схема</div>
+        <div class="meta-val" id="v-colors">-</div>
+      </div>
+
+      <button class="btn" style="width:100%;background:#00cc66;" onclick="exportFinalImage()">💾 Экспорт PNG</button>
+      
+      <div class="trend-section" id="sec-trends">
+        <label>Вдохновение / Тренды недели</label>
+        <div class="trend-grid" id="trend-box">
+          <div style="color:var(--muted);font-size:11px;grid-column:span 2;">Загрузка трендов...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var S = {
+  hl: "Заголовок новости",
+  sub: "Краткое описание или подзаголовок, раскрывающий суть",
+  cat: "МИР",
+  colorScheme: "dark",
+  aiTpl: "news",
+  bg: { type: "ai", color: "#1a1a1a", url: "", base64: "" },
+  aspect: "1:1"
+};
+
+var _currentNewsText = "";
+var _currentCType = "news";
+var _altStrategyIdx = 0;
+
+document.addEventListener("DOMContentLoaded", function() {
+  initEventListeners();
+  renderPreview();
+});
+
+function initEventListeners() {
+  document.querySelectorAll('.ct-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.ct-btn').forEach(b => b.classList.remove('on'));
+      this.classList.add('on');
+      S.aiTpl = this.dataset.ct;
+      renderPreview();
+    });
+  });
+
+  document.querySelectorAll('.bg-opt').forEach(opt => {
+    opt.addEventListener('click', function() {
+      document.querySelectorAll('.bg-opt').forEach(o => o.classList.remove('on'));
+      this.classList.add('on');
+      S.bg.type = this.dataset.bg;
+      
+      document.getElementById('ai-prompt-area').style.display = (S.bg.type==='ai' || S.bg.type==='luma') ? '' : 'none';
+      document.getElementById('photo-search-area').style.display = S.bg.type==='photo' ? '' : 'none';
+      
+      if(S.bg.type === 'solid') S.bg.color = "#152238";
+      renderPreview();
+    });
+  });
+}
+
+function setSt(msg, type) {
+  var txtEl = document.getElementById('stxt');
+  var dotEl = document.getElementById('sdot');
+  if(!txtEl || !dotEl) return;
+  txtEl.innerText = msg;
+  if(type === 'err') dotEl.className = "sdot err";
+  else if(type === 'on') dotEl.className = "sdot on";
+  else dotEl.className = "sdot";
+}
+
+function changeAspectRatio(ratio) {
+  S.aspect = ratio;
+  var canvas = document.getElementById('canvas');
+  if(ratio === '16:9') {
+    canvas.style.width = "560px";
+    canvas.style.height = "315px";
+  } else {
+    canvas.style.width = "500px";
