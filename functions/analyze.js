@@ -68,14 +68,7 @@ exports.handler = async (event) => {
   }
 
   let system = buildSystemPrompt(ctype, isQC, memory);
-  
-  if (body.finalSystem) {
-    system += body.finalSystem;
-  }
-
-  if (body._altMode) {
-    console.log(`[ALPVISION ALTERNATIVE MODE] Strategy triggered: ${body._strategy}`);
-  }
+  if (body.finalSystem) system += body.finalSystem;
 
   const content = `Target News Text:\n"""\n${text}\n"""`;
   const maxTok  = isQC ? 1500 : 1000;
