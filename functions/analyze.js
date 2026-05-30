@@ -291,7 +291,7 @@ async function callClaude(system, content, maxTok) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"},
-    body: JSON.stringify({ model: isFast ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6", max_tokens:maxTok, system, messages:[{role:"user",content}] })
+    body: JSON.stringify({ model: isFast ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6", max_tokens:maxTok, system:finalSystem||system, messages:[{role:"user",content}] })
   });
   if (!r.ok) { const e = await r.text(); throw new Error(`Claude ${r.status}: ${e.slice(0,200)}`); }
   const d = await r.json();
