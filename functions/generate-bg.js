@@ -66,15 +66,21 @@ exports.handler = async (event) => {
       throw new Error(data.error?.message || "OpenAI API error " + res.status);
     }
 
-    const imageUrl = data.data?.[0]?.url;
-    const revised  = data.data?.[0]?.revised_prompt || "";
+    const item = data.data?.[0] || {};
+    const revised = item.revised_prompt || "";
+    let base64;
 
-    if (!imageUrl) throw new Error("No image URL returned");
-
-    // URL → base64 (1 saat cache riski olmadan)
-    const imgRes = await fetch(imageUrl);
-    const buffer = await imgRes.arrayBuffer();
-    const base64 = `data:image/png;base64,${Buffer.from(buffer).toString("base64")}`;
+    if (item.b64_json) {
+      // gpt-image-1 → doğrudan base64 döner
+      base64 = `data:image/png;base64,${item.b64_json}`;
+    } else if (item.url) {
+      // dall-e-3 → URL döner, base64'e çevir
+      const imgRes = await fetch(item.url);
+      const buffer = await imgRes.arrayBuffer();
+      base64 = `data:image/png;base64,${Buffer.from(buffer).toString("base64")}`;
+    } else {
+      throw new Error("No image data returned (ne url ne b64_json)");
+    }
 
     const wasRewritten = revised && revised !== rawPrompt;
     if (wasRewritten) {
