@@ -1210,42 +1210,76 @@ function renderPreview(){
 function switchFmt(){S.prevPlatIdx=(S.prevPlatIdx+1)%PLATFORMS.length;renderPreview();}
 
 async function generateAlt(){
-  S.altCount++;
-  var tpls=['photo_panel','typographic','ec_text_only','ec_color_block','ec_illustrated','ec_split_v','ec_data','ec_invitation','feature','split','red_breaking','dark_magazine','brutalist','bottom_caption','ec_big_number','duotone','diagonal','cover_dark','stripe','logo_only'];
-  var scms=['dark','teal','red','gold','green','navy','dark','teal','red','gold','red','navy','dark','teal','red','gold','teal','navy','gold','dark'];
-  S.tpl=tpls[S.altCount%tpls.length];
-  S.scheme=scms[S.altCount%scms.length];
-  var vars=[
-    ' extreme close-up of central metaphor only matte gouache',
-    ' bird-eye view aerial perspective light gray background',
-    ' aftermath consequence scene calm cream background',
-    ' bold geometric shapes flat colors no gradients',
-    ' night scene deep navy background dramatic shadows',
-    ' opposite perspective weaker side as central figure ironic',
-    ' fully abstract color fields geometry only no objects'
+  // ── Güvenlik kontrolü ──
+  var txt = _currentNewsText || document.getElementById('txt')?.value?.trim();
+  if(!txt){ setSt('⚠ Önce analiz yapın — metin boş','err'); return; }
+  _currentNewsText = txt;
+  _currentCType    = document.querySelector('.ct-btn.on')?.dataset?.ct || S.ct || 'news';
+
+  // ── Strateji döngüsü ──
+  var strategies = [
+    'different metaphor, more minimalist and sharp, extreme negative space',
+    'alternative symbolic composition with heavy white space and irony',
+    'completely abstract approach using political geometry and color contrast',
+    'highly ironic visual contradiction, surreal scale asymmetry like a Magritte painting',
+    'data-driven composition, one dominant number or statistic as central element',
+    'silhouette composition, single dark shape against solid color background',
+    'diptych concept, two contrasting elements side by side on split background'
   ];
-  var v = vars[S.altCount%vars.length];
-  setSt('🎨 Alt #'+S.altCount+' — '+S.tpl+' — генерирую фон...','on');
+  var strategy = strategies[_altStrategyIdx % strategies.length];
+  _altStrategyIdx++;
 
-  // dallePrompt yoksa headline'dan üret
-  var prompt = S.dallePrompt || (S.hl
-    ? 'A minimalist editorial illustration for a premium news magazine. Abstract metaphor for: '+S.hl+'. Matte gouache texture, flat colors, fine ink lines, 40% negative space, solid cream background, no text no letters anywhere, no plastic 3D rendering, editorial cartoon style inspired by The Economist.'
-    : '');
+  // ── Şablon ve renk döngüsü ──
+  var tpls  = ['ec_illustrated','typographic','ec_color_block','ec_text_only','feature','brutalist','dark_magazine','ec_big_number','diagonal','red_breaking','ec_split_v','cover_dark','duotone','ec_data','ec_invitation'];
+  var scms  = ['dark','teal','red','gold','navy','red','dark','teal','gold','red','teal','navy','red','gold','teal'];
+  S.tpl    = tpls[(_altStrategyIdx-1) % tpls.length];
+  S.scheme = scms[(_altStrategyIdx-1) % scms.length];
 
-  if(prompt){
-    try{
-      var res = await genBg(prompt + v);
-      if(res && res.base64){
-        S.bg = {type:'dalle', url:res.base64, thumb:res.base64};
-        setSt('✓ Alt #'+S.altCount+': '+S.tpl+' — новый AI-фон','');
-      } else {
-        setSt('⚠ DALL-E boş döndü — prompt: '+prompt.slice(0,40),'err');
-      }
-    } catch(e){
-      setSt('❌ DALL-E hatası: '+e.message.slice(0,50),'err');
+  setSt('🎨 Alt #'+_altStrategyIdx+' — Sonnet yeni metafor üretiyor ['+strategy.slice(0,30)+']...','on');
+
+  try{
+    // ── Claude Sonnet'e yeni stratejiyle git ──
+    var r = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        txt:          txt,
+        ctype:        _currentCType,
+        fast:         false,
+        forceStrategy: strategy,
+        isAlt:        true
+      })
+    });
+    var d = await r.json();
+    if(!r.ok) throw new Error(d.error || 'Analyze API error');
+
+    // ── Yeni metaforu uygula ──
+    if(d.dallePrompt){
+      S.dallePrompt = d.dallePrompt;
+      setSt('🖼 DALL-E üretiyor: '+d.dallePrompt.slice(0,50)+'...','on');
+      try{
+        var bg = await genBg(d.dallePrompt);
+        if(bg && bg.base64){
+          S.bg = {type:'dalle', url:bg.base64, thumb:bg.base64};
+          setSt('✓ Alt #'+_altStrategyIdx+': '+S.tpl+' — '+strategy.slice(0,25),'');
+        }
+      }catch(bgErr){ setSt('⚠ DALL-E: '+bgErr.message.slice(0,50),'err'); }
     }
-  } else {
-    setSt('⚠ dallePrompt boş — önce analiz yapın','err');
+
+    // Editöryal analizi güncelle
+    if(d.economistMetaphor){
+      console.log('[Alt Strateji: '+strategy+'] →', d.economistMetaphor);
+      var ea = document.getElementById('editorial-content');
+      if(ea){ var em = ea.querySelector('.em-metaphor');
+        if(em) em.textContent = d.economistMetaphor;
+      }
+    }
+    if(d.headline) S.hl = d.headline;
+    if(d.subheadline) S.sub = d.subheadline;
+
+  }catch(err){
+    setSt('❌ Alt hatası: '+err.message.slice(0,60),'err');
+    console.error('generateAlt error:', err);
   }
   renderPreview();
 }
