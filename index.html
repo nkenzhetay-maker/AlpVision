@@ -706,7 +706,10 @@ uz.addEventListener('drop',e=>{
 });
 
 function photoPreview(){
-  if(!S.userPhotoB64){alert('Сначала загрузите фотографию');return;}
+  if(!S.userPhotoB64){
+    setSt('⚠ Сначала загрузите фотографию (или переключитесь на AI-генератор)','err');
+    return;
+  }
   // Metin alanından başlık al (varsa)
   const txtEl = document.getElementById('txt');
   if(txtEl && txtEl.value && !S.hl) S.hl = txtEl.value.split('\n')[0].slice(0,60).toUpperCase();
@@ -885,7 +888,7 @@ async function analyze(){
     // Şablon/renk seçimi
     const sm={dark:'typographic',teal:'split',red:'photo_panel',gold:'feature',grey:'typographic'};
     if(d.colorScheme && sm[d.colorScheme]) S.aiTpl = sm[d.colorScheme];
-    if(d.template) S.aiTpl = d.template;
+    if(d.template){ S.aiTpl = d.template; S.photoTpl = d.template; }
 
     // platformNotes varsa güncelle
     if(d.platformNotes) S.platformNotes = d.platformNotes;
@@ -1244,7 +1247,9 @@ async function generateAlt(){
   const scms = ['gold','dark','teal','red','navy',
                 'teal','dark','navy','gold','red',
                 'red','dark','teal','gold','teal'];
-  S.aiTpl       = tpls[(_altStrategyIdx-1) % tpls.length];
+  var pickedTpl = tpls[(_altStrategyIdx-1) % tpls.length];
+  S.aiTpl       = pickedTpl;
+  S.photoTpl    = pickedTpl;   // Foto modunda da değişsin
   S.colorScheme = scms[(_altStrategyIdx-1) % scms.length];
 
   // ── 4. UI: hemen tepki ver ──
@@ -1277,7 +1282,7 @@ async function generateAlt(){
     S.pexelsQ     = d.pexelsQuery || '';
     S.editorialData = d;
     // Backend şablon önerdiyse onu kullan, yoksa döngüdeki şablon kalsın
-    if(d.template) S.aiTpl = d.template;
+    if(d.template){ S.aiTpl = d.template; S.photoTpl = d.template; }
 
     // Metin alanlarını güncelle
     const mhl=document.getElementById('m-hl'); if(mhl) mhl.value=S.hl;
@@ -1286,9 +1291,15 @@ async function generateAlt(){
     buildAiTplGrid();
     if(d.editorialAnalysis || d.concepts) renderEditorialPanel(d);
 
-    // ── 7. Yeni görsel üret (DALL-E) ──
-    setSt('🖼 Alt #'+_altStrategyIdx+' — DALL-E görsel üretiyor...','on');
-    await loadBgs(false);  // false = DALL-E aktif
+    // ── 7. Yeni görsel üret (moda göre) ──
+    if(S.mode === 'photo' && S.userPhotoB64){
+      // Foto modu: kullanıcının fotoğrafı sabit kalır, sadece şablon/renk değişir
+      setSt('🖼 Alt #'+_altStrategyIdx+' — новый шаблон для фото...','on');
+    } else {
+      // AI modu: yeni DALL-E görseli üret
+      setSt('🖼 Alt #'+_altStrategyIdx+' — DALL-E görsel üretiyor...','on');
+      await loadBgs(false);  // false = DALL-E aktif
+    }
 
     renderPreview();
     setSt('✓ Alt #'+_altStrategyIdx+': '+S.aiTpl+' ['+S.colorScheme+'] — '+strategy.slice(0,22),'');
