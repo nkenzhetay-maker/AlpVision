@@ -1219,97 +1219,93 @@ function renderPreview(){
 function switchFmt(){S.prevPlatIdx=(S.prevPlatIdx+1)%PLATFORMS.length;renderPreview();}
 
 async function generateAlt(){
-  console.log('[AlpVision] Alternatif butonuna basıldı');
-
-  // ── 1. Metin kontrolü ──
+  console.log('[Alt] basıldı, mode='+S.mode);
   const txt = document.getElementById('txt').value.trim();
   if(txt.length < 20){ setSt('⚠ Önce metin girip Анализировать yapın','err'); return; }
-  if(S.analyzing){ return; }
+  if(S.analyzing){ setSt('⏳ Mevcut işlem bitsin','on'); return; }
 
-  // ── 2. Strateji seç (The Economist sanatsal yönleri) ──
+  // ── Strateji + şablon + renk döngüsü ──
   const strategies = [
-    'minimalist and sharp, single object on cream, extreme negative space',
-    'heavy irony, surreal scale asymmetry like a Magritte painting',
+    'minimalist and sharp, single symbolic object on solid cream, extreme negative space',
+    'heavy irony, surreal scale asymmetry like a Magritte painting, one giant vs one tiny element',
     'abstract political geometry, bold flat color blocks, no literal objects',
-    'cinematic dramatic angle, single silhouette against solid color',
-    'one dominant statistic or number as the central visual element',
-    'diptych — two contrasting symbolic elements on a split background',
-    'conceptual still-life, symbolic objects arranged with tension'
+    'cinematic dramatic angle, single bold silhouette against solid color background',
+    'one dominant symbolic object centered, museum-poster composition',
+    'diptych — two contrasting symbolic elements on a vertically split background',
+    'conceptual still-life, a few symbolic objects arranged with visual tension'
   ];
+  const tpls = ['ec_illustrated','feature','typographic','ec_color_block','split','brutalist','dark_magazine','ec_big_number','diagonal','cover_dark'];
+  const scms = ['gold','dark','teal','navy','red','dark','navy','gold','red','teal'];
   const strategy = strategies[_altStrategyIdx % strategies.length];
+  const pickedTpl = tpls[_altStrategyIdx % tpls.length];
+  const pickedScm = scms[_altStrategyIdx % scms.length];
   _altStrategyIdx++;
-  console.log('[Alt #'+_altStrategyIdx+'] Strateji:', strategy);
 
-  // ── 3. Şablon + renk şeması döngüsü (her alt farklı görünüm) ──
-  const tpls = ['ec_illustrated','feature','typographic','photo_panel','split',
-                'ec_color_block','brutalist','dark_magazine','ec_big_number','diagonal',
-                'red_breaking','cover_dark','duotone','ec_text_only','ec_data'];
-  const scms = ['gold','dark','teal','red','navy',
-                'teal','dark','navy','gold','red',
-                'red','dark','teal','gold','teal'];
-  var pickedTpl = tpls[(_altStrategyIdx-1) % tpls.length];
-  S.aiTpl       = pickedTpl;
-  S.photoTpl    = pickedTpl;   // Foto modunda da değişsin
-  S.colorScheme = scms[(_altStrategyIdx-1) % scms.length];
-
-  // ── 4. UI: hemen tepki ver ──
+  S.aiTpl = pickedTpl; S.photoTpl = pickedTpl; S.colorScheme = pickedScm;
   S.analyzing = true;
-  const btn = document.getElementById('analyze-btn');
-  setSt('↻ Alt #'+_altStrategyIdx+' — Sonnet yeni metafor üretiyor...','on');
+  const btn = document.querySelector('.btn-act[onclick*="generateAlt"]');
+  if(btn) btn.disabled = true;
 
   try{
-    // ── 5. Backend'e forceStrategy ile git ──
+    // ── 1. Sonnet'e yeni metafor ürettir ──
+    setSt('↻ Alt #'+_altStrategyIdx+' — Sonnet düşünüyor ['+strategy.slice(0,28)+']...','on');
     const r = await fetch('/api/analyze',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        text:          txt,
-        contentType:   S.contentType,
-        _fastMode:     false,
-        forceStrategy: strategy,
-        isAlt:         true
-      })
+      body: JSON.stringify({ text:txt, contentType:S.contentType, _fastMode:false, forceStrategy:strategy, isAlt:true })
     });
     const d = await r.json();
-    if(!r.ok) throw new Error(d.error || 'API '+r.status);
+    if(!r.ok) throw new Error(d.error || ('analyze '+r.status));
 
-    console.log('[Alt] Yeni metafor:', (d.economistMetaphor||d.dallePrompt||'').slice(0,80));
-
-    // ── 6. State güncelle ──
-    S.hl  = d.headline    || S.hl;
-    S.sub = d.subheadline || S.sub;
-    S.cat = d.category    || S.cat;
+    // ── 2. State + UI güncelle ──
+    S.hl = d.headline||S.hl; S.sub = d.subheadline||S.sub; S.cat = d.category||S.cat;
     S.dallePrompt = d.dallePrompt || S.dallePrompt;
-    S.pexelsQ     = d.pexelsQuery || '';
     S.editorialData = d;
-    // Backend şablon önerdiyse onu kullan, yoksa döngüdeki şablon kalsın
-    if(d.template){ S.aiTpl = d.template; S.photoTpl = d.template; }
+    if(d.template){ S.aiTpl=d.template; S.photoTpl=d.template; }
+    const mhl=document.getElementById('m-hl'); if(mhl)mhl.value=S.hl;
+    const msub=document.getElementById('m-sub'); if(msub)msub.value=S.sub;
+    if(d.editorialAnalysis||d.concepts) try{ renderEditorialPanel(d); }catch(e){}
+    try{ buildAiTplGrid(); }catch(e){}
+    console.log('[Alt] metafor:', (d.economistMetaphor||'').slice(0,70), '| prompt:', (d.dallePrompt||'').slice(0,50));
 
-    // Metin alanlarını güncelle
-    const mhl=document.getElementById('m-hl'); if(mhl) mhl.value=S.hl;
-    const msub=document.getElementById('m-sub'); if(msub) msub.value=S.sub;
-    const mcat=document.getElementById('m-cat'); if(mcat) mcat.value=S.cat;
-    buildAiTplGrid();
-    if(d.editorialAnalysis || d.concepts) renderEditorialPanel(d);
-
-    // ── 7. Yeni görsel üret (moda göre) ──
-    if(S.mode === 'photo' && S.userPhotoB64){
-      // Foto modu: kullanıcının fotoğrafı sabit kalır, sadece şablon/renk değişir
-      setSt('🖼 Alt #'+_altStrategyIdx+' — новый шаблон для фото...','on');
-    } else {
-      // AI modu: yeni DALL-E görseli üret
-      setSt('🖼 Alt #'+_altStrategyIdx+' — DALL-E görsel üretiyor...','on');
-      await loadBgs(false);  // false = DALL-E aktif
+    // ── 3. Foto modunda: fotoğraf sabit, sadece tasarım değişir ──
+    if(S.mode === 'photo'){
+      renderPreview();
+      setSt('✓ Alt #'+_altStrategyIdx+': '+S.photoTpl+' ['+pickedScm+'] (фото сохранено)','');
+      return;
     }
 
-    renderPreview();
-    setSt('✓ Alt #'+_altStrategyIdx+': '+S.aiTpl+' ['+S.colorScheme+'] — '+strategy.slice(0,22),'');
+    // ── 4. AI modunda: DALL-E DOĞRUDAN çağır ──
+    if(!S.dallePrompt){ throw new Error('dallePrompt boş döndü'); }
+    setSt('🎨 Alt #'+_altStrategyIdx+' — DALL-E рисует (~20-30 сек)...','on');
+    let bg = null;
+    try{
+      bg = await genDalle(S.dallePrompt);
+    }catch(dErr){
+      throw new Error('DALL-E: '+dErr.message);
+    }
+    if(bg && bg.base64){
+      S.dalleB64 = bg.base64;
+      S.bg = {type:'dalle', url:bg.base64, thumb:bg.base64};
+      // Thumb grid'i de güncelle
+      const g=document.getElementById('ph-grid');
+      if(g){ g.innerHTML='';
+        const dv=document.createElement('div'); dv.className='ph-thumb on'; dv.dataset.type='dalle';
+        dv.innerHTML='<img src="'+bg.base64+'"><span class="ph-badge" style="background:var(--trt)">AI</span>';
+        g.appendChild(dv);
+      }
+      renderPreview();
+      var rw = bg.wasRewritten ? ' ⚠OpenAI değiştirdi' : '';
+      setSt('✓ Alt #'+_altStrategyIdx+': '+S.aiTpl+' ['+pickedScm+'] — новый AI-фон'+rw,'');
+    } else {
+      throw new Error('DALL-E boş base64 döndü');
+    }
 
   }catch(err){
-    console.error('[Alt] Hata:', err);
-    setSt('❌ Alt hatası: '+err.message.slice(0,60),'err');
+    console.error('[Alt] HATA:', err);
+    setSt('❌ Alt #'+_altStrategyIdx+' hata: '+err.message.slice(0,70),'err');
   }finally{
-    S.analyzing=false;
-    if(btn){ btn.disabled=false; }
+    S.analyzing = false;
+    if(btn) btn.disabled = false;
   }
 }
 
