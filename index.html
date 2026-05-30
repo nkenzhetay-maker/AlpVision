@@ -507,11 +507,6 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
 </div>
 
 <script>
-// ── ALTERNATİF ÜRETIM STATE (global) ──
-var _currentNewsText = '';
-var _currentCType    = 'news';
-var _altStrategyIdx  = 0;
-
 const LOGO = 'data:image/jpeg;base64,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UjaS20cNJAN+SJgaM957z6V5L3pyxXp7JLpa6aqkYMNe5uHAd2Rg49CO1rpxq8yc1nr0w+z2H1atp7jUtXScaMlHGGubMc/Wedm3ndbeBwabWz7rrumsWn4aauoGx89XWNJLW9fqkbHzDO+59BUC0JpO36o1DqZtwfKBTSvEYjdjD5HyYd7OXIHQ5Vx2a0Wuz07oLXQwUkbjlwjbguPeT1PtX6ttrt1tdO6gooKZ1Q/nmdGwAvd3k+fqVjOxnWlGVZp4bbXZ02SNtLiC3sqVanYQcHKMVGW2cptuUvFp4wir9L1dcLdeuGl6eGVvg8sNuledpMtJDQe7oR6MjzLo8JtT2i3abNivNbT2utoZpGuZVSNi5g55dsScEgkgjrt6lOa+xWevuEVwrLdTzVcPL2czm/TZynIweowd18LzpfT95qPCLlaaaom2/SFuHnHTJGCVjCzr0pKUJJtbLOfs+PijZX12wu6cqVanKKm1KXLjaaWG1l7qS6p4w+/JA6+qi1jxctDrQ8VFBaWiSapZuzIcXHB84JDWjv3I2C4tktHz3ZtfUrWF0rKvwiIAZJcySVwHtGR7VcVotVttFN4NbKKCkiJyWxMA5j3nvPpK/VuttvtxnNDRwU5qJDJMY2AF7j5z3r56ulOXNUeW859qwseRkuJ6dGm6VvBpRUFDOM/VnzNy8+5bFSaLnqdW19df7gC4WqyeCQknIMhjdl49JHOSP7wUr4FHPD6Aj+0S/wC6ltrtNstdK+lt1BT0sEji58cTA0OJGCT37bL6Wu3UNrpBSW6khpYA4uEcTeVoJ67LZbWM6M4zk8vfPm8EfVtfo3tGrRpwcYtw5V3KKeV7W8nqREVkcoEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQH//Z';
 const PLATFORMS = [{"id": "instagram", "label": "Instagram", "w": 1080, "h": 1350, "ratio": "4/5", "tag": "4:5"}, {"id": "twitter", "label": "X/Twitter", "w": 1200, "h": 675, "ratio": "16/9", "tag": "16:9"}, {"id": "telegram", "label": "Telegram", "w": 1280, "h": 720, "ratio": "16/9", "tag": "16:9"}, {"id": "youtube", "label": "YouTube", "w": 1280, "h": 720, "ratio": "16/9", "tag": "16:9"}, {"id": "facebook", "label": "Facebook", "w": 1200, "h": 628, "ratio": "1.91/1", "tag": "1.9:1"}, {"id": "web", "label": "Web/\u0421\u0430\u0439\u0442", "w": 1920, "h": 600, "ratio": "3.2/1", "tag": "3.2:1"}];
 
@@ -538,6 +533,10 @@ const CTYPE_DEFAULTS = {
   article:    {tpl:'split',        scheme:'grey',  urgency:'normal'},
   qa:         {tpl:'typographic',  scheme:'teal',  urgency:'normal'},
 };
+
+// ── ALTERNATİF ÜRETİM STATE (global scope) ──
+let _altStrategyIdx = 0;
+let _triedConcepts  = [];
 
 const S = {
   lang:'ru', mode:'photo', contentType:'news', fastMode:false,
@@ -880,6 +879,8 @@ async function analyze(){
     S.dallePrompt= d.dallePrompt || '';
     S.pexelsQ    = d.pexelsQuery || '';
     S.editorialData = d; // tam veriyi sakla
+    _altStrategyIdx = 0;     // Yeni analiz → alt sayaç sıfırla
+    _triedConcepts  = [];
 
     // Şablon/renk seçimi
     const sm={dark:'typographic',teal:'split',red:'photo_panel',gold:'feature',grey:'typographic'};
@@ -1215,87 +1216,89 @@ function renderPreview(){
 function switchFmt(){S.prevPlatIdx=(S.prevPlatIdx+1)%PLATFORMS.length;renderPreview();}
 
 async function generateAlt(){
-  console.log('[AlpVision] Alt butonuna basıldı');
+  console.log('[AlpVision] Alternatif butonuna basıldı');
 
-  // 1. Metin kontrolü
-  var textInput = document.getElementById('txt').value || _currentNewsText;
-  if(!textInput){ alert('Нет текста! Сначала введите текст и нажмите Анализировать.'); return; }
-  _currentNewsText = textInput;
-  _currentCType = document.querySelector('.ct-btn.on')?.dataset?.ct || _currentCType || 'news';
+  // ── 1. Metin kontrolü ──
+  const txt = document.getElementById('txt').value.trim();
+  if(txt.length < 20){ setSt('⚠ Önce metin girip Анализировать yapın','err'); return; }
+  if(S.analyzing){ return; }
 
-  // 2. Status hemen güncelle
-  var stxt = document.getElementById('stxt');
-  var sdot = document.getElementById('sdot');
-  if(stxt) stxt.innerText = '↻ Sonnet придумывает новую метафору...';
-  if(sdot){ sdot.className = 'sdot on'; }
-
-  // 3. Strateji seç
-  var strategies = [
-    'minimalist and sharp extreme negative space single object on cream',
-    'heavy irony and white space surreal scale asymmetry',
-    'abstract political geometry bold color blocks no objects',
-    'surreal contradiction like Magritte small vs giant scale',
-    'single dominant number or statistic fills the frame',
-    'silhouette composition dark shape against solid color background',
-    'diptych two contrasting symbolic elements on split background'
+  // ── 2. Strateji seç (The Economist sanatsal yönleri) ──
+  const strategies = [
+    'minimalist and sharp, single object on cream, extreme negative space',
+    'heavy irony, surreal scale asymmetry like a Magritte painting',
+    'abstract political geometry, bold flat color blocks, no literal objects',
+    'cinematic dramatic angle, single silhouette against solid color',
+    'one dominant statistic or number as the central visual element',
+    'diptych — two contrasting symbolic elements on a split background',
+    'conceptual still-life, symbolic objects arranged with tension'
   ];
-  var strategy = strategies[_altStrategyIdx % strategies.length];
+  const strategy = strategies[_altStrategyIdx % strategies.length];
   _altStrategyIdx++;
   console.log('[Alt #'+_altStrategyIdx+'] Strateji:', strategy);
 
-  // 4. Şablon değiştir
-  var tpls=['ec_illustrated','typographic','ec_color_block','ec_text_only','feature','brutalist','dark_magazine','ec_big_number','diagonal','red_breaking','ec_split_v','cover_dark','duotone','ec_data','ec_invitation'];
-  var scms=['dark','teal','red','gold','navy','red','dark','teal','gold','red','teal','navy','red','gold','teal'];
-  S.tpl    = tpls[(_altStrategyIdx-1) % tpls.length];
-  S.scheme = scms[(_altStrategyIdx-1) % scms.length];
+  // ── 3. Şablon + renk şeması döngüsü (her alt farklı görünüm) ──
+  const tpls = ['ec_illustrated','feature','typographic','photo_panel','split',
+                'ec_color_block','brutalist','dark_magazine','ec_big_number','diagonal',
+                'red_breaking','cover_dark','duotone','ec_text_only','ec_data'];
+  const scms = ['gold','dark','teal','red','navy',
+                'teal','dark','navy','gold','red',
+                'red','dark','teal','gold','teal'];
+  S.aiTpl       = tpls[(_altStrategyIdx-1) % tpls.length];
+  S.colorScheme = scms[(_altStrategyIdx-1) % scms.length];
+
+  // ── 4. UI: hemen tepki ver ──
+  S.analyzing = true;
+  const btn = document.getElementById('analyze-btn');
+  setSt('↻ Alt #'+_altStrategyIdx+' — Sonnet yeni metafor üretiyor...','on');
 
   try{
-    // 5. Sonnet'e yeni metafor ürettir
-    var r = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+    // ── 5. Backend'e forceStrategy ile git ──
+    const r = await fetch('/api/analyze',{
+      method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        txt:           _currentNewsText,
-        ctype:         _currentCType,
-        fast:          false,
+        text:          txt,
+        contentType:   S.contentType,
+        _fastMode:     false,
         forceStrategy: strategy,
         isAlt:         true
       })
     });
-    var d = await r.json();
+    const d = await r.json();
     if(!r.ok) throw new Error(d.error || 'API '+r.status);
 
-    console.log('[Alt] Sonnet metaforu:', d.dallePrompt?.slice(0,80));
+    console.log('[Alt] Yeni metafor:', (d.economistMetaphor||d.dallePrompt||'').slice(0,80));
 
-    // 6. Başlık güncelle
-    if(d.headline){ S.hl=d.headline; var mhl=document.getElementById('m-hl'); if(mhl)mhl.value=d.headline; }
-    if(d.subheadline){ S.sub=d.subheadline; }
+    // ── 6. State güncelle ──
+    S.hl  = d.headline    || S.hl;
+    S.sub = d.subheadline || S.sub;
+    S.cat = d.category    || S.cat;
+    S.dallePrompt = d.dallePrompt || S.dallePrompt;
+    S.pexelsQ     = d.pexelsQuery || '';
+    S.editorialData = d;
+    // Backend şablon önerdiyse onu kullan, yoksa döngüdeki şablon kalsın
+    if(d.template) S.aiTpl = d.template;
 
-    // 7. DALL-E'ye git
-    if(d.dallePrompt){
-      S.dallePrompt = d.dallePrompt;
-      if(stxt) stxt.innerText = '🖼 DALL-E üretiyor...';
-      try{
-        var bg = await genBg(d.dallePrompt);
-        if(bg && bg.base64){
-          S.bg = {type:'dalle', url:bg.base64, thumb:bg.base64};
-          console.log('[Alt] DALL-E başarılı');
-        }
-      }catch(bgErr){
-        console.warn('[Alt] DALL-E hatası:', bgErr.message);
-        if(stxt) stxt.innerText = '⚠ DALL-E: '+bgErr.message.slice(0,50);
-        if(sdot) sdot.className='sdot err';
-      }
-    }
+    // Metin alanlarını güncelle
+    const mhl=document.getElementById('m-hl'); if(mhl) mhl.value=S.hl;
+    const msub=document.getElementById('m-sub'); if(msub) msub.value=S.sub;
+    const mcat=document.getElementById('m-cat'); if(mcat) mcat.value=S.cat;
+    buildAiTplGrid();
+    if(d.editorialAnalysis || d.concepts) renderEditorialPanel(d);
+
+    // ── 7. Yeni görsel üret (DALL-E) ──
+    setSt('🖼 Alt #'+_altStrategyIdx+' — DALL-E görsel üretiyor...','on');
+    await loadBgs(false);  // false = DALL-E aktif
 
     renderPreview();
-    if(stxt) stxt.innerText = '✓ Alt #'+_altStrategyIdx+': '+S.tpl+' ['+strategy.slice(0,20)+']';
-    if(sdot) sdot.className='sdot';
+    setSt('✓ Alt #'+_altStrategyIdx+': '+S.aiTpl+' ['+S.colorScheme+'] — '+strategy.slice(0,22),'');
 
   }catch(err){
     console.error('[Alt] Hata:', err);
-    if(stxt) stxt.innerText = '❌ Alt hatası: '+err.message.slice(0,60);
-    if(sdot) sdot.className='sdot err';
+    setSt('❌ Alt hatası: '+err.message.slice(0,60),'err');
+  }finally{
+    S.analyzing=false;
+    if(btn){ btn.disabled=false; }
   }
 }
 
