@@ -23,11 +23,10 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "No prompt received", bodyKeys: Object.keys(body) }) };
   }
 
-  // ── TEMIZLE: Rusça karakterleri İngilizce eşdeğeriyle değiştir ──
-  // DALL-E Rusça prompt alınca "stok haber" görseline sığınır
+  // ── TEMIZLE: Rusça karakterleri sil ──
   const cleanedPrompt = rawPrompt
-    .replace(/[А-ЯЁа-яё]+/g, '')  // Tüm Kiril harflerini sil
-    .replace(/\s{2,}/g, ' ')       // Çift boşlukları tek yap
+    .replace(/[А-ЯЁа-яё]+/g, '')
+    .replace(/\s{2,}/g, ' ')
     .trim();
 
   // ── PROMPT KORUMA: OpenAI rewrite'ı engelle ──
@@ -54,9 +53,8 @@ exports.handler = async (event) => {
         prompt: finalPrompt,
         n: 1,
         size: size,
-        quality: "hd",
-        style: "natural",       // "natural" = daha az plastik, daha mat
-        response_format: "url"
+        quality: "hd"
+        // style ve response_format KALDIRILDI — dall-e-3 bu parametreleri reddediyor
       })
     });
 
@@ -68,13 +66,15 @@ exports.handler = async (event) => {
 
     const item = data.data?.[0] || {};
     const revised = item.revised_prompt || "";
-    let base64;
+    let base64 = null;
+    let imageUrl = null;
 
     if (item.b64_json) {
       // gpt-image-1 → doğrudan base64 döner
       base64 = `data:image/png;base64,${item.b64_json}`;
     } else if (item.url) {
       // dall-e-3 → URL döner, base64'e çevir
+      imageUrl = item.url;
       const imgRes = await fetch(item.url);
       const buffer = await imgRes.arrayBuffer();
       base64 = `data:image/png;base64,${Buffer.from(buffer).toString("base64")}`;
