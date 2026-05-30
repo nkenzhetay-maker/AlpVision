@@ -359,6 +359,8 @@ exports.handler = async (event) => {
   const isFast  = body._fastMode === true;
   const text  = (body.text || "").trim();
   const ctype = body.contentType || "news";
+  const forceStrategy = body.forceStrategy || "";  // Alternatif üretim yönü
+  const isAlt   = body.isAlt === true;             // Alternatif modu
 
   if (!text || text.length < 10)
     return {statusCode:400,headers:CORS,body:JSON.stringify({error:"Текст слишком короткий"})};
@@ -375,7 +377,28 @@ exports.handler = async (event) => {
     if (trends.status === 'fulfilled' && trends.value) trendSection = trends.value;
   }
 
-  const system  = isQC ? QC_SYSTEM : isFast ? FAST_SYSTEM : buildSystem(avoidSection);
+  let system  = isQC ? QC_SYSTEM : isFast ? FAST_SYSTEM : buildSystem(avoidSection);
+
+  // ── ALTERNATİF ÜRETİM: editör önceki konsepti reddetti ──
+  if (forceStrategy && !isQC) {
+    system += `
+
+╔══════════════════════════════════════════════════════════╗
+║  CRITICAL OVERRIDE — ALTERNATIVE GENERATION              ║
+╚══════════════════════════════════════════════════════════╝
+The editor REJECTED all previous visual concepts for this news.
+You MUST now create a COMPLETELY DIFFERENT visual approach.
+
+REQUIRED ARTISTIC DIRECTION FOR THIS GENERATION:
+"${forceStrategy}"
+
+RULES:
+- Do NOT repeat any previous metaphor, object, or composition.
+- The economistMetaphor field MUST describe a brand-new ironic scene.
+- The dallePrompt MUST fully reflect this new direction.
+- If previous concept used a bear, use something entirely different now.
+- Surprise the editor with fresh visual thinking.`;
+  }
   // Feature/Analysis için içerik tipi bağlamını güçlendir
   const contentTypeContext = ['feature','article','qa'].includes(ctype)
     ? '\n\n[РЕЖИМ: Feature/Analysis — DALL-E ТОЛЬКО концептуальная иллюстрация, НЕТ стоковым фото]'
