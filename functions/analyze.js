@@ -52,7 +52,6 @@ exports.handler = async (event) => {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "Invalid JSON" }) };
   }
 
-  // Çift yönlü parametre güvenliği (text veya txt)
   const text  = (body.text || body.txt || "").trim();
   const ctype = (body.contentType || body.ctype || "news").toLowerCase();
   const isQC  = !!body.isQC;
@@ -68,10 +67,8 @@ exports.handler = async (event) => {
     _warmCache = memory;
   }
 
-  // Orijinal sistem prompt şablonunu oluştur
   let system = buildSystemPrompt(ctype, isQC, memory);
   
-  // Eğer frontend'den alternatif tetiği (finalSystem) geldiyse promptun sonuna ekle
   if (body.finalSystem) {
     system += body.finalSystem;
   }
