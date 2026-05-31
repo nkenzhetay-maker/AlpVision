@@ -206,7 +206,16 @@ DALL-E PROMPT FORMATI (zorunlu yapı):
    Serious yet highly ironic political cartoon style.
    No text, no letters, no alphabets, no signs anywhere on canvas.
    No plastic 3D rendering, no photorealistic elements, no AI glow effects.
-   Style inspired by editorial illustrations in The Economist and Le Monde Diplomatique."
+   VISUAL STYLE — strictly The Economist cover illustration aesthetic:
+   matte gouache, flat editorial colors, sharp fine ink lines, single strong metaphor,
+   generous negative space, intelligent ironic visual commentary.
+   COLOR PALETTE — restrained editorial tones only:
+   off-white #F2F2F0, warm beige #DCD0BA, charcoal #3A3A3A, near-black #1C1C1C,
+   deep blue #042E58, navy #01203F, cyan accent #00B6CB, dark green #216125,
+   burgundy #97212F, editorial red #B11731, mustard #C48901.
+   NO neon, NO cyberpunk, NO glow, NO oversaturated colors, NO clickbait, NO 3D render.
+   Sober, premium, news-focused. The brand identity (logo, fonts) stays TRT Russian;
+   only the illustration follows The Economist visual language."
 
 ${avoidSection}
 
