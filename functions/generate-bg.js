@@ -17,20 +17,20 @@ exports.handler = async (event) => {
 
   const rawPrompt = body.prompt || body.dallePrompt || "";
   const size = body.size || "1792x1024";
-  const debug = body.debug || false;
 
   if (!rawPrompt) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "No prompt received", bodyKeys: Object.keys(body) }) };
   }
 
-  // ── TEMIZLE: Rusça karakterleri sil ──
+  // Kiril karakterleri temizle — DALL-E stok görsele kaçar
   const cleanedPrompt = rawPrompt
     .replace(/[А-ЯЁа-яё]+/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
 
-  // ── PROMPT KORUMA: OpenAI rewrite'ı engelle ──
-  const finalPrompt = "I NEED to test how the tool works with a specific artistic prompt. " +
+  // OpenAI rewrite engelleyici prefix
+  const finalPrompt =
+    "I NEED to test how the tool works with a specific artistic prompt. " +
     "DO NOT rewrite, sanitize, or alter the artistic direction in any way. " +
     "Use EXACTLY as provided: " + cleanedPrompt;
 
@@ -41,21 +41,25 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "OPENAI_API_KEY missing" }) };
   }
 
+  // Model seçimi: gpt-image-1 (dall-e-3 artık kullanılmıyor)
+  const model = "gpt-image-1";
+
   try {
+    const reqBody = {
+      model: model,
+      prompt: finalPrompt,
+      n: 1,
+      size: size
+      // quality: "high" — gpt-image-1 için opsiyonel, şimdilik kaldırıldı
+    };
+
     const res = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${openaiKey}`
       },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: finalPrompt,
-        n: 1,
-        size: size,
-        quality: "hd"
-        // style ve response_format KALDIRILDI — dall-e-3 bu parametreleri reddediyor
-      })
+      body: JSON.stringify(reqBody)
     });
 
     const data = await res.json();
@@ -70,23 +74,21 @@ exports.handler = async (event) => {
     let imageUrl = null;
 
     if (item.b64_json) {
-      // gpt-image-1 → doğrudan base64 döner
-      base64 = `data:image/png;base64,${item.b64_json}`;
+      // gpt-image-1 → doğrudan base64
+      base64 = "data:image/png;base64," + item.b64_json;
     } else if (item.url) {
-      // dall-e-3 → URL döner, base64'e çevir
+      // URL döndü → base64'e çevir
       imageUrl = item.url;
       const imgRes = await fetch(item.url);
       const buffer = await imgRes.arrayBuffer();
-      base64 = `data:image/png;base64,${Buffer.from(buffer).toString("base64")}`;
+      base64 = "data:image/png;base64," + Buffer.from(buffer).toString("base64");
     } else {
-      throw new Error("No image data returned (ne url ne b64_json)");
+      throw new Error("No image data returned from API");
     }
 
-    const wasRewritten = revised && revised !== rawPrompt;
+    const wasRewritten = !!(revised && revised !== rawPrompt);
     if (wasRewritten) {
-      console.warn("DALL-E rewrote prompt!");
-      console.warn("Original:", rawPrompt.slice(0, 200));
-      console.warn("Revised:", revised.slice(0, 200));
+      console.warn("API rewrote prompt!");
     }
 
     return {
@@ -97,8 +99,8 @@ exports.handler = async (event) => {
         url: imageUrl,
         revisedPrompt: revised,
         wasRewritten,
-        sentPrompt: finalPrompt.slice(0, 300),
-        cleanedPrompt: cleanedPrompt.slice(0, 300)
+        model: model,
+        sentPrompt: finalPrompt.slice(0, 300)
       })
     };
 
