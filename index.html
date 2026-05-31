@@ -570,7 +570,7 @@ let _triedConcepts  = [];
 const S = {
   lang:'ru', mode:'photo', contentType:'news', fastMode:false,
   photoTpl:'logo_only', aiTpl:'photo_panel',
-  colorScheme:'dark', urgency:'normal',
+  colorScheme:'dark', urgency:'normal', altPrompts:[], altTotal:0,
   userPhotoB64:null, bg:null,
   dalleB64:null, dallePrompt:'', pexelsQ:'',
   hl:'', sub:'', cat:'', src:'',
@@ -1014,8 +1014,21 @@ async function loadBgs(fastMode){
 }
 
 async function genDalle(prompt){
-  const r=await fetch('/api/generate-bg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,size:'1792x1024'})});
-  const d=await r.json();if(!r.ok)throw new Error(d.error);return d;
+  // Platform'a göre gpt-image-1 uyumlu boyut seç
+  const platId = (S.platform && S.platform.id) || 'instagram';
+  const sizeMap = {
+    instagram:'1024x1536', telegram:'1024x1536', story:'1024x1536',
+    facebook:'1024x1024', web:'1536x1024', twitter:'1536x1024', default:'1024x1536'
+  };
+  const imgSize = sizeMap[platId] || sizeMap.default;
+
+  const r = await fetch('/api/generate-bg',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ prompt, size: imgSize })
+  });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.error || 'generate-bg '+r.status);
+  return d;
 }
 async function searchPex(query){
   const r=await fetch('/api/search-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,orientation:'landscape'})});
@@ -1321,56 +1334,46 @@ let _altIdx = 0;          // sıradaki strateji
 let _altPrepared = false; // analiz yapıldı mı
 
 // Her basışta 1 farklı The Economist konsepti önizlemeye getir
-async function generateAlt(){
-  const txt = document.getElementById('txt').value.trim();
-  if(txt.length < 20){ setSt('⚠ Önce metin girip Анализировать yapın','err'); return; }
-  if(S.analyzing){ setSt('⏳ Mevcut işlem bitsin','on'); return; }
 
-  const strat = ALT_STRATEGIES[_altIdx % ALT_STRATEGIES.length];
-  const tpl   = ALT_TPLS[_altIdx % ALT_TPLS.length];
-  const scm   = ALT_SCMS[_altIdx % ALT_SCMS.length];
-  const num   = (_altIdx % ALT_STRATEGIES.length) + 1;
+// Her basışta 1 farklı Economist konsepti önizlemeye getir
+// MİMARİ: analiz altPrompts[] hazırladı → alternatif sadece generate-bg çağırır (Sonnet yok)
+async function generateAlt(){
+  if(S.analyzing){ setSt('⏳ İşlem devam ediyor...','on'); return; }
+
+  // Eğer altPrompts hazır değilse önce analiz gerekli
+  if(!S.altPrompts || S.altPrompts.length === 0){
+    setSt('⚠ Önce Анализировать yapın — 20 konsept hazırlanacak','err'); return;
+  }
+
+  const total = S.altPrompts.length;
+  const idx   = _altIdx % total;
+  const prompt = S.altPrompts[idx];
+  const num   = idx + 1;
+  const stratName = _getStratName(idx);
   _altIdx++;
 
-  S.aiTpl=tpl; S.photoTpl=tpl; S.colorScheme=scm; S.analyzing=true;
-  const btn = document.querySelector('.btn-act[onclick*="generateAlt"]');
-  if(btn) btn.disabled=true;
+  if(!prompt || prompt.trim().length < 10){
+    setSt('⚠ Alt #'+num+' prompt boş — sonraki deneniyor','err');
+    if(_altIdx < total + 3) generateAlt(); // sonraki dene
+    return;
+  }
 
-  _elogAdd('--- Alt '+num+'/20 ['+strat.name+'] ---');
+  S.analyzing = true;
+  const btn = document.querySelector('.btn-act[onclick*="generateAlt"]');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ '+(num)+'/'+total; }
+
+  _elogAdd('--- Alt '+num+'/'+total+' ['+stratName+'] ---');
+  setSt('🎨 Alt '+num+'/'+total+' ['+stratName+'] — görsel üretiliyor...','on',30,20);
 
   try{
-    setSt('↻ '+num+'/20 ['+strat.name+'] — düşünüyor...','on',15,25);
-    const r = await fetch('/api/analyze',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ text:txt, contentType:S.contentType, _fastMode:false, forceStrategy:strat.style, isAlt:true })
-    });
-    const d = await r.json();
-    if(!r.ok) throw new Error(d.error || ('analyze '+r.status));
+    const bg = await genDalle(prompt);
+    if(!bg || !bg.base64) throw new Error('Boş görsel döndü');
 
-    S.hl=d.headline||S.hl; S.sub=d.subheadline||S.sub; S.cat=d.category||S.cat;
-    S.dallePrompt=d.dallePrompt||S.dallePrompt; S.editorialData=d;
-    if(d.template){ S.aiTpl=d.template; S.photoTpl=d.template; }
-    const mhl=document.getElementById('m-hl'); if(mhl)mhl.value=S.hl;
-    const msub=document.getElementById('m-sub'); if(msub)msub.value=S.sub;
-    if(d.editorialAnalysis||d.concepts) try{ renderEditorialPanel(d); }catch(e){}
-    _elogAdd('Метафора: '+(d.economistMetaphor||'').slice(0,60));
+    S.dalleB64 = bg.base64;
+    S.bg = {type:'dalle', url:bg.base64, thumb:bg.base64};
 
-    // Foto modu → DALL-E yok, sadece şablon/başlık değişir
-    if(S.mode === 'photo'){
-      renderPreview();
-      setSt('✓ '+num+'/20 ['+strat.name+']: '+S.photoTpl+' (фото)','',null,null);
-      return;
-    }
-
-    if(!S.dallePrompt) throw new Error('dallePrompt boş');
-    setSt('🎨 '+num+'/20 ['+strat.name+'] — görsel üretiliyor...','on',60,20);
-
-    const bg = await genDalle(S.dallePrompt);
-    if(!bg || !bg.base64) throw new Error('boş görsel');
-
-    S.dalleB64=bg.base64;
-    S.bg={type:'dalle', url:bg.base64, thumb:bg.base64};
-    const g=document.getElementById('ph-grid');
+    // Foto grid güncelle
+    const g = document.getElementById('ph-grid');
     if(g){ g.innerHTML='';
       const dv=document.createElement('div'); dv.className='ph-thumb on'; dv.dataset.type='dalle';
       dv.innerHTML='<img src="'+bg.base64+'"><span class="ph-badge" style="background:var(--trt)">AI</span>';
@@ -1378,21 +1381,24 @@ async function generateAlt(){
     }
     renderPreview();
 
-    // AI değerlendirme skoru + öneri
-    const score = _scoreAlt(d, strat.name, S.aiTpl);
-    _elogAdd('Skor: '+score.total+'/100 ['+score.reason+']');
-    const rec = score.total>=85 ? ' ⭐ Рекомендует' : '';
-    const rw = bg.wasRewritten ? ' ⚠değişti' : '';
-    setSt('✓ '+num+'/20 ['+strat.name+'] '+score.total+'/100'+rec+rw,'',null,null);
+    const rw = bg.wasRewritten ? ' ⚠prompt değişti' : '';
+    _elogAdd('✓ '+stratName+' — görsel hazır'+rw);
+    setSt('✓ Alt '+num+'/'+total+' ['+stratName+']'+rw,'',null,null);
 
   }catch(err){
     console.error('[Alt]', err);
-    _elogAdd('❌ '+err.message);
-    setSt('❌ '+num+'/20 hata: '+err.message.slice(0,55),'err');
+    _elogAdd('❌ '+stratName+': '+err.message);
+    setSt('❌ Alt '+num+'/'+total+': '+err.message.slice(0,55),'err');
   }finally{
-    S.analyzing=false;
-    if(btn) btn.disabled=false;
+    S.analyzing = false;
+    if(btn){ btn.disabled=false; btn.textContent='↻ Альтернатива'; }
   }
+}
+
+function _getStratName(i){
+  const names=['Metafora','Asimetri','Silüet','Kolaj','Soyut','Diptik','Harita','El',
+    'Denge','Gölge','Kırılma','İkon','Domino','Maske','İp','Kapı','Yangın','Satranç','Köprü','Yansıma'];
+  return 'Economist·'+(names[i%names.length]||i);
 }
 
 
