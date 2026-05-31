@@ -221,6 +221,15 @@ ${avoidSection}
 
 TRT POLİTİKA: ЦАХАЛ→Армия Израиля | ИГИЛ→ДАЕШ | на Украине→в Украине | Иерусалим→Аль-Кудс | СВО=YASAK | путинская война=YASAK | геноцид 1915→события 1915 года
 
+altPrompts DİZİSİ KURALI:
+altPrompts[0] = dallePrompt ile aynı sahne (ana konsept)
+altPrompts[1..19] = 19 FARKLI The Economist tarzı sahne — her biri:
+  - farklı bir sembolik nesne/metafor
+  - matte gouache texture, flat colors, sharp ink lines
+  - 40% negative space, solid background, no text anywhere
+  - The Economist Lead Illustrator tarzı
+  - aynı sahnenin tonu değil, tamamen farklı fikir
+
 SADECE GEÇERLİ JSON DÖNDÜR:
 {
   "editorialAnalysis":{"realCenter":"Rusça","dominantEmotion":"tek kelime","powerDynamic":"Rusça","psychologicalCore":"Rusça","socialMediaHook":"Rusça","geopoliticalWeight":"Rusça","thumbnailTest":"OK|FAIL","metaphorObject":"Rusça","economistMetaphor":"İngilizce — The Economist için bulunan ironi sahnesi"},
@@ -238,30 +247,8 @@ SADECE GEÇERLİ JSON DÖNDÜR:
   "urgency":"breaking|normal|feature",
   "colorScheme":"dark|red|teal|gold|grey",
   "template":"typographic|photo_panel|split|feature|ec_illustrated|ec_text_only",
-  "dallePrompt":"English DALL-E prompt — The Economist Lead Illustrator formatında, metaforik sahneyi detaylandır, matte gouache style, no text, solid background, 40% negative space",
-  "altPrompts":[
-    "1. Economist · Metafora — [METAFORİK SAHNE tek nesne, matte gouache, cream bg]",
-    "2. Economist · Asimetri — [devasa vs küçük ölçek asimetrisi, güç dengesizliği]",
-    "3. Economist · Silüet — [siyah silüet, tek renkli zemin, minimal]",
-    "4. Economist · Kolaj — [sembolik parçalar kolajı, editöryal yorum]",
-    "5. Economist · Soyut — [soyut geometri, kavramsal renk blokları]",
-    "6. Economist · Diptik — [iki karşıt yarı, görsel çatışma]",
-    "7. Economist · Harita — [coğrafi şekil metafor olarak]",
-    "8. Economist · El — [sembolik el hareketi, ironi]",
-    "9. Economist · Denge — [terazi/denge bozulması, güç asimetrisi]",
-    "10. Economist · Gölge — [nesnenin ironiyi açığa çıkaran gölgesi]",
-    "11. Economist · Kırılma — [çatlak/kopuş, dramatik jest]",
-    "12. Economist · İkon — [ultra minimal tek ikon, bol boşluk]",
-    "13. Economist · Domino — [domino etkisi metaforu, sembolik zincir]",
-    "14. Economist · Maske — [maske/fasad altındaki gerçeği göster]",
-    "15. Economist · İp — [kukla ipi/kontrol/manipülasyon sembolü]",
-    "16. Economist · Kapı — [kapı/engel/açılış sembolü olarak]",
-    "17. Economist · Yangın — [ateş/fırtına/kriz, dizginlenmiş drama]",
-    "18. Economist · Satranç — [satranç taşı jeopolitik metaforu]",
-    "19. Economist · Köprü — [köprü/boşluk/bağlantı sembolü]",
-    "20. Economist · Yansıma — [ayna/yansıma, dualite/karşıtlık]"
-  ],
-  "ALTPROMPTS_RULE":"altPrompts dizisinin her elemanı: gerçek DALL-E promptu olmalı. Prefix numarasını kaldır, her biri bağımsız tam prompt olmalı: matte gouache texture, flat editorial colors, sharp ink lines, 40% negative space, solid background, no text anywhere, The Economist style. Her biri FARKLI sembolik sahneyi tarif etmeli — aynı sahnenin tonu değil.",
+  "dallePrompt":"English DALL-E prompt, The Economist editorial illustration style — metaforik sahne, matte gouache, no text, solid background, 40% negative space",
+  "altPrompts":["prompt1","prompt2","prompt3","prompt4","prompt5","prompt6","prompt7","prompt8","prompt9","prompt10","prompt11","prompt12","prompt13","prompt14","prompt15","prompt16","prompt17","prompt18","prompt19","prompt20"],
   "pexelsQuery":"English 4 words (SADECE news/video içerik tipinde kullanılır)",
   "platformNotes":{"instagram":"Rusça","telegram":"Rusça"},
   "qualityGate":"passed|failed",
