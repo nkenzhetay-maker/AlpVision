@@ -7,9 +7,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --trt:#20A9CF;--trt-dk:#0D7A96;
-  --red:#CC0000;--red-dk:#990000;
-  --navy:#0D1B2E;--navy3:#1A3A6B;
+  --trt:#00B6CB;--trt-dk:#042E58;
+  --red:#B11731;--red-dk:#97212F;
+  --navy:#01203F;--navy3:#042E58;
+  /* TRT World resmi palet */
+  --trt-deepblue:#042E58;--trt-navy:#01203F;--trt-midnight:#010F1C;
+  --trt-cyan:#00B6CB;--trt-lightblue:#5599E0;
+  --trt-green-dk:#216125;--trt-green:#44964A;
+  --trt-burgundy:#97212F;--trt-red:#B11731;
+  --trt-mustard:#C48901;--trt-orange:#DA8D33;
+  --trt-charcoal:#3A3A3A;--trt-black:#1C1C1C;
+  --trt-offwhite:#F2F2F0;--trt-beige:#DCD0BA;
   --ui-bg:#0e0e0e;--ui-s:#141414;--ui-p:#1a1a1a;
   --ui-b:#252525;--ui-b2:#333;
   --muted:#5a5a5a;--muted2:#888;--txt:#e8e8e8;
@@ -454,6 +462,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
         <button class="btn-qc" onclick="runVisionQC()" id="btn-vqc" style="border-color:#27ae60;color:#27ae60;">👁 Vision QC</button>
         <button class="btn-qc" onclick="runQC()" id="btn-qc">🎨 QC Проверка</button>
         <button class="btn-act" onclick="generateAlt()">↻ Альтернатива</button>
+        <button class="btn-sm" onclick="openElog()" title="Редакционный журнал" style="font-size:.6rem;padding:4px 8px">📋</button>
         <button class="btn-act" onclick="switchFmt()">⇄ Формат</button>
         <button class="btn-approve" onclick="approveAll()">✓ Утвердить → Все форматы</button>
       </div>
@@ -484,6 +493,15 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
       <div id="single-wrap" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;">
         <div class="single-canvas" id="single-canvas"></div>
       </div>
+      <div id="gallery-wrap" style="display:none;width:100%;height:100%;overflow-y:auto;padding:12px;">
+        <div id="gallery-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;position:sticky;top:0;background:var(--bg);padding:6px 0;z-index:5;">
+          <span id="gallery-title" style="font-size:.8rem;font-weight:700;color:var(--fg)">🎨 20 концепций</span>
+          <div>
+            <button class="btn-sm" onclick="closeGallery()" style="font-size:.6rem;padding:4px 10px">← Назад к превью</button>
+          </div>
+        </div>
+        <div id="gallery-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;"></div>
+      </div>
     </div>
 
     <div class="prev-hint" id="lbl-hint" style="display:none">
@@ -504,6 +522,17 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
 <div class="statusbar">
   <div class="sdot" id="sdot"></div>
   <span id="stxt">AlpVision готов</span>
+  <span id="spct" style="display:none;margin-left:6px;font-size:.6rem;color:var(--muted);opacity:.8"></span>
+  <span id="seta" style="display:none;margin-left:4px;font-size:.6rem;color:var(--muted);opacity:.6"></span>
+</div>
+
+<!-- Editorial Log Panel -->
+<div id="elog-panel" style="display:none;position:fixed;right:0;top:0;bottom:0;width:340px;background:var(--ui-p);border-left:1px solid var(--ui-b);overflow-y:auto;z-index:200;padding:12px;font-size:.65rem;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <span style="font-size:.75rem;font-weight:700;color:var(--fg)">📋 Редакционный журнал</span>
+    <button onclick="document.getElementById('elog-panel').style.display='none'" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem">✕</button>
+  </div>
+  <div id="elog-content" style="color:var(--muted);line-height:1.6"></div>
 </div>
 
 <script>
@@ -599,9 +628,22 @@ const T = {
 
 function t(k){ return T[S.lang]?.[k] ?? k; }
 
-function setSt(msg,type){
-  document.getElementById('sdot').className='sdot'+(type==='on'?' on':type==='err'?' err':'');
-  document.getElementById('stxt').textContent=msg;
+function setSt(msg,type,pct,eta){
+  const dot=document.getElementById('sdot'),
+        txt=document.getElementById('stxt'),
+        pctEl=document.getElementById('spct'),
+        etaEl=document.getElementById('seta');
+  if(!dot||!txt)return;
+  dot.className='sdot'+(type?' sdot-'+type:'');
+  txt.textContent=msg;
+  if(pct!==undefined && pct!==null){
+    pctEl.style.display='';
+    pctEl.textContent='('+pct+'%)';
+  } else { pctEl.style.display='none'; }
+  if(eta!==undefined && eta!==null){
+    etaEl.style.display='';
+    etaEl.textContent='~'+eta+'с';
+  } else { etaEl.style.display='none'; }
 }
 
 function setLang(l){
@@ -865,7 +907,12 @@ async function analyze(){
   S.analyzing=true;
   const btn=document.getElementById('analyze-btn');
   btn.disabled=true;btn.textContent='⏳...';
-  setSt(t('analyzing'),'on');S.approved=false;S.qcDone=false;
+  S.approved=false;S.qcDone=false;
+  setSt(t('analyzing'),'on',0,null);
+  _elogEntries=[]; _bestAltScore=0; _bestAltIdx=0; _altIdx=0;
+  _elogAdd('=== Новый анализ ===');
+  _elogAdd('Тип контента: '+S.contentType+' | Режим: '+(S.fastMode?'быстрый':'стандарт'));
+  _progressTimer = _startProgress(['Анализирую текст...','Строю редакционную логику...','Генерирую метафоры...','Формирую DALL-E промпт...'], 15);
 
   try{
     const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -931,9 +978,17 @@ async function analyze(){
       document.getElementById('memory-clear-btn').style.display='';
       document.getElementById('memory-count').textContent = mc;
     }
-    setSt(t('done') + engine + (mc?' · 🧠 '+mc+' görsel':''),'');
+    _elogAdd('Заголовок: '+S.hl);
+    _elogAdd('Категория: '+S.cat+' | Цвет: '+(d.colorScheme||''));
+    if(d.editorialAnalysis){
+      const ea=d.editorialAnalysis;
+      _elogAdd('Суть: '+(ea.realCenter||''));
+      _elogAdd('Метафора: '+(d.economistMetaphor||'').slice(0,80));
+    }
+    _elogAdd('DALL-E промпт: '+(d.dallePrompt||'').slice(0,80)+'...');
+    setSt(t('done') + engine + (mc?' · 🧠 '+mc+' görsel':''),'',null,null);
   }catch(e){setSt(t('errPfx')+e.message,'err');}
-  finally{S.analyzing=false;btn.disabled=false;btn.textContent=t('analyzeBtn');}
+  finally{S.analyzing=false;btn.disabled=false;btn.textContent=t('analyzeBtn');_stopProgress();}
 }
 
 async function loadBgs(fastMode){
@@ -1102,7 +1157,8 @@ function getActiveBg(){ return S.mode==='photo'?S.userPhotoB64||'':S.bg?.url||''
 function getActiveTpl(){ return S.mode==='photo'?S.photoTpl:S.aiTpl; }
 
 function trtLogo(dark){
-  var tc=dark?'#fff':'#CC0000',sc=dark?'rgba(255,255,255,.9)':'rgba(0,0,0,.8)';
+  // Kural: logo beyaz / koyu gri / siyah / kurumsal mavi. Yapı sabit.
+  var tc=dark?'#fff':'#1C1C1C',sc=dark?'rgba(255,255,255,.92)':'rgba(28,28,28,.85)';
   return '<div style="position:absolute;top:3%;left:3.5%;z-index:10;display:flex;align-items:center;">'
     +'<span style="font-family:Manrope,sans-serif;font-size:clamp(11px,2.8vw,17px);font-weight:800;color:'+tc+';letter-spacing:.5px;">TRT</span>'
     +'<span style="font-family:Manrope,sans-serif;font-size:clamp(9px,2.3vw,14px);font-weight:400;color:'+sc+';letter-spacing:.14em;margin-left:4px;"> НА РУССКОМ</span>'
@@ -1119,12 +1175,26 @@ function getDisplayCat(){
   return blocked.includes(S.cat.toUpperCase().trim()) ? '' : S.cat;
 }
 
+// TRT World kurumsal renk seçici — kategoriye göre accent
+function _trtAccent(cat, urgency, ctype){
+  if(urgency==='breaking') return '#B11731'; // Editorial Red — kriz/savaş
+  if(ctype==='video') return '#B11731';
+  const c = (cat||'').toUpperCase();
+  // Diplomasi → Navy / Ekonomi → Deep Blue / Güvenlik → Dark Green
+  if(/ДИПЛОМАТ|DIPLO|ПЕРЕГОВОР|САММИТ/.test(c)) return '#042E58';
+  if(/ЭКОНОМ|ECONO|ФИНАНС|БИЗНЕС|РЫНОК/.test(c)) return '#042E58';
+  if(/ВОЕН|АРМИ|ОБОРОН|MILITAR|SECURITY|БЕЗОПАСН/.test(c)) return '#216125';
+  if(/ВОЙН|КРИЗИС|WAR|CRISIS|КОНФЛИКТ/.test(c)) return '#B11731';
+  if(/ГЕОПОЛИТ|ПОЛИТИК|POLIT/.test(c)) return '#042E58';
+  return '#00B6CB'; // varsayılan: TRT Cyan accent
+}
+
 function buildCard(tpl, bg, platform, forExport){
   const isPt  = platform.id==='instagram';
   const isWeb = platform.id==='web';
   const isSq  = platform.id==='facebook';
   const ratio = platform.w / platform.h;
-  const accent = (S.urgency==='breaking'||S.contentType==='video')?'#CC0000':'#20A9CF';
+  const accent = _trtAccent(S.cat, S.urgency, S.contentType);
 
   // Font scaling: relative to platform aspect ratio
   // Portrait → bigger text relative to height
@@ -1218,151 +1288,208 @@ function renderPreview(){
 
 function switchFmt(){S.prevPlatIdx=(S.prevPlatIdx+1)%PLATFORMS.length;renderPreview();}
 
+const ALT_STRATEGIES = [
+  {name:'Economist · Metafora',style:'The Economist cover illustration, single powerful symbolic metaphor object centered, matte gouache, solid cream background, 45% negative space, ironic editorial wit'},
+  {name:'Economist · Asimetri',style:'The Economist style, dramatic scale asymmetry — one giant element vs one tiny element, flat editorial colors, sharp ink lines, conceptual irony'},
+  {name:'Economist · Silüet',style:'The Economist editorial illustration, bold black silhouette on solid color field, minimalist, single conceptual idea, fine gouache texture'},
+  {name:'Economist · Kolaj',style:'The Economist style conceptual collage, layered symbolic fragments, muted editorial palette, intelligent visual commentary'},
+  {name:'Economist · Soyut',style:'The Economist abstract editorial geometry, bold flat color blocks forming a concept, no literal objects, sophisticated restraint'},
+  {name:'Economist · Diptik',style:'The Economist split composition, two contrasting symbolic halves, visual confrontation, flat colors, editorial gravitas'},
+  {name:'Economist · Harita',style:'The Economist map-as-metaphor, stylized geographic shape carrying the political idea, muted cartography palette, fine lines'},
+  {name:'Economist · El',style:'The Economist style, symbolic hands performing an ironic gesture, single concept, matte gouache, generous negative space'},
+  {name:'Economist · Denge',style:'The Economist editorial illustration, balance or scale metaphor showing power imbalance, flat colors, sharp wit'},
+  {name:'Economist · Gölge',style:'The Economist style, object casting a revealing or ironic shadow, dramatic single light source, flat editorial palette'},
+  {name:'Economist · Kırılma',style:'The Economist cover, a crack or break symbolizing fracture/conflict, single dramatic gesture, cream background, gouache texture'},
+  {name:'Economist · İkon',style:'The Economist ultra-minimalist single iconic symbol, maximum negative space, one solid background color, premium editorial restraint'},
+  {name:'Economist · Domino',style:'The Economist style chain-reaction or domino metaphor, sequential symbolic objects, flat colors, intelligent visual logic'},
+  {name:'Economist · Maske',style:'The Economist style, mask or facade metaphor revealing hidden truth, ironic editorial concept, matte gouache'},
+  {name:'Economist · İp',style:'The Economist illustration, puppet strings or tension lines showing control/manipulation, minimalist, flat editorial colors'},
+  {name:'Economist · Kapı',style:'The Economist style, door/threshold/wall as barrier or opening metaphor, single architectural symbol, gouache texture'},
+  {name:'Economist · Yangın',style:'The Economist editorial, fire/smoke/storm as crisis metaphor, restrained dramatic palette, single powerful symbol'},
+  {name:'Economist · Satranç',style:'The Economist chessboard or game-piece geopolitical metaphor, strategic symbolic arrangement, muted sophisticated colors'},
+  {name:'Economist · Köprü',style:'The Economist bridge/gap/connection metaphor, single structural symbol carrying the idea, flat editorial palette, fine lines'},
+  {name:'Economist · Yansıma',style:'The Economist style, mirror or reflection showing contrast/duality, conceptual irony, matte gouache, generous empty space'}
+];
+const ALT_TPLS = ['ec_illustrated','feature','typographic','ec_color_block','split','brutalist','dark_magazine','ec_big_number','diagonal','cover_dark','photo_panel','ec_split_v','ec_invitation','duotone','stripe','ec_text_only','red_breaking','bottom_caption','cover_dark','ec_data'];
+const ALT_SCMS = ['gold','dark','teal','navy','red','dark','navy','gold','red','teal','dark','navy','gold','teal','red','dark','red','gold','navy','teal'];
+
+let _galleryItems = [];
+let _galleryRunning = false;
+
+// Tek tıkla 20 konsept üret + galeri göster
+let _altIdx = 0;          // sıradaki strateji
+let _altPrepared = false; // analiz yapıldı mı
+
+// Her basışta 1 farklı The Economist konsepti önizlemeye getir
 async function generateAlt(){
-  console.log('[Alt] basıldı, mode='+S.mode);
   const txt = document.getElementById('txt').value.trim();
   if(txt.length < 20){ setSt('⚠ Önce metin girip Анализировать yapın','err'); return; }
   if(S.analyzing){ setSt('⏳ Mevcut işlem bitsin','on'); return; }
 
-  // ── Strateji + şablon + renk döngüsü ──
-  const strategies = [
-    'minimalist and sharp, single symbolic object on solid cream, extreme negative space',
-    'heavy irony, surreal scale asymmetry like a Magritte painting, one giant vs one tiny element',
-    'abstract political geometry, bold flat color blocks, no literal objects',
-    'cinematic dramatic angle, single bold silhouette against solid color background',
-    'one dominant symbolic object centered, museum-poster composition',
-    'diptych — two contrasting symbolic elements on a vertically split background',
-    'conceptual still-life, a few symbolic objects arranged with visual tension'
-  ];
-  const tpls = ['ec_illustrated','feature','typographic','ec_color_block','split','brutalist','dark_magazine','ec_big_number','diagonal','cover_dark'];
-  const scms = ['gold','dark','teal','navy','red','dark','navy','gold','red','teal'];
-  const strategy = strategies[_altStrategyIdx % strategies.length];
-  const pickedTpl = tpls[_altStrategyIdx % tpls.length];
-  const pickedScm = scms[_altStrategyIdx % scms.length];
-  _altStrategyIdx++;
+  const strat = ALT_STRATEGIES[_altIdx % ALT_STRATEGIES.length];
+  const tpl   = ALT_TPLS[_altIdx % ALT_TPLS.length];
+  const scm   = ALT_SCMS[_altIdx % ALT_SCMS.length];
+  const num   = (_altIdx % ALT_STRATEGIES.length) + 1;
+  _altIdx++;
 
-  S.aiTpl = pickedTpl; S.photoTpl = pickedTpl; S.colorScheme = pickedScm;
-  S.analyzing = true;
+  S.aiTpl=tpl; S.photoTpl=tpl; S.colorScheme=scm; S.analyzing=true;
   const btn = document.querySelector('.btn-act[onclick*="generateAlt"]');
-  if(btn) btn.disabled = true;
+  if(btn) btn.disabled=true;
+
+  _elogAdd('--- Alt '+num+'/20 ['+strat.name+'] ---');
 
   try{
-    // ── 1. Sonnet'e yeni metafor ürettir ──
-    setSt('↻ Alt #'+_altStrategyIdx+' — Sonnet düşünüyor ['+strategy.slice(0,28)+']...','on');
+    setSt('↻ '+num+'/20 ['+strat.name+'] — düşünüyor...','on',15,25);
     const r = await fetch('/api/analyze',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ text:txt, contentType:S.contentType, _fastMode:false, forceStrategy:strategy, isAlt:true })
+      body: JSON.stringify({ text:txt, contentType:S.contentType, _fastMode:false, forceStrategy:strat.style, isAlt:true })
     });
     const d = await r.json();
     if(!r.ok) throw new Error(d.error || ('analyze '+r.status));
 
-    // ── 2. State + UI güncelle ──
-    S.hl = d.headline||S.hl; S.sub = d.subheadline||S.sub; S.cat = d.category||S.cat;
-    S.dallePrompt = d.dallePrompt || S.dallePrompt;
-    S.editorialData = d;
+    S.hl=d.headline||S.hl; S.sub=d.subheadline||S.sub; S.cat=d.category||S.cat;
+    S.dallePrompt=d.dallePrompt||S.dallePrompt; S.editorialData=d;
     if(d.template){ S.aiTpl=d.template; S.photoTpl=d.template; }
     const mhl=document.getElementById('m-hl'); if(mhl)mhl.value=S.hl;
     const msub=document.getElementById('m-sub'); if(msub)msub.value=S.sub;
     if(d.editorialAnalysis||d.concepts) try{ renderEditorialPanel(d); }catch(e){}
-    try{ buildAiTplGrid(); }catch(e){}
-    console.log('[Alt] metafor:', (d.economistMetaphor||'').slice(0,70), '| prompt:', (d.dallePrompt||'').slice(0,50));
+    _elogAdd('Метафора: '+(d.economistMetaphor||'').slice(0,60));
 
-    // ── 3. Foto modunda: fotoğraf sabit, sadece tasarım değişir ──
+    // Foto modu → DALL-E yok, sadece şablon/başlık değişir
     if(S.mode === 'photo'){
       renderPreview();
-      setSt('✓ Alt #'+_altStrategyIdx+': '+S.photoTpl+' ['+pickedScm+'] (фото сохранено)','');
+      setSt('✓ '+num+'/20 ['+strat.name+']: '+S.photoTpl+' (фото)','',null,null);
       return;
     }
 
-    // ── 4. AI modunda: DALL-E DOĞRUDAN çağır ──
-    if(!S.dallePrompt){ throw new Error('dallePrompt boş döndü'); }
-    setSt('🎨 Alt #'+_altStrategyIdx+' — DALL-E рисует (~20-30 сек)...','on');
-    let bg = null;
-    try{
-      bg = await genDalle(S.dallePrompt);
-    }catch(dErr){
-      throw new Error('DALL-E: '+dErr.message);
+    if(!S.dallePrompt) throw new Error('dallePrompt boş');
+    setSt('🎨 '+num+'/20 ['+strat.name+'] — görsel üretiliyor...','on',60,20);
+
+    const bg = await genDalle(S.dallePrompt);
+    if(!bg || !bg.base64) throw new Error('boş görsel');
+
+    S.dalleB64=bg.base64;
+    S.bg={type:'dalle', url:bg.base64, thumb:bg.base64};
+    const g=document.getElementById('ph-grid');
+    if(g){ g.innerHTML='';
+      const dv=document.createElement('div'); dv.className='ph-thumb on'; dv.dataset.type='dalle';
+      dv.innerHTML='<img src="'+bg.base64+'"><span class="ph-badge" style="background:var(--trt)">AI</span>';
+      g.appendChild(dv);
     }
-    if(bg && bg.base64){
-      S.dalleB64 = bg.base64;
-      S.bg = {type:'dalle', url:bg.base64, thumb:bg.base64};
-      // Thumb grid'i de güncelle
-      const g=document.getElementById('ph-grid');
-      if(g){ g.innerHTML='';
-        const dv=document.createElement('div'); dv.className='ph-thumb on'; dv.dataset.type='dalle';
-        dv.innerHTML='<img src="'+bg.base64+'"><span class="ph-badge" style="background:var(--trt)">AI</span>';
-        g.appendChild(dv);
-      }
-      renderPreview();
-      var rw = bg.wasRewritten ? ' ⚠OpenAI değiştirdi' : '';
-      setSt('✓ Alt #'+_altStrategyIdx+': '+S.aiTpl+' ['+pickedScm+'] — новый AI-фон'+rw,'');
-    } else {
-      throw new Error('DALL-E boş base64 döndü');
-    }
+    renderPreview();
+
+    // AI değerlendirme skoru + öneri
+    const score = _scoreAlt(d, strat.name, S.aiTpl);
+    _elogAdd('Skor: '+score.total+'/100 ['+score.reason+']');
+    const rec = score.total>=85 ? ' ⭐ Рекомендует' : '';
+    const rw = bg.wasRewritten ? ' ⚠değişti' : '';
+    setSt('✓ '+num+'/20 ['+strat.name+'] '+score.total+'/100'+rec+rw,'',null,null);
 
   }catch(err){
-    console.error('[Alt] HATA:', err);
-    setSt('❌ Alt #'+_altStrategyIdx+' hata: '+err.message.slice(0,70),'err');
+    console.error('[Alt]', err);
+    _elogAdd('❌ '+err.message);
+    setSt('❌ '+num+'/20 hata: '+err.message.slice(0,55),'err');
   }finally{
-    S.analyzing = false;
-    if(btn) btn.disabled = false;
+    S.analyzing=false;
+    if(btn) btn.disabled=false;
   }
 }
 
-// Arka plan grid'ini güncelle
-function renderBgGrid(){
-  const g = document.getElementById('ph-grid');
-  if(!g || !S.bg) return;
-  // Mevcut seçili thumbu güncelle
-  const thumbs = g.querySelectorAll('.ph-thumb');
-  thumbs.forEach(t => t.classList.remove('on'));
-  const dalle = g.querySelector('.ph-thumb[data-type="dalle"]');
-  if(dalle && S.bg.type === 'dalle'){
-    const img = dalle.querySelector('img');
-    if(img) img.src = S.bg.thumb || S.bg.url;
-    dalle.classList.add('on');
+
+// ── Editorial Log helpers ──
+let _elogEntries = [];
+function _elogAdd(msg){
+  const ts = new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  _elogEntries.push('['+ts+'] '+msg);
+  const el = document.getElementById('elog-content');
+  if(el) el.innerHTML = _elogEntries.map(e=>'<div style="margin-bottom:3px;border-bottom:1px solid var(--ui-b);padding-bottom:2px">'+e+'</div>').join('');
+}
+function openElog(){
+  const p=document.getElementById('elog-panel');
+  if(p) p.style.display=(p.style.display==='none'?'block':'none');
+}
+
+// ── Alt sonuç kartı + Recommended badge ──
+let _bestAltScore = 0;
+let _bestAltIdx = 0;
+function _scoreAlt(d, stratName, tpl){
+  let total = 0; let reasons = [];
+  // Editorial Intelligence
+  const ei = d.economistMetaphor ? 20 : 8;
+  total += ei;
+  if(ei>15) reasons.push('güçlü metafor');
+  // Thumbnail gücü
+  const thumbTpls = ['typographic','ec_big_number','brutalist','dark_magazine','red_breaking'];
+  const tg = thumbTpls.includes(tpl) ? 18 : 12;
+  total += tg;
+  if(tg>15) reasons.push('thumbnail odaklı şablon');
+  // Yaratıcılık
+  const creative = ['Magritte Surreal','Constructivist','Noir Editorial','Ink Woodcut','Documentary Poster'];
+  const cr = creative.includes(stratName) ? 18 : 12;
+  total += cr;
+  if(cr>15) reasons.push('yüksek yaratıcılık');
+  // TRT uyumu
+  const trt = 15;
+  total += trt;
+  // Mobil okunabilirlik
+  const mobileTpls = ['typographic','ec_text_only','brutalist','cover_dark'];
+  const mb = mobileTpls.includes(tpl) ? 16 : 10;
+  total += mb;
+  if(mb>13) reasons.push('mobil uyumlu');
+  // Sosyal medya
+  const sm = d.editorialAnalysis?.socialMedia ? 13 : 7;
+  total += sm;
+  if(sm>10) reasons.push('sosyal potansiyel yüksek');
+  return { total: Math.min(total,100), reason: reasons.join(', ')||'standart' };
+}
+
+function _showAltResult(idx, stratName, tpl, scm, score, d){
+  const isNew = score.total > _bestAltScore;
+  if(isNew){ _bestAltScore = score.total; _bestAltIdx = idx; }
+  // Önceki recommended badge'leri temizle
+  document.querySelectorAll('.alt-recommended').forEach(el=>el.remove());
+  // Eğer bu en iyi skorsa badge göster
+  if(score.total >= _bestAltScore){
+    const prev = document.querySelector('.card-wrap');
+    if(prev){
+      const badge = document.createElement('div');
+      badge.className = 'alt-recommended';
+      badge.innerHTML = '<div style="background:linear-gradient(90deg,#f5a623,#e8870a);color:#fff;padding:6px 12px;border-radius:4px;font-size:.65rem;font-weight:700;margin-bottom:8px;text-align:center">⭐ AlpVision Рекомендует — Alt #'+idx+' ['+stratName+'] '+score.total+'/100<br><span style="font-weight:400;font-size:.6rem">'+_buildReasonText(score,d)+'</span></div>';
+      prev.insertBefore(badge, prev.firstChild);
+    }
   }
 }
 
-function approveAll(){
-  S.approved=true;
-  document.getElementById('prev-acts').style.display='none';
-  document.getElementById('all-acts').style.display='';
-  document.getElementById('lbl-hint').style.display='none';
-  renderAllPlatforms();
+function _buildReasonText(score, d){
+  const parts = [];
+  if(d.economistMetaphor) parts.push('сильная метафора');
+  parts.push('шаблон оптимизирован для мобильных');
+  if(d.editorialAnalysis) parts.push('высокий редакционный интеллект');
+  parts.push('соответствует стилю TRT Russian');
+  return parts.slice(0,3).join(' · ');
 }
 
-function backToPreview(){
-  S.approved=false;
-  document.getElementById('prev-acts').style.display='';
-  document.getElementById('all-acts').style.display='none';
-  document.getElementById('lbl-hint').style.display='';
-  document.getElementById('plat-list').innerHTML='<div class="right-empty">'+t('rightEmpty').replace(/\n/g,'<br>')+'</div>';
+// ── Progress timer ──
+let _progressTimer = null;
+let _progressStart = 0;
+function _startProgress(msgs, totalSec){
+  _progressStart = Date.now();
+  let i = 0;
+  return setInterval(()=>{
+    const elapsed = (Date.now()-_progressStart)/1000;
+    const pct = Math.min(95, Math.round((elapsed/totalSec)*100));
+    const eta = Math.max(0, Math.round(totalSec - elapsed));
+    const msg = msgs[Math.floor(i/3) % msgs.length];
+    i++;
+    setSt(msg,'on',pct,eta);
+  }, 1000);
+}
+function _stopProgress(){
+  if(_progressTimer){ clearInterval(_progressTimer); _progressTimer=null; }
+  setSt('','',null,null);
 }
 
-function renderAllPlatforms(){
-  if(S.mode==='ai'){S.hl=document.getElementById('m-hl').value;S.sub=document.getElementById('m-sub').value;S.cat=document.getElementById('m-cat').value;S.src=document.getElementById('m-src').value;}
-  else{S.hl=document.getElementById('p-hl').value;S.sub=document.getElementById('p-sub').value;S.cat=document.getElementById('p-cat').value;S.src=document.getElementById('p-src').value;}
-  const list=document.getElementById('plat-list');
-  list.innerHTML='';
-  PLATFORMS.forEach(p=>{
-    const card=document.createElement('div');
-    card.className='plat-card';
-    card.innerHTML=`
-      <div class="plat-card-hdr">
-        <div class="plat-name">${p.label}<span class="plat-sz">${p.w}×${p.h}</span></div>
-        <button class="btn-dl" onclick="exp1('${p.id}')">${t('dl')}</button>
-      </div>
-      <div class="plat-prev-wrap">
-        <div class="plat-canvas" style="aspect-ratio:${p.ratio};position:relative;overflow:hidden;">
-          ${buildCard(getActiveTpl(),getActiveBg(),p,false)}
-        </div>
-      </div>`;
-    list.appendChild(card);
-  });
-}
 
-// ── EXPORT — HTML Canvas based (no server needed for basic export) ──
 async function exp1(pid){
   const p = PLATFORMS.find(x => x.id === pid);
   if(!p) return;
