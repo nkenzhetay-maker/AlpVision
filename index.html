@@ -570,7 +570,7 @@ let _triedConcepts  = [];
 const S = {
   lang:'ru', mode:'photo', contentType:'news', fastMode:false,
   photoTpl:'logo_only', aiTpl:'photo_panel',
-  colorScheme:'dark', urgency:'normal', altPrompts:[], altTotal:0,
+  colorScheme:'dark', urgency:'normal', altPrompts:[], altTotal:0, _rawAnalysis:null,
   userPhotoB64:null, bg:null,
   dalleB64:null, dallePrompt:'', pexelsQ:'',
   hl:'', sub:'', cat:'', src:'',
@@ -920,6 +920,8 @@ async function analyze(){
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Error');
 
+    // Ham analiz verisi kaydet (altPrompts dahil)
+    S._rawAnalysis = d;
     // Yeni editoryal JSON yapısını işle
     S.hl  = d.headline    || '';
     S.sub = d.subheadline || '';
@@ -993,20 +995,57 @@ async function analyze(){
 
 async function loadBgs(fastMode){
   const g=document.getElementById('ph-grid');
-  g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>';
-  const [dall,pex]=await Promise.allSettled([
-    (!fastMode && S.dallePrompt) ? genDalle(S.dallePrompt) : Promise.resolve(null),
-    S.pexelsQ ? searchPex(S.pexelsQ) : Promise.resolve([])
-  ]);
+  g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳ Генерация...</div>';
+
+  // DALL-E prompt kontrolü
+  if(!S.dallePrompt || S.dallePrompt.trim().length < 10){
+    g.innerHTML='<div style="color:#B11731;font-size:.65rem;padding:8px">❌ DALL-E prompt boş — analiz başarısız</div>';
+    setSt('❌ DALL-E prompt alınamadı — yeniden analiz edin','err');
+    return;
+  }
+
   const items=[];
-  if(dall.status==='fulfilled'&&dall.value){S.dalleB64=dall.value.base64;items.push({type:'dalle',url:dall.value.base64,thumb:dall.value.base64});}
-  if(pex.status==='fulfilled'&&pex.value?.length) pex.value.slice(0,5).forEach(p=>items.push({type:'pexels',url:p.src_large,thumb:p.src_medium}));
-  if(!items.length){g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">Нет изображений</div>';return;}
+
+  // DALL-E
+  if(!fastMode){
+    setSt('🎨 Görsel üretiliyor (~20-30 sn)...','on',70,25);
+    try{
+      const dall = await genDalle(S.dallePrompt);
+      if(dall && dall.base64){
+        S.dalleB64 = dall.base64;
+        items.push({type:'dalle', url:dall.base64, thumb:dall.base64});
+        // altPrompts'ı da kaydet (eğer analiz döndürdüyse)
+        if(S._rawAnalysis && S._rawAnalysis.altPrompts && Array.isArray(S._rawAnalysis.altPrompts)){
+          S.altPrompts = S._rawAnalysis.altPrompts.filter(p=>typeof p==='string' && p.trim().length>15);
+          S.altTotal = S.altPrompts.length;
+          _altIdx = 0;
+          _elogAdd('✓ '+S.altTotal+' alternatif prompt hazır');
+        }
+      }
+    }catch(dErr){
+      console.error('DALL-E hatası:', dErr.message);
+      setSt('❌ Görsel hatası: '+dErr.message.slice(0,50),'err');
+    }
+  }
+
+  // Pexels (foto modu veya fallback)
+  try{
+    if(S.pexelsQ){
+      const pex = await searchPex(S.pexelsQ);
+      if(pex && pex.length) pex.slice(0,5).forEach(p=>items.push({type:'pexels',url:p.src_large,thumb:p.src_medium}));
+    }
+  }catch(pErr){ console.warn('Pexels:', pErr.message); }
+
+  if(!items.length){
+    g.innerHTML='<div style="color:#B11731;font-size:.65rem;padding:8px;text-align:center">❌ Görsel üretilemedi<br><span style="opacity:.7">API erişimini kontrol et</span></div>';
+    return;
+  }
+
   S.bg=items[0];
   g.innerHTML='';
   items.forEach((item,i)=>{
     const d=document.createElement('div');
-    d.className='ph-thumb'+(i===0?' on':'');d.dataset.type=item.type;
+    d.className='ph-thumb'+(i===0?' on':''); d.dataset.type=item.type;
     d.innerHTML='<img src="'+item.thumb+'" loading="lazy"><span class="ph-badge" style="background:'+(item.type==='dalle'?'var(--trt)':'rgba(0,0,0,.7)')+'">'+t(item.type==='dalle'?'ai':'photo')+'</span>';
     d.onclick=()=>{S.bg=item;document.querySelectorAll('.ph-thumb').forEach(x=>x.classList.remove('on'));d.classList.add('on');renderPreview();};
     g.appendChild(d);
