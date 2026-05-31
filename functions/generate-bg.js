@@ -16,7 +16,10 @@ exports.handler = async (event) => {
   }
 
   const rawPrompt = body.prompt || body.dallePrompt || "";
-  const size = body.size || "1792x1024";
+  // gpt-image-1 geçerli boyutlar: 1024x1024, 1024x1536, 1536x1024, auto
+  const reqSize = body.size || "1024x1536";
+  const SIZE_MAP = {"1792x1024":"1536x1024","1024x1792":"1024x1536","512x512":"1024x1024","256x256":"1024x1024"};
+  const size = SIZE_MAP[reqSize] || (["1024x1024","1024x1536","1536x1024","auto"].includes(reqSize) ? reqSize : "1024x1536");
 
   if (!rawPrompt) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "No prompt received", bodyKeys: Object.keys(body) }) };
