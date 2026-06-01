@@ -16,11 +16,10 @@ exports.handler = async (event) => {
   }
 
   const rawPrompt = body.prompt || body.dallePrompt || "";
-  // dall-e-2 desteklenen boyutlar: 256x256, 512x512, 1024x1024
   const size = "1024x1024";
 
   if (!rawPrompt) {
-    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "No prompt received", bodyKeys: Object.keys(body) }) };
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "No prompt received" }) };
   }
 
   // Kiril karakterleri temizle — DALL-E stok görsele kaçar
@@ -29,7 +28,6 @@ exports.handler = async (event) => {
     .replace(/\s{2,}/g, ' ')
     .trim();
 
-  // OpenAI rewrite engelleyici prefix
   const finalPrompt =
     "I NEED to test how the tool works with a specific artistic prompt. " +
     "DO NOT rewrite, sanitize, or alter the artistic direction in any way. " +
@@ -42,19 +40,15 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "OPENAI_API_KEY missing" }) };
   }
 
-  // Model: dall-e-2 (hızlı, 3-8 sn, Netlify free tier uyumlu)
-  // gpt-image-1 / dall-e-3 Netlify free tier'da 504 timeout veriyor
-  const model = "dall-e-2";
+  // dall-e-2: response_format parametresi KALDIRILDI (desteklenmiyor, 500 hatasına yol açıyordu)
+  const reqBody = {
+    model: "dall-e-2",
+    prompt: finalPrompt,
+    n: 1,
+    size: size
+  };
 
   try {
-    const reqBody = {
-      model: model,
-      prompt: finalPrompt,
-      n: 1,
-      size: size,
-      response_format: "b64_json"  // dall-e-2: doğrudan base64 al (URL süresi dolar)
-    };
-
     const res = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: {
@@ -64,15 +58,15 @@ exports.handler = async (event) => {
       body: JSON.stringify(reqBody)
     });
 
-    // 504/HTML response kontrolü
-    const contentType = res.headers.get('content-type')||'';
+    const contentType = res.headers.get('content-type') || '';
     let data;
-    if(contentType.includes('application/json')){
+    if (contentType.includes('application/json')) {
       data = await res.json();
     } else {
       const txt = await res.text();
-      throw new Error("OpenAI "+res.status+": HTML response. dall-e-2 timeout? CT:"+contentType.slice(0,30));
+      throw new Error("OpenAI " + res.status + ": non-JSON response: " + txt.slice(0, 100));
     }
+
     if (!res.ok) {
       console.error("OpenAI error:", JSON.stringify(data));
       throw new Error(data.error?.message || "OpenAI API error " + res.status);
@@ -84,21 +78,20 @@ exports.handler = async (event) => {
     let imageUrl = null;
 
     if (item.b64_json) {
-      // dall-e-2 response_format=b64_json → doğrudan base64
       base64 = "data:image/png;base64," + item.b64_json;
     } else if (item.url) {
-      // Fallback: URL varsa çevir
       imageUrl = item.url;
-      const imgRes = await fetch(item.url);
-      const buffer = await imgRes.arrayBuffer();
-      base64 = "data:image/png;base64," + Buffer.from(buffer).toString("base64");
+      // URL'den base64'e çevir (8sn timeout)
+      try {
+        const imgRes = await fetch(item.url, { signal: AbortSignal.timeout(8000) });
+        const buffer = await imgRes.arrayBuffer();
+        base64 = "data:image/png;base64," + Buffer.from(buffer).toString("base64");
+      } catch {
+        // Timeout olursa URL'i döndür, frontend img src olarak kullanır
+        base64 = item.url;
+      }
     } else {
       throw new Error("No image data returned from API");
-    }
-
-    const wasRewritten = !!(revised && revised !== rawPrompt);
-    if (wasRewritten) {
-      console.warn("API rewrote prompt!");
     }
 
     return {
@@ -108,8 +101,8 @@ exports.handler = async (event) => {
         base64,
         url: imageUrl,
         revisedPrompt: revised,
-        wasRewritten,
-        model: model,
+        wasRewritten: !!(revised && revised !== rawPrompt),
+        model: "dall-e-2",
         sentPrompt: finalPrompt.slice(0, 300)
       })
     };
