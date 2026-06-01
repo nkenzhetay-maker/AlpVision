@@ -440,14 +440,39 @@ RULES:
 - If previous concept used a bear, use something entirely different now.
 - Surprise the editor with fresh visual thinking.`;
   }
-  // Feature/Analysis için içerik tipi bağlamını güçlendir
-  const contentTypeContext = ['feature','article','qa'].includes(ctype)
-    ? '\n\n[РЕЖИМ: Feature/Analysis — DALL-E ТОЛЬКО концептуальная иллюстрация, НЕТ стоковым фото]'
-    : '';
+  // İçerik türüne göre gazetecilik odağı
+  const ctypeInstructions = {
+    news:`
+[РЕЖИМ: НОВОСТЬ — Gazeteci refleksi]
+Soru sor: Bu haberde okuyucu ne hisseder? Ne konuşacak?
+Görsel: Tek güçlü an. Haberin duygusal çekirdeği. 0.5 saniyede anlaşılacak thumbnail.
+DALL-E: The Economist kapak tarzı — tek metaforik sahne, haberin özü, haber fotoğrafı değil.`,
+    infographic:`
+[РЕЖИМ: ИНФОГРАФИКА — Veri hikayesi]
+Soru sor: Hangi rakamlar önemli? Karşılaştırma nedir? Zaman çizelgesi?
+Görsel: Carousel. 5-7 slayt. Her slayt tek veri veya fikir.
+DALL-E kapak: Bold minimal data-driven. altPrompts: Her slayt için farklı background tonu.`,
+    feature:`
+[РЕЖИМ: FEATURE — Derinlikli makale]
+Soru sor: Arka plan nedir? Hangi paradoks var? Okuyucuyu ne düşündürür?
+Görsel: Sofistike çok katmanlı. The Economist long-read kapağı tarzı.
+DALL-E: Zengin metafor, ironi katmanları, matte gouache, karmaşık sembolizm.`,
+    video:`
+[РЕЖИМ: ВИДЕО — Thumbnail]
+Soru sor: İzleyici neden tıklar? Hangi an en çarpıcı?
+Görsel: Yüksek kontrast, bold yazı, sinematik çekim. Thumbnail gücü öncelik.`,
+    article:`
+[РЕЖИМ: СТАТЬЯ — Analitik makale]
+Soru sor: Ana argüman nedir? Okuyucu ne öğrenir?
+Görsel: Temiz editorial, düşündürücü. Net tek fikir, The Economist style.`,
+    qa:`
+[РЕЖИМ: Q&A — Soru-cevap]
+Soru sor: En merak edilen soru nedir?
+Görsel: İki kutuplu kompozisyon, soru-cevap enerjisi, diyalog metaforu.`
+  };
+  const ctypeCtx = ctypeInstructions[ctype] || ctypeInstructions.news;
 
-  const content = isQC
-    ? text
-    : `Тип контента: ${ctype}${contentTypeContext}\n\nТекст материала:\n${text.slice(0, 4000)}${trendSection}`;
+  
   const maxTok  = isQC ? 1200 : isFast ? 600 : 4000; // 4000: 20 altPrompts için yeterli
 
   // Claude önce, GPT-4o yedek
@@ -477,6 +502,9 @@ RULES:
   // Kategori filtrele
   const blocked = ['НОВОСТИ','NEWS','HABER','VIDEO','ВИДЕО','FEATURE','СТАТЬЯ','ARTICLE','INFOGRAPHIC','ИНФОГРАФИКА'];
   if (blocked.includes((parsed.category||'').toUpperCase().trim())) parsed.category = 'МИРОВЫЕ';
+  // TRT WORLD ve benzeri kaynak değerlerini temizle
+  const badSources = ['TRT WORLD','TRT RUSSIAN','TRT НА РУССКОМ','TRTWORLD','TRT','SOURCE'];
+  if (badSources.includes((parsed.source||'').toUpperCase().trim())) parsed.source = '';
 
   // ── Başarılı analiz → memory'e kaydet (arka planda) ──
   // Feature içerik için pexels sorgusunu temizle (stok yasak)
