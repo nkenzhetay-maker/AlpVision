@@ -16,10 +16,8 @@ exports.handler = async (event) => {
   }
 
   const rawPrompt = body.prompt || body.dallePrompt || "";
-  // gpt-image-1 geçerli boyutlar: 1024x1024, 1024x1536, 1536x1024, auto
-  const reqSize = body.size || "1024x1536";
-  const SIZE_MAP = {"1792x1024":"1536x1024","1024x1792":"1024x1536","512x512":"1024x1024","256x256":"1024x1024"};
-  const size = SIZE_MAP[reqSize] || (["1024x1024","1024x1536","1536x1024","auto"].includes(reqSize) ? reqSize : "1024x1536");
+  // dall-e-2 desteklenen boyutlar: 256x256, 512x512, 1024x1024
+  const size = "1024x1024";
 
   if (!rawPrompt) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "No prompt received", bodyKeys: Object.keys(body) }) };
@@ -44,16 +42,17 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "OPENAI_API_KEY missing" }) };
   }
 
-  // Model seçimi: gpt-image-1 (dall-e-3 artık kullanılmıyor)
-  const model = "gpt-image-1";
+  // Model: dall-e-2 (hızlı, 3-8 sn, Netlify free tier uyumlu)
+  // gpt-image-1 / dall-e-3 Netlify free tier'da 504 timeout veriyor
+  const model = "dall-e-2";
 
   try {
     const reqBody = {
       model: model,
       prompt: finalPrompt,
       n: 1,
-      size: size
-      // quality: "high" — gpt-image-1 için opsiyonel, şimdilik kaldırıldı
+      size: size,
+      response_format: "b64_json"  // dall-e-2: doğrudan base64 al (URL süresi dolar)
     };
 
     const res = await fetch("https://api.openai.com/v1/images/generations", {
@@ -72,7 +71,7 @@ exports.handler = async (event) => {
       data = await res.json();
     } else {
       const txt = await res.text();
-      throw new Error("OpenAI API HTML response (timeout?): " + res.status + " — " + txt.slice(0,80));
+      throw new Error("OpenAI "+res.status+": HTML response. dall-e-2 timeout? CT:"+contentType.slice(0,30));
     }
     if (!res.ok) {
       console.error("OpenAI error:", JSON.stringify(data));
@@ -85,10 +84,10 @@ exports.handler = async (event) => {
     let imageUrl = null;
 
     if (item.b64_json) {
-      // gpt-image-1 → doğrudan base64
+      // dall-e-2 response_format=b64_json → doğrudan base64
       base64 = "data:image/png;base64," + item.b64_json;
     } else if (item.url) {
-      // URL döndü → base64'e çevir
+      // Fallback: URL varsa çevir
       imageUrl = item.url;
       const imgRes = await fetch(item.url);
       const buffer = await imgRes.arrayBuffer();
