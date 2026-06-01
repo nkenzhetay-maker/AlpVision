@@ -570,7 +570,7 @@ let _triedConcepts  = [];
 const S = {
   lang:'ru', mode:'photo', contentType:'news', fastMode:false,
   photoTpl:'logo_only', aiTpl:'photo_panel',
-  colorScheme:'dark', urgency:'normal', altPrompts:[], altTotal:0, _rawAnalysis:null, altImages:[], altBgRunning:false,
+  colorScheme:'dark', urgency:'normal', altPrompts:[], altTotal:0, _rawAnalysis:null, altImages:[], altBgRunning:false, _inspiration:null,
   userPhotoB64:null, bg:null,
   dalleB64:null, dallePrompt:'', pexelsQ:'',
   hl:'', sub:'', cat:'', src:'',
@@ -910,6 +910,12 @@ async function analyze(){
   S.approved=false;S.qcDone=false;
   setSt(t('analyzing'),'on',0,null);
   _elogEntries=[]; _bestAltScore=0; _bestAltIdx=0; _altIdx=0;
+  // TRT Russian içerik referansını arka planda çek (opsiyonel)
+  if(!S._inspiration){
+    fetch('/api/fetch-inspiration',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      .then(r=>r.json()).then(d=>{ S._inspiration=d; _elogAdd('✓ TRT Russian referansı yüklendi: '+d.source); })
+      .catch(()=>{});
+  }
   _elogAdd('=== Новый анализ ===');
   _elogAdd('Тип контента: '+S.contentType+' | Режим: '+(S.fastMode?'быстрый':'стандарт'));
   _progressTimer = _startProgress(['📰 Метни analiz ediyorum...','✍️ Editöryal mantık kuruyorum...','🎨 Economist metaforu geliştiriyorum...','🖼 20 konsept için DALL-E promptları hazırlıyorum...'], 18);
@@ -1324,6 +1330,11 @@ function buildCard(tpl, bg, platform, forExport){
 
 // ── RENDER PREVIEW (responsive to container) ──
 function renderPreview(){
+  // Инфографика modu — carousel önizleme
+  if(S.contentType === 'infographic' && S.infSlides && S.infSlides.length > 0){
+    _renderInfographicCarousel();
+    return;
+  }
   if(S.mode==='ai'){S.hl=document.getElementById('m-hl').value;S.sub=document.getElementById('m-sub').value;S.cat=document.getElementById('m-cat').value;S.src=document.getElementById('m-src').value;}
   else{S.hl=document.getElementById('p-hl').value;S.sub=document.getElementById('p-sub').value;S.cat=document.getElementById('p-cat').value;S.src=document.getElementById('p-src').value;}
 
@@ -1408,25 +1419,58 @@ async function _generateAltBackground(){
   if(!S.analyzing) setSt('✓ '+S.altImages.length+'/20 konsept hazır','',null,null);
 }
 
-// ── ALTERNATİF: sadece bir sonraki görsel ──
+// ── ALTERNATİF: sıradaki görsel göster (yoksa üret) ──
 async function generateAlt(){
-  if(!S.altImages || S.altImages.length === 0){
-    setSt('⚠ Önce Анализировать yapın','err'); return;
+  if(!S.hl && !S.dalleB64){ setSt('⚠ Önce Анализировать yapın','err'); return; }
+  if(S.analyzing){ setSt('⏳ İşlem devam ediyor...','on'); return; }
+
+  // Sıradaki index
+  const nextIdx = (_altIdx + 1) % Math.max(S.altImages.length, 1);
+  const nextImg = S.altImages[nextIdx];
+
+  // Görsel hazırsa: anında göster
+  if(nextImg){
+    _altIdx = nextIdx;
+    _showAltImage(nextImg, nextIdx);
+    return;
   }
-  _altIdx = (_altIdx + 1) % S.altImages.length;
-  const imgB64 = S.altImages[_altIdx];
-  const ready = S.altImages.length;
-  const total = S.altPrompts.length || 20;
-  const stratName = _getStratName(_altIdx);
 
-  S.dalleB64 = imgB64;
-  S.bg = {type:'dalle', url:imgB64, thumb:imgB64};
+  // Hazır değilse: on-demand üret
+  const promptIdx = nextIdx % Math.max(S.altPrompts.length, 1);
+  const prompt = S.altPrompts[promptIdx] || S.dallePrompt;
+  if(!prompt){ setSt('⚠ Prompt yok — yeniden analiz edin','err'); return; }
 
-  // Foto grid güncelle
-  const g = document.getElementById('ph-grid');
+  const stratName = _getStratName(nextIdx);
+  S.analyzing = true;
+  const btn = document.querySelector('.btn-act[onclick*="generateAlt"]');
+  if(btn){ btn.disabled=true; btn.textContent='⏳...'; }
+
+  setSt('🎨 Alt '+(nextIdx+1)+' ['+stratName+'] — üretiliyor...','on',50,20);
+
+  try{
+    const bg = await genDalle(prompt);
+    if(!bg || !bg.base64) throw new Error('boş görsel');
+    // Diziye ekle (sıralı doldurmak için)
+    while(S.altImages.length <= nextIdx) S.altImages.push(null);
+    S.altImages[nextIdx] = bg.base64;
+    _altIdx = nextIdx;
+    _showAltImage(bg.base64, nextIdx);
+    _elogAdd('✓ Alt '+(nextIdx+1)+' on-demand üretildi');
+  }catch(err){
+    setSt('❌ Alt '+(nextIdx+1)+': '+err.message.slice(0,50),'err');
+    _elogAdd('❌ '+stratName+': '+err.message);
+  }finally{
+    S.analyzing=false;
+    if(btn){ btn.disabled=false; btn.textContent='↻ Альтернатива'; }
+  }
+}
+
+function _showAltImage(imgB64, idx){
+  S.dalleB64=imgB64; S.bg={type:'dalle',url:imgB64,thumb:imgB64};
+  const g=document.getElementById('ph-grid');
   if(g){
-    const existing = g.querySelector('.ph-thumb[data-type="dalle"]');
-    if(existing) existing.querySelector('img').src = imgB64;
+    const ex=g.querySelector('.ph-thumb[data-type="dalle"]');
+    if(ex) ex.querySelector('img').src=imgB64;
     else{
       g.innerHTML='';
       const dv=document.createElement('div'); dv.className='ph-thumb on'; dv.dataset.type='dalle';
@@ -1435,9 +1479,10 @@ async function generateAlt(){
     }
   }
   renderPreview();
-  const bgStatus = ready < total ? ' · '+(total-ready)+' üretiliyor...' : ' · tümü hazır';
-  setSt('✓ Alt '+(_altIdx+1)+'/'+ready+' ['+stratName+']'+bgStatus,'',null,null);
-  _elogAdd('Alt gösteriliyor: '+(_altIdx+1)+'/'+ready+' ['+stratName+']');
+  const ready=S.altImages.filter(Boolean).length;
+  const total=Math.max(S.altPrompts.length,20);
+  const bgTxt = S.altBgRunning ? ' · '+(total-ready)+' üretiliyor...' : '';
+  setSt('✓ Alt '+(idx+1)+'/'+ready+' ['+_getStratName(idx)+']'+bgTxt,'',null,null);
 }
 
 function _getStratName(i){
@@ -1445,6 +1490,96 @@ function _getStratName(i){
     'Harita','El','Denge','Gölge','Kırılma','İkon','Domino',
     'Maske','İp','Kapı','Yangın','Satranç','Köprü','Yansıma'];
   return 'Economist·'+(names[i%names.length]||i);
+}
+
+
+// ── İNFOGRAFİK KAROSELİ ──
+function _renderInfographicCarousel(){
+  const wrap = document.getElementById('single-wrap');
+  if(!wrap) return;
+  wrap.style.display='flex';
+  document.getElementById('empty').style.display='none';
+
+  const slides = S.infSlides || [];
+  const idx = S._infIdx || 0;
+  const slide = slides[idx];
+  if(!slide){ wrap.innerHTML=''; return; }
+
+  const canvas = document.getElementById('single-canvas');
+  const p = PLATFORMS[S.prevPlatIdx] || PLATFORMS[0];
+  const vw = (document.querySelector('.center')||document.body).offsetWidth - 32;
+  const vh = (document.querySelector('.prev-body')||document.body).offsetHeight - 32;
+  const ratio = 4/5; // Instagram portrait
+  let cw = Math.min(vw, vh*ratio);
+  let ch = cw/ratio;
+  canvas.style.width=cw+'px'; canvas.style.height=ch+'px';
+  canvas.style.position='relative'; canvas.style.overflow='hidden';
+
+  const bg = slide.bg || S.bg;
+  const bgCss = bg && bg.url ? 'url('+bg.url+') center/cover no-repeat' : '#DCD0BA';
+
+  canvas.innerHTML = _buildInfSlide(slide, cw, ch, bgCss, idx, slides.length);
+}
+
+function _buildInfSlide(sl, w, h, bgCss, idx, total){
+  const isTitle = idx === 0;
+  const hasNum = sl.stat && sl.stat.length > 0;
+  const scheme = sl.scheme || 'beige';
+  const bgColors = {beige:'#DCD0BA',navy:'#01203F',red:'#B11731',dark:'#1C1C1C',teal:'#042E58'};
+  const bgFill = bgColors[scheme] || bgColors.beige;
+  const textColor = scheme==='beige' ? '#1C1C1C' : '#ffffff';
+  const logo = trtLogo(scheme !== 'beige');
+
+  let content = '';
+  if(hasNum){
+    content = '<div style="font-family:Oswald,sans-serif;font-size:clamp(36px,12vw,80px);font-weight:700;color:'+(scheme==='beige'?'#042E58':'#fff')+';line-height:1;margin-bottom:8px;">'+sl.stat+'</div>';
+  }
+  content += '<div style="font-family:Manrope,sans-serif;font-size:clamp(13px,3.5vw,20px);font-weight:'+(isTitle?700:600)+';color:'+textColor+';line-height:1.3;margin-bottom:6px;">'+sl.title+'</div>';
+  if(sl.body) content += '<div style="font-family:Manrope,sans-serif;font-size:clamp(10px,2.5vw,14px);color:'+textColor+';opacity:.85;line-height:1.5;">'+sl.body+'</div>';
+  
+  // Fotoğraf varsa üstte göster
+  const photoSection = sl.photoUrl ? '<div style="position:absolute;top:0;left:0;right:0;height:55%;background:url('+sl.photoUrl+') center/cover no-repeat;"></div><div style="position:absolute;top:50%;left:0;right:0;height:60%;background:linear-gradient(to bottom,transparent,'+bgFill+' 40%);"></div>' : '';
+
+  // Slide göstergesi
+  const dots = Array.from({length:total},(_,i)=>'<span style="width:6px;height:6px;border-radius:50%;background:'+(i===idx?textColor:textColor+'55')+';margin:0 2px;display:inline-block;"></span>').join('');
+
+  return '<div style="position:relative;width:100%;height:100%;background:'+bgFill+';overflow:hidden;">'
+    +(sl.photoUrl ? photoSection : '')
+    +logo
+    +'<div style="position:absolute;'+(sl.photoUrl?'bottom:8%':'top:50%;transform:translateY(-50%)')+';left:6%;right:6%;'+(sl.photoUrl?'':'text-align:left')+'">'+content+'</div>'
+    +'<div style="position:absolute;bottom:3%;left:50%;transform:translateX(-50%);display:flex;align-items:center;">'+dots+'</div>'
+    +'<div style="position:absolute;bottom:3%;left:5%;font-size:clamp(8px,1.5vw,10px);color:'+textColor+';opacity:.5;font-family:Manrope,sans-serif;">'+(idx+1)+' / '+total+'</div>'
+    +'<button onclick="_infPrev()" style="position:absolute;left:2%;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;">‹</button>'
+    +'<button onclick="_infNext()" style="position:absolute;right:2%;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;">›</button>'
+    +'</div>';
+}
+
+function _infNext(){ if(!S.infSlides) return; S._infIdx=((S._infIdx||0)+1)%S.infSlides.length; _renderInfographicCarousel(); }
+function _infPrev(){ if(!S.infSlides) return; S._infIdx=((S._infIdx||0)+S.infSlides.length-1)%S.infSlides.length; _renderInfographicCarousel(); }
+
+// Analiz sonucunda infographic slides oluştur
+function _buildInfSlides(d){
+  if(!d) return;
+  const slides = [];
+  // Slide 1: Kapak
+  slides.push({title:d.headline||'', body:d.subheadline||'', scheme:'navy', photoUrl: S.bg&&S.bg.url&&S.bg.url.length>100?S.bg.url:null});
+  // Slide 2: Temel bilgi
+  if(d.editorialAnalysis){
+    const ea=d.editorialAnalysis;
+    slides.push({title:'Суть', body:ea.realCenter||'', scheme:'beige'});
+    if(ea.geopolitics) slides.push({title:'Геополитика', body:ea.geopolitics||'', scheme:'teal'});
+    if(ea.socialMedia) slides.push({title:'Значение', body:ea.socialMedia||'', scheme:'beige'});
+  }
+  // Slide 3-N: Konseptler
+  if(d.concepts && Array.isArray(d.concepts)){
+    d.concepts.slice(0,3).forEach(con=>{
+      if(con.headline) slides.push({title:con.headline||'', body:con.description||'', scheme:'dark'});
+    });
+  }
+  // Son slide: Kapanış
+  slides.push({title:'TRT НА РУССКОМ', body:'Следите за новостями', scheme:'navy'});
+  S.infSlides=slides; S._infIdx=0;
+  _elogAdd('✓ İnfografik: '+slides.length+' slayt oluşturuldu');
 }
 
 
@@ -1796,25 +1931,66 @@ function updateMemoryCounter(count){
   if(el && cnt){ el.style.display=''; cnt.textContent=count; }
 }
 
-// Utвердить → Все форматы
-async function approveAll(){
+// Platform seçim modalı
+function approveAll(){
   if(!S.hl && !S.dalleB64){ setSt('⚠ Önce görsel oluşturun','err'); return; }
-  const btn = document.querySelector('.btn-approve');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ İndiriliyor...'; }
   S.approved = true;
-  setSt('📥 Tüm formatlar hazırlanıyor...','on');
-  await exportAll();
-  if(btn){ btn.disabled=false; btn.textContent='✓ Утвердить → Все форматы'; }
+  _showPlatformModal();
 }
 
-async function exportAll(){
-  const platforms = PLATFORMS.slice(0, 6);
+function _showPlatformModal(){
+  let modal = document.getElementById('platform-modal');
+  if(modal){ modal.style.display='flex'; return; }
+  modal = document.createElement('div');
+  modal.id='platform-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:center;justify-content:center;';
+  const platforms = PLATFORMS.slice(0,6);
+  const rows = platforms.map(p=>{
+    const colors={instagram:'#E1306C',telegram:'#2CA5E0',twitter:'#1DA1F2',youtube:'#FF0000',facebook:'#1877F2',web:'#042E58'};
+    const col = colors[p.id]||'#042E58';
+    const div = document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--ui-s);border-radius:6px;margin-bottom:8px;';
+    div.innerHTML='<div><div style="font-size:.75rem;font-weight:700;color:'+col+'">'+p.label+'</div>'
+      +'<div style="font-size:.6rem;color:var(--muted)">'+p.w+'x'+p.h+'px</div></div>';
+    const btn=document.createElement('button');
+    btn.style.cssText='background:'+col+';color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:.65rem;font-weight:700;cursor:pointer;';
+    btn.textContent='📥 İndir';
+    btn.onclick=()=>_dlPlatform(p.id);
+    div.appendChild(btn);
+    return div.outerHTML;
+  }).join('');
+  const inner = document.createElement('div');
+  inner.style.cssText = 'background:var(--ui-p);border-radius:8px;padding:20px;min-width:320px;max-width:400px;border:1px solid var(--ui-b);';
+  const hdr = document.createElement('div');
+  hdr.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;';
+  hdr.innerHTML='<span style="font-size:.8rem;font-weight:700;color:var(--fg)">📥 Format seç — indir</span>';
+  const closeBtn=document.createElement('button');
+  closeBtn.textContent='✕'; closeBtn.style.cssText='background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;';
+  closeBtn.onclick=()=>{modal.style.display='none';};
+  hdr.appendChild(closeBtn); inner.appendChild(hdr);
+  inner.insertAdjacentHTML('beforeend', rows);
+  const dlAll=document.createElement('button');
+  dlAll.textContent='📥 Tüm formatları indir';
+  dlAll.style.cssText='width:100%;margin-top:12px;background:#042E58;color:#fff;border:none;border-radius:4px;padding:8px;font-size:.65rem;font-weight:700;cursor:pointer;';
+  dlAll.onclick=_dlAll; inner.appendChild(dlAll);
+  modal.appendChild(inner); document.body.appendChild(modal);
+}
+
+async function _dlPlatform(pid){
+  setSt('📥 '+pid+' hazırlanıyor...','on');
+  try{ await exp1(pid); setSt('✓ '+pid+' indirildi','',null,null); }
+  catch(e){ setSt('❌ '+e.message,'err'); }
+}
+
+async function _dlAll(){
+  document.getElementById('platform-modal').style.display='none';
+  setSt('📥 Tüm formatlar...','on');
   let ok=0;
-  for(const p of platforms){
-    try{ await exp1(p.id); ok++; }catch(e){ console.warn('Export skip:',e.message); }
-    await new Promise(r=>setTimeout(r,800));
+  for(const p of PLATFORMS.slice(0,6)){
+    try{ await exp1(p.id); ok++; }catch(e){ console.warn(e); }
+    await new Promise(r=>setTimeout(r,700));
   }
-  setSt('✓ '+ok+' формат скачан','',null,null);
+  setSt('✓ '+ok+' format indirildi','',null,null);
 }
 
 window.addEventListener('resize',()=>{if(S.userPhotoB64||S.hl)renderPreview();});
