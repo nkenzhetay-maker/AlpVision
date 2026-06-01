@@ -65,7 +65,15 @@ exports.handler = async (event) => {
       body: JSON.stringify(reqBody)
     });
 
-    const data = await res.json();
+    // 504/HTML response kontrolü
+    const contentType = res.headers.get('content-type')||'';
+    let data;
+    if(contentType.includes('application/json')){
+      data = await res.json();
+    } else {
+      const txt = await res.text();
+      throw new Error("OpenAI API HTML response (timeout?): " + res.status + " — " + txt.slice(0,80));
+    }
     if (!res.ok) {
       console.error("OpenAI error:", JSON.stringify(data));
       throw new Error(data.error?.message || "OpenAI API error " + res.status);
