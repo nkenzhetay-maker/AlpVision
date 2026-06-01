@@ -248,7 +248,29 @@ SADECE GEÇERLİ JSON DÖNDÜR:
   "colorScheme":"dark|red|teal|gold|grey",
   "template":"typographic|photo_panel|split|feature|ec_illustrated|ec_text_only",
   "dallePrompt":"English DALL-E prompt, The Economist editorial illustration style — metaforik sahne, matte gouache, no text, solid background, 40% negative space",
-  "altPrompts":["prompt1","prompt2","prompt3","prompt4","prompt5","prompt6","prompt7","prompt8","prompt9","prompt10","prompt11","prompt12","prompt13","prompt14","prompt15","prompt16","prompt17","prompt18","prompt19","prompt20"],
+  "altPrompts":[
+    "PROMPT_1: [The Economist cover style — symbolic metaphor scene 1 — matte gouache, no text]",
+    "PROMPT_2: [scale asymmetry — one giant vs tiny element]",
+    "PROMPT_3: [bold black silhouette on solid color]",
+    "PROMPT_4: [conceptual collage of symbolic fragments]",
+    "PROMPT_5: [abstract geometry blocks as concept]",
+    "PROMPT_6: [split diptych — two contrasting halves]",
+    "PROMPT_7: [geographic shape as political metaphor]",
+    "PROMPT_8: [symbolic hands gesture — irony]",
+    "PROMPT_9: [balance scale — power imbalance]",
+    "PROMPT_10: [object casting ironic shadow]",
+    "PROMPT_11: [crack or fracture symbolizing conflict]",
+    "PROMPT_12: [ultra-minimalist single icon — max negative space]",
+    "PROMPT_13: [domino chain-reaction metaphor]",
+    "PROMPT_14: [mask or facade revealing hidden truth]",
+    "PROMPT_15: [puppet strings — control metaphor]",
+    "PROMPT_16: [door or wall as barrier/opening]",
+    "PROMPT_17: [fire storm — restrained crisis symbol]",
+    "PROMPT_18: [chessboard geopolitical pieces]",
+    "PROMPT_19: [bridge gap or connection symbol]",
+    "PROMPT_20: [mirror reflection — duality contrast]"
+  ],
+  "ALTPROMPTS_INSTRUCTION": "Replace each PROMPT_N placeholder above with a REAL, SPECIFIC DALL-E prompt describing the actual scene based on THIS article. Each must be 1-2 sentences in English, describe a unique The Economist-style editorial illustration, matte gouache texture, flat colors, NO text anywhere, solid background. Make each conceptually different from the others.",
   "pexelsQuery":"English 4 words (SADECE news/video içerik tipinde kullanılır)",
   "platformNotes":{"instagram":"Rusça","telegram":"Rusça"},
   "qualityGate":"passed|failed",
@@ -426,7 +448,7 @@ RULES:
   const content = isQC
     ? text
     : `Тип контента: ${ctype}${contentTypeContext}\n\nТекст материала:\n${text.slice(0, 4000)}${trendSection}`;
-  const maxTok  = isQC ? 1200 : isFast ? 600 : 2200;
+  const maxTok  = isQC ? 1200 : isFast ? 600 : 4000; // 4000: 20 altPrompts için yeterli
 
   // Claude önce, GPT-4o yedek
   let parsed = null;
