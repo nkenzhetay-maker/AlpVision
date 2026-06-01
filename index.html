@@ -1404,13 +1404,18 @@ async function _generateAltBackground(){
         S.altImages.push(bg.base64);
         done++;
         _elogAdd('✓ Alt '+done+'/20 hazır (arka plan)');
-        // Status güncelle sadece meşgul değilsek
-        if(!S.analyzing){
-          setSt('🎨 '+done+'/20 görsel hazır — Альтернатива deneyin','',null,null);
-        }
+        if(!S.analyzing) setSt('🎨 '+done+'/20 görsel hazır — Альтернатива deneyin','',null,null);
       }
     }catch(e){
-      _elogAdd('⚠ Alt bg #'+(i+2)+': '+e.message.slice(0,40));
+      const msg = e.message||'';
+      // Billing/quota hatası: daha fazla deneme — para israf etme
+      if(msg.toLowerCase().includes('billing') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('limit')){
+        _elogAdd('🚫 OpenAI kredi bitti — arka plan üretimi durduruldu');
+        setSt('🚫 OpenAI kredi bitti: platform.openai.com/billing adresinden ekle','err');
+        S.altBgRunning = false;
+        return; // döngüyü tamamen bitir
+      }
+      _elogAdd('⚠ Alt bg #'+(i+2)+': '+msg.slice(0,50));
     }
     // Rate limit koruması
     await new Promise(r=>setTimeout(r,500));
@@ -1457,7 +1462,12 @@ async function generateAlt(){
     _showAltImage(bg.base64, nextIdx);
     _elogAdd('✓ Alt '+(nextIdx+1)+' on-demand üretildi');
   }catch(err){
-    setSt('❌ Alt '+(nextIdx+1)+': '+err.message.slice(0,50),'err');
+    const em=err.message||'';
+    if(em.toLowerCase().includes('billing')||em.toLowerCase().includes('quota')||em.toLowerCase().includes('limit')){
+      setSt('🚫 OpenAI kredi bitti — platform.openai.com/billing adresinden ekle','err');
+    } else {
+      setSt('❌ Alt '+(nextIdx+1)+': '+em.slice(0,50),'err');
+    }
     _elogAdd('❌ '+stratName+': '+err.message);
   }finally{
     S.analyzing=false;
