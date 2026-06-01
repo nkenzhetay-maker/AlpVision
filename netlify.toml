@@ -1,10 +1,6 @@
 [build]
   functions = "functions"
 
-[functions]
-  node_bundler = "esbuild"
-
-# generate-bg çok uzun sürüyor — max timeout
 [functions."generate-bg"]
   timeout = 26
 
@@ -13,6 +9,3 @@
 
 [functions."vision-qc"]
   timeout = 26
-
-[functions."fetch-inspiration"]
-  timeout = 10
