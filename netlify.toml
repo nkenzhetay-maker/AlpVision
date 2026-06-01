@@ -1,7 +1,18 @@
 [build]
   functions = "functions"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+[functions]
+  node_bundler = "esbuild"
+
+# generate-bg çok uzun sürüyor — max timeout
+[functions."generate-bg"]
+  timeout = 26
+
+[functions."analyze"]
+  timeout = 26
+
+[functions."vision-qc"]
+  timeout = 26
+
+[functions."fetch-inspiration"]
+  timeout = 10
