@@ -227,76 +227,19 @@ TRT POLİTİKA: ЦАХАЛ→Армия Израиля | ИГИЛ→ДАЕШ | �
 
 
 ══════════════════════════════════════════════════════════
-20 VİZÜEL STIL ŞABLONu — Her biri farklı gazetecilik estetiği
-Bu makalenin içeriğini HER STİLE göre yorumla ve altPrompts dizisini doldur.
-PLACEHOLDER DEĞİL — Her prompt bu makale için gerçek, spesifik sahneyi tanımlamalı.
-══════════════════════════════════════════════════════════
-
-STIL 1 — ECONOMIST İLLÜSTRASYON (Krem zemin, matte gouache)
-Prompt formatı: "Flat matte gouache editorial illustration on solid cream #F2F2F0 background. [Bu makalenin ana ironisini anlatan tek sembolik sahne]. Stylized flat figures, sharp ink outlines, 45% negative space. NO text anywhere. The Economist cover illustration style."
-
-STIL 2 — ÖLÇEK ASİMETRİSİ (Devasa vs. küçük güç dengesi)
-Prompt formatı: "Matte gouache illustration. Giant [GÜÇLÜ UNSUR] towering over tiny [ZAYIF UNSUR], showing power asymmetry of this story. Solid yellow or navy background. Editorial irony. NO text. The Economist style."
-
-STIL 3 — NESNE DAMGASI / KOLAJ (DENIED damgası tarzı)
-Prompt formatı: "Vintage collage editorial illustration. [Bu haberin sembolü olan nesne] covered with [ironiyi anlatan damga/etiket]. Matte gouache on cream background. Layered, tactile texture. NO text. Economist collage style."
-
-STIL 4 — DİPTİK KONTRAST (İki zıt yarı)
-Prompt formatı: "Split composition illustration. Left half: [BİR TARAF/DURUM]. Right half: [ZIT TARAF/DURUM]. Strong vertical divide. Flat editorial colors, matte gouache. NO text. Economist diptych cover style."
-
-STIL 5 — SARI ZEMIN BOLD (Saturated bold Economist sarısı)
-Prompt formatı: "Bold flat illustration on saturated yellow #F5C400 background. [Bu makalenin figürü veya sembolü] in simplified flat editorial style. Strong silhouette, high contrast. NO text. Classic Economist yellow cover."
-
-STIL 6 — TİPOGRAFİK NESNE (Harf/kelime = görsel unsur)
-Prompt formatı: "Abstract editorial illustration where [BU HABERİN ANAHTAR KAVRAMI] is visually constructed from [sembolik nesneler — örn: drones, coins, flags]. Dark bold composition. NO literal text. Economist typographic-object style."
-
-STIL 7 — VERİ GRAFİĞİ SAHNESI (Minimal chart aesthetic)
-Prompt formatı: "Clean minimal data visualization illustration on off-white background. Single ascending/descending bar chart or timeline representing [BU HABERİN VERİSİ]. Red #B11731 bars on cream. Source notation style. NO photos. Economist data graphic."
-
-STIL 8 — SİYAH BEYAZ + RENK YIKAMA (Duotone portrait)
-Prompt formatı: "Duotone editorial treatment. [Bu haberle ilgili sembolik figür/obje] in black and white photography style with [TEK RENK — red/teal/navy] color wash overlay. Graphic, high contrast. Economist editorial photo treatment."
-
-STIL 9 — SİNEMATİK FULL-BLEED (Dramatik atmosfer)
-Prompt formatı: "Cinematic widescreen editorial scene. [Bu haberin dramatik momenti] photographed from [açı]. Dark atmospheric lighting, single spotlight. Gradient bottom shadow for text. Photorealistic but editorial quality. NO text overlay."
-
-STIL 10 — BÜYÜK RAKAM / TEK STAT (İstatistik dominant)
-Prompt formatı: "Editorial typography illustration. Giant [BU HABERİN EN ÇARPICI RAKAMI/İSTATİSTİĞİ] in bold Oswald-style font dominates frame. Brief context line below in smaller serif. Off-white background. Economist data-stat style."
-
-STIL 11 — SİLÜET SOLID (Bold siyah şekil, düz zemin)
-Prompt formatı: "Ultra bold black silhouette of [BU HABERİN SİMGESİ] on solid [RENK — navy/red/yellow] background. Zero detail inside silhouette, maximum negative space. Single powerful shape. Economist minimal cover."
-
-STIL 12 — SULUBOYA PORTRE (Sketch illustration, kişi odaklı)
-Prompt formatı: "Detailed watercolor and ink portrait sketch of [BU HABERİN ANAHTAR KİŞİSİ veya SİMGELEDİĞİ TİP]. Loosely rendered with expressive brushstrokes. White or cream background, US/European flag color accent strokes. Economist 'By Invitation' portrait style."
-
-STIL 13 — TRT HABER KARANLIK (Dark photo overlay, Kiril)
-Prompt formatı: "Dramatic dark editorial photograph of [BU HABERİN SAHNESI]. Heavy bottom gradient overlay (transparent to black) for Cyrillic headline space. TRT Russian breaking news aesthetic. High drama, journalistic realism."
-
-STIL 14 — KONSTRÜKTİVİST (Diagonal geometri, kırmızı/siyah)
-Prompt formatı: "Soviet constructivist poster influence. Diagonal red and black geometric shapes. [BU HABERİN GÜCÜ VE GERİLİMİNİ] expressed through bold angular composition. Flat colors, strong diagonals, monumental energy. NO text."
-
-STIL 15 — MİNİMALİST İKON (Ultra minimal, max boşluk)
-Prompt formatı: "Ultra-minimalist single icon on [SOLID RENK] background. Entire story told through ONE simple geometric or symbolic shape: [BU HABERİN ÖZÜNÜ ANLATAN TEK SEMBOL]. 60% negative space. Premium icon design quality. NO text."
-
-STIL 16 — GÖLGE İRONİSİ (Nesne + ironiyi açığa çıkaran gölge)
-Prompt formatı: "Editorial illustration. A [MASUM GÖRÜNEN NESNE] casts a shadow revealing [GERÇEKLİĞİ/TEHLIKEI/İRONİSİ]. Single light source, dramatic. Cream or grey background. NO text. Economist shadow-irony style."
-
-STIL 17 — KUKLA İPLERİ (Kontrol/manipülasyon metaforu)
-Prompt formatı: "Editorial illustration. [KONTROL EDEN GÜÇTÜR] holding puppet strings attached to [KONTROL EDİLEN — ülke/kurum/kişi sembolü]. Matte gouache, flat editorial. Power and control metaphor. NO text. Economist manipulation style."
-
-STIL 18 — SATRANÇ / JEOPOLİTİK OYUN (Taş/strateji metaforu)
-Prompt formatı: "Geopolitical chessboard editorial illustration. Chess pieces representing [BU HABERİN AKTÖRLERI] in strategic positions on board representing [JEOGRAFİ/ALAN]. Matte gouache, navy and cream. NO text. Economist strategy cover."
-
-STIL 19 — BRÜTALİST TİPOGRAFİ (Ham enerji, yüksek kontrast)
-Prompt formatı: "Brutalist editorial design. Raw typography energy expressed through abstract shapes. [BU HABERİN ÇARPICILIĞINI] captured in high-contrast black and white with single red accent. Bold, unapologetic, aggressive editorial aesthetic."
-
-STIL 20 — DOCUMENTARY / RÖPORTAJ (Gerçekçi, gazeteci gözü)
-Prompt formatı: "Documentary editorial photograph aesthetic. [BU HABERİN EN İNSANİ DETAYI — bir nesne, bir el, bir an]. Extreme close-up or revealing angle. Gritty texture, grain, honest journalism quality. Photojournalism award style."
-
-══════════════════════════════════════════════════════════
-TALIMAT: Yukarıdaki 20 stilden her biri için bu makaleye özel gerçek bir DALL-E promptu yaz.
-altPrompts[0] = Stil 1, altPrompts[1] = Stil 2, ... altPrompts[19] = Stil 20
-Her prompt İngilizce, 1-3 cümle, NO text anywhere on canvas.
-Editöryal zeka: hangi stil bu içeriğe en güçlü sonucu verir? dallePrompt = o stil.
+20 GÖRSEL STİL — Bu habere özel DALL-E promptu yaz. NO text on any image. Completely different concepts.
+S1=Economist cream gouache, symbolic metaphor | S2=Giant vs tiny scale asymmetry yellow bg
+S3=Stamp/collage on object cream bg | S4=Split diptych two contrasting halves
+S5=Bold figure saturated yellow Economist | S6=Concept from objects (drones=WAR) dark bg
+S7=Minimal bar chart red on off-white | S8=Duotone BW + color wash editorial
+S9=Cinematic dramatic dark atmospheric | S10=Huge statistic number dominates frame
+S11=Bold black silhouette solid color bg | S12=Watercolor ink portrait sketch
+S13=TRT dark news dramatic contrast | S14=Constructivist diagonal red/black
+S15=Minimalist single icon 60% space | S16=Object casts ironic revealing shadow
+S17=Puppet strings control metaphor | S18=Geopolitical chessboard actors
+S19=Brutalist BW + red accent raw | S20=Documentary extreme close-up grain
+altPrompts[0..19]=S1..S20 for THIS article. 2 sentences English each.
+dallePrompt = strongest style for this content.
 ══════════════════════════════════════════════════════════
 
 SADECE GEÇERLİ JSON DÖNDÜR:
@@ -446,7 +389,7 @@ function buildFallback(text) {
     headline:text.slice(0,60).toUpperCase().split(/\s+/).slice(0,7).join(' '),
     subheadline:"",category:"МИРОВЫЕ",source:"TRT Russian",urgency:"normal",
     colorScheme:"dark",template:"photo_panel",
-    dallePrompt:"dramatic news background dark atmospheric lighting no people no faces cinematic",
+    dallePrompt:"Flat matte gouache editorial illustration on cream background, single symbolic object telling this story, sharp ink lines, 40% negative space, no text no letters anywhere, The Economist cover style",
     pexelsQuery:"news breaking dramatic",
     platformNotes:{instagram:"Базовый режим",telegram:"Базовый режим"},
     qualityGate:"failed",visualNote:"Повторите анализ"
