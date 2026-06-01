@@ -1283,7 +1283,7 @@ function buildCard(tpl, bg, platform, forExport){
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.52rem,1.4vw,.86rem);font-weight:400;color:rgba(255,255,255,.62);line-height:1.4;max-width:88%;">${S.sub}</div>`:''}
       <div style="margin-top:clamp(7px,1.6vw,14px);display:flex;align-items:center;gap:7px;">
         <div style="width:22px;height:2px;background:${accent};border-radius:1px;"></div>
-        <span style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.78vw,.48rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${S.src||'TRT RUSSIAN'}</span>
+        <span style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.78vw,.48rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${S.src||''}</span>
       </div>
     </div>`;
 
@@ -1324,7 +1324,7 @@ function buildCard(tpl, bg, platform, forExport){
       <div style="width:20px;height:3px;background:${accent};border-radius:2px;margin-bottom:clamp(5px,1.2vw,11px);"></div>
       <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.5vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(4px,.95vw,10px);">${S.hl||'ЗАГОЛОВОК'}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.25vw,.74rem);font-weight:400;color:rgba(255,255,255,.65);line-height:1.4;">${S.sub}</div>`:''}
-      <div style="margin-top:clamp(4px,.95vw,9px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.46rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${S.src||'TRT RUSSIAN'}</div>
+      <div style="margin-top:clamp(4px,.95vw,9px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.46rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${S.src||''}</div>
     </div>`;
 }
 
