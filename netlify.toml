@@ -1,6 +1,12 @@
 [build]
   functions = "functions"
 
+# /api/* → /.netlify/functions/* yönlendirmesi
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
 [functions."generate-bg"]
   timeout = 26
 
