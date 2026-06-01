@@ -926,8 +926,17 @@ async function analyze(){
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Error');
 
-    // Ham analiz verisi kaydet (altPrompts dahil)
+    // Ham analiz verisi kaydet
     S._rawAnalysis = d;
+    // altPrompts'u HEMEN kaydet — DALL-E başarısız olsa bile alternatif çalışsın
+    if(d.altPrompts && Array.isArray(d.altPrompts)){
+      const cleaned = d.altPrompts.filter(p=>typeof p==='string' && p.trim().length>20 && !p.startsWith('PROMPT_'));
+      if(cleaned.length > 0){
+        S.altPrompts = cleaned;
+        S.altTotal = cleaned.length;
+        _elogAdd('✓ '+cleaned.length+' Economist konsepti hazır');
+      }
+    }
     // Yeni editoryal JSON yapısını işle
     S.hl  = d.headline    || '';
     S.sub = d.subheadline || '';
@@ -1000,6 +1009,10 @@ async function analyze(){
     _altIdx = 0;
     if(S.altPrompts.length > 1 && !S.altBgRunning){
       _generateAltBackground();
+    } else if(S.altPrompts.length === 0 && S.dallePrompt){
+      // altPrompts boş ama dallePrompt var — en azından 1 alternatif çalışacak
+      S.altPrompts = [S.dallePrompt];
+      _elogAdd('⚠ altPrompts boş, yalnızca ana prompt kullanılacak');
     }
   }catch(e){setSt(t('errPfx')+e.message,'err');}
   finally{S.analyzing=false;btn.disabled=false;btn.textContent=t('analyzeBtn');_stopProgress();}
@@ -1026,13 +1039,7 @@ async function loadBgs(fastMode){
       if(dall && dall.base64){
         S.dalleB64 = dall.base64;
         items.push({type:'dalle', url:dall.base64, thumb:dall.base64});
-        // altPrompts'ı da kaydet (eğer analiz döndürdüyse)
-        if(S._rawAnalysis && S._rawAnalysis.altPrompts && Array.isArray(S._rawAnalysis.altPrompts)){
-          S.altPrompts = S._rawAnalysis.altPrompts.filter(p=>typeof p==='string' && p.trim().length>15);
-          S.altTotal = S.altPrompts.length;
-          _altIdx = 0;
-          _elogAdd('✓ '+S.altTotal+' alternatif prompt hazır');
-        }
+        // altPrompts zaten analyze'den kaydedildi
       }
     }catch(dErr){
       console.error('DALL-E hatası:', dErr.message);
@@ -1426,8 +1433,22 @@ async function _generateAltBackground(){
 
 // ── ALTERNATİF: sıradaki görsel göster (yoksa üret) ──
 async function generateAlt(){
-  if(!S.hl && !S.dalleB64){ setSt('⚠ Önce Анализировать yapın','err'); return; }
+  if(!S.hl && !S.dalleB64 && !S.dallePrompt){ setSt('⚠ Önce Анализировать yapın','err'); return; }
   if(S.analyzing){ setSt('⏳ İşlem devam ediyor...','on'); return; }
+
+  // altImages henüz boşsa (DALL-E timeout oldu) — on-demand başlat
+  if(S.altImages.length === 0 && S.dallePrompt){
+    setSt('🎨 İlk görsel üretiliyor (timeout sonrası)...','on',20,25);
+    S.analyzing=true;
+    const btn=document.querySelector('.btn-act[onclick*="generateAlt"]');
+    if(btn){btn.disabled=true;btn.textContent='⏳...';}
+    try{
+      const bg=await genDalle(S.dallePrompt);
+      if(bg&&bg.base64){ S.dalleB64=bg.base64; S.bg={type:'dalle',url:bg.base64,thumb:bg.base64}; S.altImages=[bg.base64]; renderPreview(); }
+    }catch(e){ setSt('❌ '+e.message.slice(0,50),'err'); }
+    finally{ S.analyzing=false; if(btn){btn.disabled=false;btn.textContent='↻ Альтернатива';} }
+    return;
+  }
 
   // Sıradaki index
   const nextIdx = (_altIdx + 1) % Math.max(S.altImages.length, 1);
