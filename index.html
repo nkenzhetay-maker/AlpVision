@@ -282,7 +282,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
-<body>
+<body onkeydown="if(event.key==='Escape'&&!S.analyzing){document.getElementById('analyze-overlay').style.display='none';}">
 
 <header class="hdr">
   <div class="brand">
@@ -461,7 +461,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
       <div class="prev-acts" id="prev-acts" style="display:none">
         <button class="btn-qc" onclick="runVisionQC()" id="btn-vqc" style="border-color:#27ae60;color:#27ae60;">👁 Vision QC</button>
         <button class="btn-qc" onclick="runQC()" id="btn-qc">🎨 QC Проверка</button>
-        <button class="btn-act" onclick="generateAlt()">↻ Альтернатива</button>
+        <button class="btn-act" onclick="generateAlt()">→ Следующий</button>
         <button class="btn-sm" onclick="openElog()" title="Редакционный журнал" style="font-size:.6rem;padding:4px 8px">📋</button>
         <button class="btn-act" onclick="switchFmt()">⇄ Формат</button>
         <button class="btn-approve" onclick="approveAll()">✓ Утвердить → Все форматы</button>
@@ -525,6 +525,20 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
   <span id="spct" style="display:none;margin-left:6px;font-size:.6rem;color:var(--muted);opacity:.8"></span>
   <span id="seta" style="display:none;margin-left:4px;font-size:.6rem;color:var(--muted);opacity:.6"></span>
 </div>
+
+<!-- Merkezi analiz animasyon overlay -->
+<div id="analyze-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,14,24,.92);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+  <div id="anim-ring" style="width:80px;height:80px;border-radius:50%;border:3px solid #042E58;border-top-color:#00B6CB;animation:spin .9s linear infinite;"></div>
+  <div id="anim-msg" style="font-family:Manrope,sans-serif;font-size:1rem;font-weight:700;color:#fff;text-align:center;max-width:320px;line-height:1.4;"></div>
+  <div id="anim-sub" style="font-family:Manrope,sans-serif;font-size:.72rem;color:rgba(255,255,255,.5);text-align:center;"></div>
+  <div style="width:240px;height:3px;background:#042E58;border-radius:2px;overflow:hidden;margin-top:4px;">
+    <div id="anim-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#00B6CB,#042E58);border-radius:2px;transition:width .4s ease;"></div>
+  </div>
+</div>
+<style>
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
 
 <!-- Editorial Log Panel -->
 <div id="elog-panel" style="display:none;position:fixed;right:0;top:0;bottom:0;width:340px;background:var(--ui-p);border-left:1px solid var(--ui-b);overflow-y:auto;z-index:200;padding:12px;font-size:.65rem;">
@@ -629,21 +643,31 @@ const T = {
 function t(k){ return T[S.lang]?.[k] ?? k; }
 
 function setSt(msg,type,pct,eta){
-  const dot=document.getElementById('sdot'),
-        txt=document.getElementById('stxt'),
-        pctEl=document.getElementById('spct'),
-        etaEl=document.getElementById('seta');
+  const dot=document.getElementById('sdot'),txt=document.getElementById('stxt'),
+        pctEl=document.getElementById('spct'),etaEl=document.getElementById('seta');
   if(!dot||!txt)return;
   dot.className='sdot'+(type?' sdot-'+type:'');
   txt.textContent=msg;
-  if(pct!==undefined && pct!==null){
-    pctEl.style.display='';
-    pctEl.textContent='('+pct+'%)';
-  } else { pctEl.style.display='none'; }
-  if(eta!==undefined && eta!==null){
-    etaEl.style.display='';
-    etaEl.textContent='~'+eta+'с';
-  } else { etaEl.style.display='none'; }
+  if(pct!==undefined&&pct!==null){pctEl.style.display='';pctEl.textContent='('+pct+'%)';}
+  else pctEl.style.display='none';
+  if(eta!==undefined&&eta!==null){etaEl.style.display='';etaEl.textContent='~'+eta+'с';}
+  else etaEl.style.display='none';
+
+  // Merkezi overlay
+  const ov=document.getElementById('analyze-overlay');
+  const amsg=document.getElementById('anim-msg');
+  const asub=document.getElementById('anim-sub');
+  const abar=document.getElementById('anim-bar');
+  if(!ov) return;
+  if(type==='on' && msg){
+    ov.style.display='flex';
+    if(amsg) amsg.textContent=msg;
+    if(asub) asub.textContent=eta ? '~'+eta+' сек. осталось' : '';
+    if(abar && pct!=null) abar.style.width=pct+'%';
+  } else {
+    ov.style.display='none';
+    if(abar) abar.style.width='0%';
+  }
 }
 
 function setLang(l){
@@ -804,8 +828,9 @@ function renderEditorialPanel(d){
     html += '</div>';
   }
 
-  // Konsept kartları
-  if(concepts.length > 0){
+  // Konsept kartları — GIZLI (arka planda AI ajanı olarak çalışır)
+  // Kullanıcı ekranını yormuyor; konseptler S.editorialData'da saklanır
+  if(false && concepts.length > 0){
     html += '<div class="ed-title" style="margin-top:10px;">Концепции ('+concepts.length+')</div>';
     html += '<div class="concepts-grid">';
     concepts.forEach(c => {
@@ -918,7 +943,7 @@ async function analyze(){
   }
   _elogAdd('=== Новый анализ ===');
   _elogAdd('Тип контента: '+S.contentType+' | Режим: '+(S.fastMode?'быстрый':'стандарт'));
-  _progressTimer = _startProgress(['📰 Метни analiz ediyorum...','✍️ Editöryal mantık kuruyorum...','🎨 Economist metaforu geliştiriyorum...','🖼 20 konsept için DALL-E promptları hazırlıyorum...'], 18);
+  _progressTimer = _startProgress(['🔍 Metni okuyorum...','🧠 Editöryal çerçeve kuruyorum...','🎨 The Economist tarzı 20 konsept hazırlıyorum...','🖼 Görsel direktifler üretiliyor...'], 18);
 
   try{
     const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1446,7 +1471,7 @@ async function generateAlt(){
       const bg=await genDalle(S.dallePrompt);
       if(bg&&bg.base64){ S.dalleB64=bg.base64; S.bg={type:'dalle',url:bg.base64,thumb:bg.base64}; S.altImages=[bg.base64]; renderPreview(); }
     }catch(e){ setSt('❌ '+e.message.slice(0,50),'err'); }
-    finally{ S.analyzing=false; if(btn){btn.disabled=false;btn.textContent='↻ Альтернатива';} }
+    finally{ S.analyzing=false; if(btn){btn.disabled=false;btn.textContent='→ Следующий';} }
     return;
   }
 
@@ -1492,7 +1517,7 @@ async function generateAlt(){
     _elogAdd('❌ '+stratName+': '+err.message);
   }finally{
     S.analyzing=false;
-    if(btn){ btn.disabled=false; btn.textContent='↻ Альтернатива'; }
+    if(btn){ btn.disabled=false; btn.textContent='→ Следующий'; }
   }
 }
 
@@ -1517,10 +1542,14 @@ function _showAltImage(imgB64, idx){
 }
 
 function _getStratName(i){
-  const names=['Metafora','Asimetri','Silüet','Kolaj','Soyut','Diptik',
-    'Harita','El','Denge','Gölge','Kırılma','İkon','Domino',
-    'Maske','İp','Kapı','Yangın','Satranç','Köprü','Yansıma'];
-  return 'Economist·'+(names[i%names.length]||i);
+  const styles=[
+    'Economist·İllüstrasyon','Ölçek Asimetrisi','Nesne Damgası','Diptik Kontrast',
+    'Sarı Zemin Bold','Tipografik Nesne','Veri Grafiği','Duotone Portre',
+    'Sinematik Full-Bleed','Büyük Rakam','Silüet Solid','Suluboya Portre',
+    'TRT Haber Karanlık','Konstrüktiviz','Minimalist İkon','Gölge İronisi',
+    'Kukla İpleri','Satranç Jeopolitik','Brütalist','Documentary'
+  ];
+  return styles[i%styles.length]||('Stil '+(i+1));
 }
 
 
