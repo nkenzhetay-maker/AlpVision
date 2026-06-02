@@ -40,12 +40,13 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "OPENAI_API_KEY missing" }) };
   }
 
-  // dall-e-2: response_format parametresi KALDIRILDI (desteklenmiyor, 500 hatasına yol açıyordu)
+  // dall-e-3: response_format b64_json destekleniyor
   const reqBody = {
-    model: "dall-e-2",
+    model: "dall-e-3",
     prompt: finalPrompt,
     n: 1,
-    size: size
+    size: size,
+    response_format: "b64_json"
   };
 
   try {
@@ -102,7 +103,7 @@ exports.handler = async (event) => {
         url: imageUrl,
         revisedPrompt: revised,
         wasRewritten: !!(revised && revised !== rawPrompt),
-        model: "dall-e-2",
+        model: "dall-e-3",
         sentPrompt: finalPrompt.slice(0, 300)
       })
     };
