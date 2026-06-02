@@ -953,9 +953,24 @@ async function analyze(){
 
     // Ham analiz verisi kaydet
     S._rawAnalysis = d;
+    // Canva şablon galerisi — tüm kategoriler için
+    if(d.canvaTemplates && d.canvaTemplates.length > 0){
+      _renderCanvaGallery(d.canvaTemplates);
+    }
+    // İnfografika modu — carousel slaytları oluştur
+    if(S.contentType === 'infographic'){
+      _buildInfSlides(d);
+      renderPreview();
+    }
     // altPrompts'u HEMEN kaydet — DALL-E başarısız olsa bile alternatif çalışsın
     if(d.altPrompts && Array.isArray(d.altPrompts)){
-      const cleaned = d.altPrompts.filter(p=>typeof p==='string' && p.trim().length>20 && !p.startsWith('PROMPT_'));
+      const cleaned = d.altPrompts
+        .map(p => {
+          if(typeof p !== 'string') return null;
+          // "PROMPT_N: actual text" formatını temizle
+          return p.replace(/^PROMPT_\d+:\s*/i, '').trim();
+        })
+        .filter(p => p && p.length > 20 && !p.startsWith('PROMPT_') && !p.startsWith('['));
       if(cleaned.length > 0){
         S.altPrompts = cleaned;
         S.altTotal = cleaned.length;
@@ -1458,7 +1473,7 @@ async function _generateAltBackground(){
 
 // ── ALTERNATİF: sıradaki görsel göster (yoksa üret) ──
 async function generateAlt(){
-  if(!S.hl && !S.dalleB64 && !S.dallePrompt){ setSt('⚠ Önce Анализировать yapın','err'); return; }
+  if(!S.hl && !S.dalleB64 && !S.dallePrompt){ setSt('⚠ Önce «Анализировать и создать превью» butonuna basın','err'); return; }
   if(S.analyzing){ setSt('⏳ İşlem devam ediyor...','on'); return; }
 
   // altImages henüz boşsa (DALL-E timeout oldu) — on-demand başlat
@@ -1582,64 +1597,260 @@ function _renderInfographicCarousel(){
 }
 
 function _buildInfSlide(sl, w, h, bgCss, idx, total){
-  const isTitle = idx === 0;
-  const hasNum = sl.stat && sl.stat.length > 0;
-  const scheme = sl.scheme || 'beige';
-  const bgColors = {beige:'#DCD0BA',navy:'#01203F',red:'#B11731',dark:'#1C1C1C',teal:'#042E58'};
-  const bgFill = bgColors[scheme] || bgColors.beige;
-  const textColor = scheme==='beige' ? '#1C1C1C' : '#ffffff';
+  // 5 ŞABLON SİSTEMİ
+  const template = sl.template || 'TEMPLATE_HOOK';
+  const scheme   = sl.scheme   || 'navy';
+
+  const PALETTE = {
+    navy:  {bg:'#01203F', text:'#F2F2F0', accent:'#00B6CB', sub:'rgba(242,242,240,.65)', border:'rgba(0,182,203,.35)'},
+    beige: {bg:'#DCD0BA', text:'#1C1C1C', accent:'#042E58', sub:'rgba(28,28,28,.6)',     border:'rgba(4,46,88,.2)'},
+    dark:  {bg:'#1C1C1C', text:'#F2F2F0', accent:'#00B6CB', sub:'rgba(242,242,240,.6)',  border:'rgba(0,182,203,.25)'},
+    teal:  {bg:'#042E58', text:'#F2F2F0', accent:'#00B6CB', sub:'rgba(242,242,240,.65)', border:'rgba(0,182,203,.4)'},
+    red:   {bg:'#B11731', text:'#F2F2F0', accent:'#F2F2F0', sub:'rgba(242,242,240,.7)',  border:'rgba(242,242,240,.3)'}
+  };
+  const P = PALETTE[scheme] || PALETTE.navy;
   const logo = trtLogo(scheme !== 'beige');
 
-  let content = '';
-  if(hasNum){
-    content = '<div style="font-family:Oswald,sans-serif;font-size:clamp(36px,12vw,80px);font-weight:700;color:'+(scheme==='beige'?'#042E58':'#fff')+';line-height:1;margin-bottom:8px;">'+sl.stat+'</div>';
+  // Dots nav
+  const dots = Array.from({length:total},(_,i)=>
+    '<span style="width:'+(i===idx?'18px':'6px')+';height:6px;border-radius:3px;background:'+(i===idx?P.accent:P.sub)+';margin:0 2px;display:inline-block;transition:width .3s;"></span>'
+  ).join('');
+  const nav = '<div style="position:absolute;bottom:4%;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px;">'+dots+'</div>'
+    +'<div style="position:absolute;bottom:3.5%;right:5%;font-size:clamp(7px,1.4vw,9px);color:'+P.sub+';font-family:Manrope,sans-serif;letter-spacing:.1em;">'+( idx+1)+' / '+total+'</div>'
+    +'<button onclick="_infPrev()" style="position:absolute;left:1.5%;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.25);border:1px solid '+P.border+';color:'+P.text+';width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">‹</button>'
+    +'<button onclick="_infNext()" style="position:absolute;right:1.5%;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.25);border:1px solid '+P.border+';color:'+P.text+';width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">›</button>';
+
+  // ── ŞABLON 1: HOOK (Kapak) ──
+  if(template === 'TEMPLATE_HOOK'){
+    const slayt = idx === 0 ? 'COVER' : String(idx+1).padStart(2,'0');
+    return '<div style="position:relative;width:100%;height:100%;background:'+P.bg+';overflow:hidden;font-family:Manrope,sans-serif;">'
+      // Dekoratif köşe çizgi
+      +'<div style="position:absolute;top:0;right:0;width:40%;height:3px;background:'+P.accent+';"></div>'
+      +'<div style="position:absolute;top:0;right:0;width:3px;height:25%;background:'+P.accent+';"></div>'
+      // Slayt numarası
+      +'<div style="position:absolute;top:6%;left:6%;font-size:clamp(8px,1.5vw,10px);font-weight:700;letter-spacing:.2em;color:'+P.accent+';text-transform:uppercase;">'+slayt+'</div>'
+      // Logo
+      +logo
+      // Ana başlık — ortalanmış büyük
+      +'<div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-55%);text-align:left;">'
+        +'<div style="font-size:clamp(16px,5vw,32px);font-weight:900;line-height:1.15;color:'+P.text+';letter-spacing:-.01em;margin-bottom:clamp(6px,1.5vw,12px);">'+(sl.headline||sl.title||'')+'</div>'
+        +(sl.subtext||sl.body ? '<div style="font-size:clamp(10px,2.3vw,14px);color:'+P.sub+';line-height:1.5;max-width:85%;">'+(sl.subtext||sl.body||'')+'</div>' : '')
+        // Cyan aksan çizgi
+        +'<div style="width:40px;height:3px;background:'+P.accent+';margin-top:clamp(8px,2vw,14px);"></div>'
+      +'</div>'
+      +nav+'</div>';
   }
-  content += '<div style="font-family:Manrope,sans-serif;font-size:clamp(13px,3.5vw,20px);font-weight:'+(isTitle?700:600)+';color:'+textColor+';line-height:1.3;margin-bottom:6px;">'+sl.title+'</div>';
-  if(sl.body) content += '<div style="font-family:Manrope,sans-serif;font-size:clamp(10px,2.5vw,14px);color:'+textColor+';opacity:.85;line-height:1.5;">'+sl.body+'</div>';
-  
-  // Fotoğraf varsa üstte göster
-  const photoSection = sl.photoUrl ? '<div style="position:absolute;top:0;left:0;right:0;height:55%;background:url('+sl.photoUrl+') center/cover no-repeat;"></div><div style="position:absolute;top:50%;left:0;right:0;height:60%;background:linear-gradient(to bottom,transparent,'+bgFill+' 40%);"></div>' : '';
 
-  // Slide göstergesi
-  const dots = Array.from({length:total},(_,i)=>'<span style="width:6px;height:6px;border-radius:50%;background:'+(i===idx?textColor:textColor+'55')+';margin:0 2px;display:inline-block;"></span>').join('');
+  // ── ŞABLON 2: DATA (İstatistik) ──
+  if(template === 'TEMPLATE_DATA'){
+    return '<div style="position:relative;width:100%;height:100%;background:'+P.bg+';overflow:hidden;font-family:Manrope,sans-serif;">'
+      +'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,'+P.accent+',transparent);"></div>'
+      +logo
+      +'<div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);text-align:center;">'
+        // Dev rakam
+        +(sl.stat ? '<div style="font-size:clamp(48px,14vw,96px);font-weight:900;line-height:1;color:'+P.accent+';font-family:Oswald,sans-serif;margin-bottom:4px;">'+sl.stat+'</div>' : '')
+        +'<div style="font-size:clamp(14px,3.8vw,22px);font-weight:700;color:'+P.text+';margin-bottom:8px;">'+(sl.headline||sl.title||'')+'</div>'
+        +(sl.subtext||sl.body ? '<div style="font-size:clamp(9px,2vw,13px);color:'+P.sub+';line-height:1.5;">'+( sl.subtext||sl.body||'')+'</div>' : '')
+      +'</div>'
+      +nav+'</div>';
+  }
 
-  return '<div style="position:relative;width:100%;height:100%;background:'+bgFill+';overflow:hidden;">'
-    +(sl.photoUrl ? photoSection : '')
-    +logo
-    +'<div style="position:absolute;'+(sl.photoUrl?'bottom:8%':'top:50%;transform:translateY(-50%)')+';left:6%;right:6%;'+(sl.photoUrl?'':'text-align:left')+'">'+content+'</div>'
-    +'<div style="position:absolute;bottom:3%;left:50%;transform:translateX(-50%);display:flex;align-items:center;">'+dots+'</div>'
-    +'<div style="position:absolute;bottom:3%;left:5%;font-size:clamp(8px,1.5vw,10px);color:'+textColor+';opacity:.5;font-family:Manrope,sans-serif;">'+(idx+1)+' / '+total+'</div>'
-    +'<button onclick="_infPrev()" style="position:absolute;left:2%;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;">‹</button>'
-    +'<button onclick="_infNext()" style="position:absolute;right:2%;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;">›</button>'
-    +'</div>';
+  // ── ŞABLON 3: LIST (Maddeler) ──
+  if(template === 'TEMPLATE_LIST'){
+    const bullets = sl.bullets && sl.bullets.length ? sl.bullets : (sl.body ? sl.body.split(/[;
+]/).filter(Boolean) : []);
+    const bulletHtml = bullets.slice(0,4).map(b=>
+      '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:clamp(6px,1.5vw,10px);">'
+        +'<span style="color:'+P.accent+';font-weight:900;font-size:clamp(12px,2.5vw,16px);flex-shrink:0;margin-top:1px;">■</span>'
+        +'<span style="font-size:clamp(10px,2.3vw,14px);color:'+P.text+';line-height:1.4;">'+b.replace(/^[■•·\-\s]+/,'').trim()+'</span>'
+      +'</div>'
+    ).join('');
+    return '<div style="position:relative;width:100%;height:100%;background:'+P.bg+';overflow:hidden;font-family:Manrope,sans-serif;">'
+      +'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+P.accent+';"></div>'
+      +logo
+      +'<div style="position:absolute;top:50%;left:8%;right:6%;transform:translateY(-50%);">'
+        +'<div style="font-size:clamp(12px,3vw,18px);font-weight:800;color:'+P.text+';margin-bottom:clamp(10px,2.5vw,18px);line-height:1.2;">'+(sl.headline||sl.title||'')+'</div>'
+        +bulletHtml
+      +'</div>'
+      +nav+'</div>';
+  }
+
+  // ── ŞABLON 4: QUOTE (Alıntı/Özet) ──
+  if(template === 'TEMPLATE_QUOTE'){
+    return '<div style="position:relative;width:100%;height:100%;background:'+P.bg+';overflow:hidden;font-family:Manrope,sans-serif;">'
+      // Büyük tırnak işareti dekoratif
+      +'<div style="position:absolute;top:6%;left:5%;font-size:clamp(60px,18vw,120px);color:'+P.accent+';opacity:.15;font-family:Georgia,serif;line-height:1;">"</div>'
+      +logo
+      +'<div style="position:absolute;top:50%;left:8%;right:8%;transform:translateY(-50%);text-align:center;">'
+        +'<div style="font-size:clamp(13px,3.5vw,21px);font-weight:700;color:'+P.text+';line-height:1.4;font-style:italic;margin-bottom:12px;">'+(sl.headline||sl.title||'')+'</div>'
+        +(sl.subtext||sl.body ? '<div style="font-size:clamp(9px,2vw,12px);color:'+P.sub+';letter-spacing:.12em;text-transform:uppercase;">'+(sl.subtext||sl.body||'')+'</div>' : '')
+        +'<div style="width:30px;height:2px;background:'+P.accent+';margin:10px auto 0;"></div>'
+      +'</div>'
+      +nav+'</div>';
+  }
+
+  // ── ŞABLON 5: CTA (Harekete Geçirici) ──
+  if(template === 'TEMPLATE_CTA'){
+    return '<div style="position:relative;width:100%;height:100%;background:'+P.bg+';overflow:hidden;font-family:Manrope,sans-serif;">'
+      // Üst + alt dekoratif çizgi
+      +'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:'+P.accent+';"></div>'
+      +'<div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:'+P.accent+';"></div>'
+      +logo
+      +'<div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);text-align:center;">'
+        +'<div style="font-size:clamp(22px,7vw,44px);margin-bottom:8px;">💾</div>'
+        +'<div style="font-size:clamp(14px,3.8vw,22px);font-weight:900;color:'+P.text+';margin-bottom:10px;line-height:1.2;">'+(sl.headline||sl.title||'')+'</div>'
+        +(sl.subtext||sl.body ? '<div style="font-size:clamp(9px,2vw,12px);color:'+P.sub+';line-height:1.5;max-width:80%;margin:0 auto;">'+(sl.subtext||sl.body||'')+'</div>' : '')
+        // Aksiyon kutusu
+        +'<div style="display:inline-block;margin-top:14px;padding:8px 20px;border:2px solid '+P.accent+';border-radius:4px;font-size:clamp(9px,2vw,12px);font-weight:700;color:'+P.accent+';letter-spacing:.1em;text-transform:uppercase;">TRT НА РУССКОМ</div>'
+      +'</div>'
+      +nav+'</div>';
+  }
+
+  // Fallback — HOOK şablonu
+  return _buildInfSlide({...sl, template:'TEMPLATE_HOOK'}, w, h, bgCss, idx, total);
 }
 
 function _infNext(){ if(!S.infSlides) return; S._infIdx=((S._infIdx||0)+1)%S.infSlides.length; _renderInfographicCarousel(); }
 function _infPrev(){ if(!S.infSlides) return; S._infIdx=((S._infIdx||0)+S.infSlides.length-1)%S.infSlides.length; _renderInfographicCarousel(); }
 
 // Analiz sonucunda infographic slides oluştur
+
+// ═══════════════════════════════════════════════
+// CANVA ŞABLON GALERİSİ
+// ═══════════════════════════════════════════════
+function _renderCanvaGallery(templates){
+  if(!templates || templates.length === 0) return;
+  
+  const STYLE_LABELS = {
+    trt_dark:'TRT Karanlık', trt_dark_v2:'TRT Karanlık v2', trt_banner:'TRT Banner',
+    economist_cream:'Economist Krem', power_editorial:'Güç Editorial',
+    asymmetry:'Asimetri', power_imbalance:'Güç Dengesizliği', black_split:'Siyah Bölünmüş',
+    bw_editorial:'S/B Editorial', big_number:'Büyük Rakam', big_number_v2:'Büyük Rakam v2',
+    data_viz:'Veri Grafiği', quote_editorial:'Alıntı', quote_v2:'Alıntı v2',
+    quote_gray:'Alıntı Gri', quote_v3:'Alıntı v3', data_chart:'Veri Çizelgesi',
+    comparison:'Karşılaştırma', trend_analysis:'Trend Analiz', watercolor:'Suluboya Portre'
+  };
+
+  const grid = document.getElementById('gallery-grid');
+  const title = document.getElementById('gallery-title');
+  if(!grid) return;
+  
+  title.textContent = '🎨 ' + templates.length + ' Canva Şablonu — Birini Seçin';
+  grid.innerHTML = '';
+  
+  // Thumbnail URL'leri — Canva brand template thumbnail
+  const THUMBS = {
+    'EAHLcbSuSmo':'https://template-private.canva.com/EAHLcbSuSmo/1/0/640w-JnHiwzoHEJc.jpg',
+    'EAHLcdMwS-E':'https://template-private.canva.com/EAHLcdMwS-E/1/0/640w-maar93RxgQY.jpg',
+    'EAHLcZWnH0Y':'https://template-private.canva.com/EAHLcZWnH0Y/1/0/640w-FNliExraUPY.jpg',
+    'EAHLcZKx8UA':'https://template-private.canva.com/EAHLcZKx8UA/1/0/640w-K4svtq0945g.jpg',
+    'EAHLcZEDHv0':'https://template-private.canva.com/EAHLcZEDHv0/1/0/640w-Raw0Aa_ysLI.jpg',
+    'EAHLcbHdSNw':'https://template-private.canva.com/EAHLcbHdSNw/1/0/640w-Uqu3gcdx0WM.jpg',
+    'EAHLcdNXGXA':'https://template-private.canva.com/EAHLcdNXGXA/1/0/640w-3yFUTu6fo_M.jpg',
+    'EAHLcU_Ullg':'https://template-private.canva.com/EAHLcU_Ullg/1/0/640w-kNG6F0TdhQE.jpg',
+    'EAHLccH0QyI':'https://template-private.canva.com/EAHLccH0QyI/1/0/640w-30siwmPCrNE.jpg',
+    'EAHLcQY-qCY':'https://template-private.canva.com/EAHLcQY-qCY/1/0/640w-Zt4DDAJz4Uw.jpg',
+    'EAHLcazlbZo':'https://template-private.canva.com/EAHLcazlbZo/1/0/640w-FW0-l2cOMSE.jpg',
+    'EAHLcaFMLas':'https://template-private.canva.com/EAHLcaFMLas/1/0/640w-dcHLyTvfDNo.jpg',
+    'EAHLcannr_U':'https://template-private.canva.com/EAHLcannr_U/1/0/640w-2dczyARbokw.jpg',
+    'EAHLcaHdlfA':'https://template-private.canva.com/EAHLcaHdlfA/1/0/640w-CfrrgDrzHZI.jpg',
+    'EAHLcZBObt4':'https://template-private.canva.com/EAHLcZBObt4/1/0/640w-FJxDSHWAVPQ.jpg',
+    'EAHLcSz-Gik':'https://template-private.canva.com/EAHLcSz-Gik/1/0/640w-WUd8WTaCDcs.jpg',
+    'EAHLcVs6bOo':'https://template-private.canva.com/EAHLcVs6bOo/1/0/640w-DqWKt0pUzWk.jpg',
+    'EAHLcU3FTH4':'https://template-private.canva.com/EAHLcU3FTH4/1/0/640w-Ykn9p4Ni154.jpg',
+    'EAHLcXQ8FVQ':'https://template-private.canva.com/EAHLcXQ8FVQ/1/0/640w-_Y83vEKiY18.jpg',
+    'EAHLccBt_XA':'https://template-private.canva.com/EAHLccBt_XA/1/0/640w-JTP8Pou7nKw.jpg'
+  };
+
+  templates.forEach((t, i) => {
+    const label = STYLE_LABELS[t.style] || t.style;
+    const thumb = THUMBS[t.id] || '';
+    const rank  = i + 1;
+    
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--ui-s);border:1.5px solid var(--ui-b);border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s;';
+    card.onmouseover = () => { card.style.borderColor='#00B6CB'; card.style.transform='translateY(-2px)'; };
+    card.onmouseout  = () => { card.style.borderColor='var(--ui-b)'; card.style.transform=''; };
+    
+    card.innerHTML = 
+      '<div style="position:relative;">'
+        + (thumb ? '<img src="'+thumb+'" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block;" onerror="this.style.display='none'">' : '<div style="width:100%;aspect-ratio:4/5;background:#1C1C1C;display:flex;align-items:center;justify-content:center;color:#666;font-size:1.5rem;">🎨</div>')
+        + '<div style="position:absolute;top:5px;left:5px;background:#01203F;color:#F2F2F0;font-size:.55rem;font-weight:700;padding:2px 6px;border-radius:3px;">#'+rank+'</div>'
+      +'</div>'
+      +'<div style="padding:8px;">'
+        +'<div style="font-size:.65rem;font-weight:700;color:var(--fg);margin-bottom:4px;">'+label+'</div>'
+        +'<button onclick="window.open(''+t.createUrl+'','_blank')" style="width:100%;padding:5px;background:#01203F;color:#F2F2F0;border:none;border-radius:4px;font-size:.6rem;font-weight:700;cursor:pointer;margin-bottom:4px;">Canva'da Aç →</button>'
+        +'<button onclick="_openPlatformCanva(''+t.id+'','instagram')" style="width:100%;padding:4px;background:transparent;color:#00B6CB;border:1px solid #00B6CB;border-radius:4px;font-size:.55rem;cursor:pointer;">📱 Instagram</button>'
+      +'</div>';
+    
+    grid.appendChild(card);
+  });
+  
+  // Galeriyi göster
+  document.getElementById('gallery-wrap').style.display = 'block';
+  document.getElementById('single-wrap').style.display = 'none';
+  document.getElementById('empty').style.display = 'none';
+}
+
+function _openPlatformCanva(templateId, platform){
+  const sizes = {
+    instagram:'1080x1080',
+    telegram:'1280x720',
+    youtube:'1280x720',
+    twitter:'1600x900',
+    web:'1920x1080'
+  };
+  const url = `https://www.canva.com/design?create=true&template=${templateId}`;
+  window.open(url, '_blank');
+}
+
 function _buildInfSlides(d){
   if(!d) return;
-  const slides = [];
-  // Slide 1: Kapak
-  slides.push({title:d.headline||'', body:d.subheadline||'', scheme:'navy', photoUrl: S.bg&&S.bg.url&&S.bg.url.length>100?S.bg.url:null});
-  // Slide 2: Temel bilgi
-  if(d.editorialAnalysis){
-    const ea=d.editorialAnalysis;
-    slides.push({title:'Суть', body:ea.realCenter||'', scheme:'beige'});
-    if(ea.geopolitics) slides.push({title:'Геополитика', body:ea.geopolitics||'', scheme:'teal'});
-    if(ea.socialMedia) slides.push({title:'Значение', body:ea.socialMedia||'', scheme:'beige'});
+  let slides = [];
+
+  // carouselPlan varsa → direkt kullan (medya stratejisti çıktısı)
+  if(d.carouselPlan && d.carouselPlan.slides && d.carouselPlan.slides.length > 0){
+    slides = d.carouselPlan.slides.map(sl => ({
+      title:    sl.headline || sl.title || '',
+      headline: sl.headline || sl.title || '',
+      body:     sl.subtext  || '',
+      subtext:  sl.subtext  || '',
+      bullets:  sl.bullets  || [],
+      stat:     sl.stat     || '',
+      scheme:   sl.scheme   || 'navy',
+      template: sl.template || 'TEMPLATE_HOOK',
+      type:     sl.type     || 'slide'
+    }));
+    // Caption + hashtag bilgisini state'e kaydet
+    if(d.carouselPlan.caption) S.carouselCaption = d.carouselPlan.caption;
+    if(d.carouselPlan.hashtags) S.carouselHashtags = d.carouselPlan.hashtags;
+    _elogAdd('✓ Медиастратег: '+slides.length+' slayt (carouselPlan)');
   }
-  // Slide 3-N: Konseptler
-  if(d.concepts && Array.isArray(d.concepts)){
-    d.concepts.slice(0,3).forEach(con=>{
-      if(con.headline) slides.push({title:con.headline||'', body:con.description||'', scheme:'dark'});
-    });
+
+  // Fallback: carouselPlan yoksa editorialAnalysis'ten üret
+  if(slides.length === 0){
+    slides.push({title:d.headline||'', headline:d.headline||'', body:d.subheadline||'', subtext:d.subheadline||'', scheme:'navy', template:'TEMPLATE_HOOK'});
+    if(d.editorialAnalysis){
+      const ea = d.editorialAnalysis;
+      if(ea.realCenter)     slides.push({title:'Суть',        headline:'Суть',        body:ea.realCenter,    subtext:ea.realCenter,    scheme:'beige', template:'TEMPLATE_HOOK'});
+      if(ea.socialMediaHook) slides.push({title:'Зачем знать',headline:'Зачем знать', body:ea.socialMediaHook, subtext:ea.socialMediaHook, scheme:'teal', template:'TEMPLATE_LIST'});
+    }
+    if(d.concepts && Array.isArray(d.concepts)){
+      d.concepts.slice(0,2).forEach(con=>{
+        slides.push({title:con.title||'', headline:con.title||'', body:con.description||'', subtext:con.description||'', scheme:'dark', template:'TEMPLATE_LIST'});
+      });
+    }
+    slides.push({title:d.headline||'TRT НА РУССКОМ', headline:d.headline||'TRT НА РУССКОМ', body:'Сохраните и поделитесь', subtext:'Сохраните и поделитесь', scheme:'navy', template:'TEMPLATE_CTA'});
+    _elogAdd('✓ İnfografik fallback: '+slides.length+' slayt');
   }
-  // Son slide: Kapanış
-  slides.push({title:'TRT НА РУССКОМ', body:'Следите за новостями', scheme:'navy'});
-  S.infSlides=slides; S._infIdx=0;
-  _elogAdd('✓ İnfografik: '+slides.length+' slayt oluşturuldu');
+
+  S.infSlides = slides;
+  S._infIdx = 0;
+
+  // Caption panelini göster
+  if(S.carouselCaption){
+    _elogAdd('📝 Caption: '+S.carouselCaption.slice(0,60)+'...');
+  }
 }
 
 
