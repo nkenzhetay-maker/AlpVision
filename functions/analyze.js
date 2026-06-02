@@ -1,5 +1,54 @@
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
+// ═══════════════════════════════════════════════
+// CANVA BRAND TEMPLATE KATALOĞU
+// ═══════════════════════════════════════════════
+const CANVA_TEMPLATES = [
+  { id:"EAHLcbSuSmo", style:"trt_dark",         tone:["breaking","urgent","war","crisis"],       category:["news","video"] },
+  { id:"EAHLcdMwS-E", style:"trt_dark_v2",      tone:["breaking","politics","international"],    category:["news","video"] },
+  { id:"EAHLcZWnH0Y", style:"trt_banner",       tone:["breaking","urgent"],                      category:["news"] },
+  { id:"EAHLcZKx8UA", style:"economist_cream",  tone:["analysis","diplomacy","economy"],         category:["news","feature","article"] },
+  { id:"EAHLcZEDHv0", style:"power_editorial",  tone:["geopolitics","power","analysis"],         category:["news","feature"] },
+  { id:"EAHLcbHdSNw", style:"asymmetry",        tone:["inequality","power","conflict"],           category:["news","feature","infographic"] },
+  { id:"EAHLcdNXGXA", style:"power_imbalance",  tone:["sanctions","pressure","geopolitics"],     category:["news","feature"] },
+  { id:"EAHLcU_Ullg", style:"black_split",      tone:["breaking","politics","military"],          category:["news","video"] },
+  { id:"EAHLccH0QyI", style:"bw_editorial",     tone:["serious","documentary","historical"],     category:["feature","article"] },
+  { id:"EAHLcQY-qCY", style:"big_number",       tone:["data","statistics","economy"],            category:["infographic","news"] },
+  { id:"EAHLcazlbZo", style:"big_number_v2",    tone:["data","statistics","social"],             category:["infographic"] },
+  { id:"EAHLcaFMLas", style:"data_viz",         tone:["data","economy","market"],               category:["infographic","news"] },
+  { id:"EAHLcannr_U", style:"quote_editorial",  tone:["opinion","statement","leader"],           category:["feature","article","qa"] },
+  { id:"EAHLcaHdlfA", style:"quote_v2",         tone:["opinion","analysis","expert"],           category:["feature","article"] },
+  { id:"EAHLcZBObt4", style:"quote_gray",       tone:["serious","historical","documentary"],     category:["feature","article"] },
+  { id:"EAHLcSz-Gik", style:"quote_v3",         tone:["crisis","urgent","human"],               category:["feature","article"] },
+  { id:"EAHLcVs6bOo", style:"data_chart",       tone:["economy","market","trade","energy"],     category:["infographic","news"] },
+  { id:"EAHLcU3FTH4", style:"comparison",       tone:["before_after","comparison","analysis"],  category:["infographic","feature"] },
+  { id:"EAHLcXQ8FVQ", style:"trend_analysis",   tone:["trend","social","technology"],           category:["feature","infographic"] },
+  { id:"EAHLccBt_XA", style:"watercolor",       tone:["opinion","profile","portrait"],          category:["article","feature","qa"] }
+];
+
+// Metne göre 20 şablon seç ve sırala
+function selectCanvaTemplates(analysis, ctype) {
+  const tone = (analysis.editorialAnalysis?.emotionalTone || '').toLowerCase();
+  const hl   = (analysis.headline || '').toLowerCase();
+  const text  = (tone + ' ' + hl).toLowerCase();
+  
+  // Her şablona puan ver
+  const scored = CANVA_TEMPLATES.map(t => {
+    let score = 0;
+    // Kategori eşleşmesi
+    if (t.category.includes(ctype)) score += 3;
+    // Ton eşleşmesi
+    t.tone.forEach(k => { if (text.includes(k)) score += 2; });
+    // Rastgele çeşitlilik
+    score += Math.random() * 0.5;
+    return { ...t, score };
+  });
+  
+  return scored.sort((a,b) => b.score - a.score);
+}
+
+
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type",
@@ -286,7 +335,9 @@ SADECE GEÇERLİ JSON DÖNDÜR:
   "pexelsQuery":"English 4 words (SADECE news/video içerik tipinde kullanılır)",
   "platformNotes":{"instagram":"Rusça","telegram":"Rusça"},
   "qualityGate":"passed|failed",
-  "visualNote":"Rusça — Metaforik sahneyi açıkla"
+  "visualNote":"Rusça — Metaforik sahneyi açıkla",
+  "carouselPlan": null,
+  "canvaTemplates": []
 }`;
 }
 
@@ -338,13 +389,13 @@ Her ikisi Rusça. SADECE JSON:
 //  API ÇAĞIRICI — Claude önce, GPT-4o yedek
 // ════════════════════════════════════════════════════════════════
 
-async function callClaude(system, content, maxTok) {
+async function callClaude(system, content, maxTok, model) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY missing");
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST",
     headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"},
-    body: JSON.stringify({ model: isFast ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6", max_tokens:maxTok, system:finalSystem||system, messages:[{role:"user",content}] })
+    body: JSON.stringify({ model: model || "claude-sonnet-4-6", max_tokens:maxTok, system:system, messages:[{role:"user",content}] })
   });
   if (!r.ok) { const e = await r.text(); throw new Error(`Claude ${r.status}: ${e.slice(0,200)}`); }
   const d = await r.json();
@@ -460,10 +511,47 @@ Soru sor: Bu haberde okuyucu ne hisseder? Ne konuşacak?
 Görsel: Tek güçlü an. Haberin duygusal çekirdeği. 0.5 saniyede anlaşılacak thumbnail.
 DALL-E: The Economist kapak tarzı — tek metaforik sahne, haberin özü, haber fotoğrafı değil.`,
     infographic:`
-[РЕЖИМ: ИНФОГРАФИКА — Veri hikayesi]
-Soru sor: Hangi rakamlar önemli? Karşılaştırma nedir? Zaman çizelgesi?
-Görsel: Carousel. 5-7 slayt. Her slayt tek veri veya fikir.
-DALL-E kapak: Bold minimal data-driven. altPrompts: Her slayt için farklı background tonu.`,
+[РЕЖИМ: ИНФОГРАФИКА — Медиастратег + Carousel Planlayıcı]
+
+Sen hem TRT Russian editörü hem de Instagram medya stratejistisin.
+Bu haberi/konuyu 6-8 slaytlık YÜK SEK ETKİLEŞİMLİ carousel içeriğe dönüştür.
+
+STRATEJİK AKIŞ (zorunlu):
+  Slayt 1 — KAPAK (Hook): "Dur ve incele" dedirten, merak uyandıran güçlü başlık
+  Slayt 2 — SORUN/GİRİŞ: Hedef kitlenin yaşadığı problem veya konunun önemi
+  Slayt 3-5/6 — ÇÖZÜM/DEĞER: Adım adım uygulanabilir, hap bilgiler (boğucu değil)
+  Slayt N-1 — ÖZET: Tüm içeriği tek cümle veya vurucu grafikle özetle
+  Slayt N — CTA: Kaydetme, paylaşma, yorum yapmaya teşvik
+
+5 ŞABLON — Her slayt için şablonlardan birini seç:
+  TEMPLATE_HOOK: Büyük başlık + güçlü alt metin, minimal görsel, navy bg
+  TEMPLATE_DATA: Büyük rakam/istatistik merkezi + kısa açıklama, beige bg
+  TEMPLATE_LIST: 3-4 madde bölümü (■ nokta ile), dark bg, teal aksan
+  TEMPLATE_QUOTE: Tek büyük alıntı veya önemli cümle, editorial red bg
+  TEMPLATE_CTA: Eylem çağrısı, emoji, paylaş/kaydet butonu, navy bg
+
+JSON'a EKLE (infographic modu için zorunlu):
+"carouselPlan": {
+  "topic": "Русça konu başlığı",
+  "targetAudience": "Hedef kitle tanımı Rusça",
+  "engagementHook": "Neden kaydedilir/paylaşılır?",
+  "slides": [
+    {
+      "index": 1,
+      "type": "cover|problem|solution|data|quote|summary|cta",
+      "template": "TEMPLATE_HOOK|TEMPLATE_DATA|TEMPLATE_LIST|TEMPLATE_QUOTE|TEMPLATE_CTA",
+      "headline": "Rusça büyük başlık (max 7 kelime)",
+      "subtext": "Rusça alt metin (max 15 kelime)",
+      "bullets": ["■ madde 1", "■ madde 2"],
+      "stat": "Büyük rakam varsa (örn: 47%)",
+      "scheme": "navy|beige|dark|teal|red",
+      "visualNote": "Tasarımcı için görsel konsept (1 cümle İngilizce)"
+    }
+  ],
+  "caption": "Instagram açıklaması Rusça (150-200 karakter, engaging)",
+  "hashtags": ["#хештег1", "#хештег2", "#хештег3", "#хештег4", "#хештег5"],
+  "tone": "professional|inspiring|analytical|urgent"
+}`,
     feature:`
 [РЕЖИМ: FEATURE — Derinlikli makale]
 Soru sor: Arka plan nedir? Hangi paradoks var? Okuyucuyu ne düşündürür?
@@ -484,27 +572,49 @@ Görsel: İki kutuplu kompozisyon, soru-cevap enerjisi, diyalog metaforu.`
   };
   const ctypeCtx = ctypeInstructions[ctype] || ctypeInstructions.news;
 
-  
-  const maxTok  = isQC ? 1200 : isFast ? 600 : 4000; // 4000: 20 altPrompts için yeterli
+  // ctypeCtx ve trendSection'ı sisteme ekle
+  if (!isQC) {
+    system += '\n\n' + ctypeCtx;
+    if (trendSection) system += trendSection;
+  }
+
+  // Kullanıcıya gönderilecek içerik (content değişkeni)
+  const userContent = isQC
+    ? `Görseli değerlendir (QC modu):\n${text}`
+    : `Haber metni:\n${text}`;
+
+  const claudeModel = isFast ? "claude-haiku-4-5-20251001" : "claude-sonnet-4-6";
+  const maxTok  = isQC ? 1200 : isFast ? 600 : 4000;
 
   // Claude önce, GPT-4o yedek
   let parsed = null;
   let engine = 'none';
 
   try {
-    const raw = await callClaude(system, content, maxTok);
+    const raw = await callClaude(system, userContent, maxTok, claudeModel);
     parsed = safeParse(raw);
     if (parsed && (parsed.headline || parsed.reviewer1)) { engine = 'claude'; }
     else { parsed = null; throw new Error("Claude invalid JSON"); }
   } catch (claudeErr) {
     console.warn("Claude failed:", claudeErr.message);
     try {
-      const raw = await callGPT(system, content, maxTok);
+      const raw = await callGPT(system, userContent, maxTok);
       parsed = safeParse(raw);
       if (parsed) engine = 'gpt4o';
     } catch (gptErr) {
       console.error("Both failed:", gptErr.message);
     }
+  }
+
+  // Canva şablonlarını seç ve ekle
+  if (parsed) {
+    const templates = selectCanvaTemplates(parsed, ctype);
+    parsed.canvaTemplates = templates.map(t => ({
+      id: t.id,
+      style: t.style,
+      score: Math.round(t.score * 10) / 10,
+      createUrl: `https://www.canva.com/design?create=true&template=${t.id}`
+    }));
   }
 
   if (!parsed) {
