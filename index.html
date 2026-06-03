@@ -1547,9 +1547,9 @@ function buildCard(tpl, bg, platform, forExport){
 
   // ── accent_color: sarı/pembe/mor düz zemin ──
   if(tpl==='accent_color'){
-    const acolors = ['#C48901','#E91E8C','#6B3FA0','#00B6CB','#216125'];
-    const aidx = S.hl ? S.hl.length % acolors.length : 0;
-    const abg = acolors[aidx];
+    // TRT onaylı palette — scheme'e göre seç
+    const amap = {red:'#B11731',navy:'#042E58',dark:'#01203F',teal:'#00B6CB',gold:'#C48901',green:'#216125',light:'#DCD0BA'};
+    const abg = amap[S._builtScheme] || '#C48901';
     const atxt = abg==='#C48901'?'#1C1C1C':'#F2F2F0';
     return `
     <div style="position:absolute;inset:0;background:${abg};"></div>
@@ -2104,26 +2104,26 @@ function _renderCanvaGallery(templates){
 // ── buildCard ile şablon önizleme sistemi ──
 // 20 şablon kombinasyonu
 const BUILT_TEMPLATES = [
-  {tpl:'photo_panel',   scheme:'dark',  label:'TRT Тёмный'},
-  {tpl:'typographic',   scheme:'dark',  label:'Типографский'},
-  {tpl:'split',         scheme:'teal',  label:'Разделённый'},
-  {tpl:'feature',       scheme:'navy',  label:'Репортаж'},
-  {tpl:'photo_panel',   scheme:'red',   label:'Срочные новости'},
-  {tpl:'typographic',   scheme:'teal',  label:'Тёмно-синий'},
-  {tpl:'split',         scheme:'red',   label:'Красный блок'},
-  {tpl:'feature',       scheme:'dark',  label:'Тёмный репортаж'},
-  {tpl:'photo_panel',   scheme:'gold',  label:'Золотой'},
-  {tpl:'typographic',   scheme:'navy',  label:'Флотский'},
-  {tpl:'split',         scheme:'dark',  label:'Тёмное деление'},
-  {tpl:'feature',       scheme:'teal',  label:'Бирюзовый'},
-  {tpl:'photo_panel',   scheme:'teal',  label:'Бирюзовая панель'},
-  {tpl:'typographic',   scheme:'red',   label:'Красный заголовок'},
-  {tpl:'split',         scheme:'gold',  label:'Золотое деление'},
-  {tpl:'feature',       scheme:'red',   label:'Красный репортаж'},
-  {tpl:'photo_panel',   scheme:'navy',  label:'Тёмно-синяя панель'},
-  {tpl:'typographic',   scheme:'gold',  label:'Золотой заголовок'},
-  {tpl:'split',         scheme:'navy',  label:'Синее деление'},
-  {tpl:'feature',       scheme:'gold',  label:'Золотой репортаж'}
+  {tpl:'dark_minimal',    scheme:'dark',  label:'Тёмный минимал'},
+  {tpl:'photo_overlay',   scheme:'dark',  label:'Фото оверлей'},
+  {tpl:'color_block',     scheme:'navy',  label:'Цветной блок'},
+  {tpl:'pure_typography', scheme:'light', label:'Чистый текст'},
+  {tpl:'accent_color',    scheme:'gold',  label:'Акцент-жёлтый'},
+  {tpl:'collage_dark',    scheme:'red',   label:'Коллаж Тёмный'},
+  {tpl:'map_visual',      scheme:'light', label:'Карта/Данные'},
+  {tpl:'portrait_illus',  scheme:'light', label:'Портрет-рисунок'},
+  {tpl:'invitation',      scheme:'navy',  label:'Приглашение'},
+  {tpl:'magazine_cover',  scheme:'red',   label:'Обложка журнала'},
+  {tpl:'silhouette',      scheme:'light', label:'Силуэт'},
+  {tpl:'insider',         scheme:'dark',  label:'Срочно (Insider)'},
+  {tpl:'trt_headline',    scheme:'dark',  label:'TRT Заголовок'},
+  {tpl:'trt_breaking',    scheme:'red',   label:'TRT Срочно'},
+  {tpl:'tweet_card',      scheme:'navy',  label:'Твит-карточка'},
+  {tpl:'typographic',     scheme:'dark',  label:'Типографский'},
+  {tpl:'photo_panel',     scheme:'dark',  label:'Фото + Панель'},
+  {tpl:'split',           scheme:'teal',  label:'Сплит'},
+  {tpl:'feature',         scheme:'navy',  label:'Feature'},
+  {tpl:'geometric',       scheme:'light', label:'Геометрия'}
 ];
 
 function _showBuiltSlide(idx){
@@ -2154,11 +2154,20 @@ function _showBuiltSlide(idx){
   // Mevcut bg'yi kullan (Pexels foto veya DALL-E)
   const bg = S.bg ? (S.bg.url || S.bg.base64 || null) : null;
 
-  // Geçici olarak aiTpl değiştir, render et, geri al
+  // Geçici olarak aiTpl + scheme değiştir, render et, geri al
   const prevTpl = S.aiTpl;
+  const prevCat = S.cat;
+  S._builtScheme = t.scheme || 'dark';
   S.aiTpl = t.tpl;
+  // Scheme → S.cat üzerinden accent rengini zorla
+  if(t.scheme === 'red')   S.cat = 'ВОЙН';
+  else if(t.scheme === 'navy' || t.scheme === 'dark') S.cat = 'ДИПЛОМАТ';
+  else if(t.scheme === 'teal') S.cat = 'TECH';
+  else if(t.scheme === 'gold') S.cat = 'ЗОЛОТО';
+  else if(t.scheme === 'light') S.cat = '';
   canvas.innerHTML = buildCard(t.tpl, bg, p, false);
   S.aiTpl = prevTpl;
+  S.cat = prevCat;
 
   // Şablon adı + sayaç overlay
   let badge = document.getElementById('built-badge');
@@ -2271,7 +2280,7 @@ function _processDeeepResult(d, txt){
   if(d.dallePrompt && d.dallePrompt.length > 20){
     S.dallePrompt = d.dallePrompt;
     _elogAdd('🖼 DALL-E görsel üretiliyor...');
-    generateBg(d.dallePrompt);
+    genDalle(d.dallePrompt).then(bg=>{ if(bg&&bg.base64){ S.dalleB64=bg.base64; S.bg={type:"dalle",url:bg.base64,thumb:bg.base64}; if(!S.altImages[0]) S.altImages[0]=bg.base64; renderPreview(); } }).catch(e=>_elogAdd("⚠ DALL-E: "+e.message));
   }
 
   // Editorial analiz güncelle
