@@ -90,6 +90,17 @@ SADECE JSON döndür, başka hiçbir şey yazma:
     "S19: brutalist BW+red accent — [THIS story's raw tension]",
     "S20: documentary extreme closeup grain — [THIS story's human detail]"
   ],
+  "carouselPlan": {
+    "caption": "Rusça Instagram caption 2-3 cümle + emoji",
+    "hashtags": "#новости #TRTрусском",
+    "slides": [
+      {"headline": "Rusça güçlü kısa başlık", "subtext": "Rusça açıklama 1-2 cümle", "stat": "", "scheme": "navy", "template": "TEMPLATE_HOOK", "bullets": []},
+      {"headline": "Rusça 2. slayt", "subtext": "Ana gerçek/bağlam", "stat": "SAYI varsa", "scheme": "beige", "template": "TEMPLATE_DATA", "bullets": ["madde1","madde2"]},
+      {"headline": "Rusça 3. slayt", "subtext": "Detay", "stat": "", "scheme": "teal", "template": "TEMPLATE_LIST", "bullets": ["nokta1","nokta2","nokta3"]},
+      {"headline": "Rusça 4. slayt", "subtext": "Analiz/yorum", "stat": "", "scheme": "dark", "template": "TEMPLATE_HOOK", "bullets": []},
+      {"headline": "TRT НА РУССКОМ", "subtext": "Сохраните и поделитесь", "stat": "", "scheme": "navy", "template": "TEMPLATE_CTA", "bullets": []}
+    ]
+  },
   "visualNote": "Rusça — seçilen metaforun neden güçlü olduğunu açıkla",
   "qualityGate": "passed"
 }`;
