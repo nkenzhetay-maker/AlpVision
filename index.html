@@ -312,21 +312,11 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
   <!-- ══ LEFT ══ -->
   <div class="left">
 
-    <!-- MODE SEÇİMİ -->
-    <div class="sec">
-      <div class="sec-lbl" id="lbl-mode">Режим</div>
-      <div class="mode-tabs">
-        <div class="mode-tab on" data-mode="photo" onclick="setMode('photo')">
-          <div class="mode-tab-icon">📷</div>
-          <span class="mode-tab-name" id="mn-photo">Фото</span>
-          <span class="mode-tab-sub" id="ms-photo">Загрузить фото → лого</span>
-        </div>
-        <div class="mode-tab" data-mode="ai" onclick="setMode('ai')">
-          <div class="mode-tab-icon">✨</div>
-          <span class="mode-tab-name" id="mn-ai">AI-генератор</span>
-          <span class="mode-tab-sub" id="ms-ai">Текст → AI-фон</span>
-        </div>
-      </div>
+    <!-- MODE — gizli, her zaman AI modu aktif -->
+    <div style="display:none">
+      <div id="lbl-mode"></div>
+      <div id="mn-photo"></div><div id="ms-photo"></div>
+      <div id="mn-ai"></div><div id="ms-ai"></div>
     </div>
 
     <!-- ТИП КОНТЕНТА — всегда виден -->
@@ -348,10 +338,10 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
       <textarea id="txt" placeholder="Вставьте текст новости или брифа..."></textarea>
     </div>
 
-    <!-- ══ ФОТО РЕЖИМ ══ -->
+    <!-- ══ ФОТО + АНАЛИЗ — единый режим ══ -->
     <div id="photo-mode">
       <div class="sec">
-        <div class="sec-lbl" id="lbl-upload">Фотография (AA / TRT World / Reuters)</div>
+        <div class="sec-lbl" id="lbl-upload">Фотография</div>
         <div class="upload-zone" id="upload-zone">
           <input type="file" accept="image/*" onchange="onFileSelect(event)" id="file-input">
           <div id="upload-empty">
@@ -368,15 +358,10 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
         </div>
         <div class="photo-warn" id="photo-warn">⚠ Нет ли логотипов других СМИ в кадре?</div>
       </div>
-      <div class="sec">
-        <button class="btn-main" onclick="photoPreview()" id="photo-preview-btn">
-          👁 Создать превью с фото
-        </button>
-      </div>
     </div>
 
-    <!-- ══ AI РЕЖИМ ══ -->
-    <div id="ai-mode" style="display:none">
+    <!-- ══ АНАЛИЗ ══ -->
+    <div id="ai-mode" style="display:block">
       <div class="sec">
         <button class="btn-main" id="analyze-btn" onclick="analyze()">
           🔍 Анализировать и создать превью
@@ -419,9 +404,10 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
             <div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳</div>
           </div>
           <div style="display:flex;gap:4px;margin-top:4px;">
-            <button class="btn-sm" id="regen-btn" onclick="regenDalle()" style="flex:1">↺ AI-иллюстрация</button>
-            <button class="btn-sm" id="photo-ai-btn" onclick="genPhotoAI()" style="flex:1;background:rgba(0,182,203,.12);border-color:#00B6CB;color:#00B6CB;">📷 AI-фото</button>
+            <button class="btn-sm" id="regen-btn" onclick="regenDalle()" style="flex:1">↺ Иллюстрация</button>
+            <button class="btn-sm" id="photo-ai-btn" onclick="genPhotoAI()" style="flex:1;background:rgba(0,182,203,.12);border-color:#00B6CB;color:#00B6CB;">📷 Фото</button>
           </div>
+          <button class="btn-sm" id="cover-ai-btn" onclick="genCoverAI()" style="width:100%;margin-top:4px;background:rgba(193,135,1,.15);border-color:#C48901;color:#C48901;font-weight:800;">🎨 Создать полную обложку (AI)</button>
         </div>
       </div>
 
@@ -716,19 +702,12 @@ function setCType(ct){
 
 // ── MODE ──
 function setMode(mode){
-  S.mode = mode;
-  document.querySelectorAll('.mode-tab').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
-  document.getElementById('photo-mode').style.display = mode === 'photo' ? '' : 'none';
-  document.getElementById('ai-mode').style.display    = mode === 'ai'    ? '' : 'none';
-  // Önizlemeyi sıfırla
-  if(!S.userPhotoB64 && !S.hl){
-    document.getElementById('empty').style.display       = '';
-    document.getElementById('single-wrap').style.display = 'none';
-    document.getElementById('prev-acts').style.display   = 'none';
-    document.getElementById('lbl-hint').style.display    = 'none';
-    document.getElementById('qc-bar').style.display      = 'none';
-    document.getElementById('vqc-result').style.display  = 'none';
-  }
+  // Her zaman AI modu — tek akış
+  S.mode = 'ai';
+  const pm = document.getElementById('photo-mode');
+  const am = document.getElementById('ai-mode');
+  if(pm) pm.style.display = '';
+  if(am) am.style.display = '';
 }
 
 // ── PHOTO MODE ──
@@ -1354,6 +1333,84 @@ async function genPhotoAI(){
   }
 }
 
+// ── Tam Kapak AI Üretici ──
+async function genCoverAI(){
+  const btn = document.getElementById('cover-ai-btn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Kapak üretiliyor (~20sn)...'; }
+  setSt('🎨 Tam kapak üretiliyor...','on');
+  _elogAdd('🎨 Tam kapak: gpt-image-1 high quality başladı');
+
+  // En iyi konsepti seç — dallePrompt veya altPrompts[0]
+  const concept = S.dallePrompt || (S.altPrompts && S.altPrompts[0]) || S.hl || '';
+  if(!concept){
+    setSt('⚠ Önce analiz yapın','err');
+    if(btn){ btn.disabled=false; btn.textContent='🎨 Создать полную обложку (AI)'; }
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/generate-bg', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        mode: 'cover',
+        prompt: concept,
+        concept: concept,
+        headline: S.hl || '',
+        category: S.cat || '',
+        platform: (PLATFORMS[S.prevPlatIdx] || PLATFORMS[0]).id
+      })
+    });
+    const d = await r.json();
+
+    if(d.base64){
+      // Özel cover slot — şablonlara değil direkt tam kapak göster
+      S.coverB64 = d.base64;
+      S.bg = {type:'cover', url: d.base64, thumb: d.base64};
+
+      // Canvas'a tam kapak göster — şablon olmadan
+      const canvas = document.getElementById('single-canvas');
+      const p = PLATFORMS[S.prevPlatIdx] || PLATFORMS[0];
+      canvas.innerHTML = `
+        <div style="position:absolute;inset:0;background:url(${d.base64}) center/cover no-repeat;"></div>
+        ${trtLogo(true)}
+      `;
+
+      // ph-grid'e ekle
+      const grid = document.getElementById('ph-grid');
+      if(grid){
+        grid.querySelectorAll('[data-type="cover"]').forEach(x=>x.remove());
+        const div = document.createElement('div');
+        div.className='ph-thumb on'; div.dataset.type='cover';
+        div.innerHTML='<img src="'+d.base64+'" style="width:100%;height:100%;object-fit:cover;">';
+        div.title = '🎨 Полная обложка AI';
+        div.onclick = () => {
+          document.querySelectorAll('.ph-thumb').forEach(x=>x.classList.remove('on'));
+          div.classList.add('on');
+          S.bg = {type:'cover', url:d.base64};
+          S.src = '';
+          canvas.innerHTML = `<div style="position:absolute;inset:0;background:url(${d.base64}) center/cover no-repeat;"></div>${trtLogo(true)}`;
+        };
+        grid.prepend(div);
+      }
+
+      document.getElementById('empty').style.display='none';
+      document.getElementById('single-wrap').style.display='flex';
+      document.getElementById('prev-acts').style.display='';
+
+      _elogAdd('✓ Полная обложка готова — high quality 1024×1536');
+      setSt('✓ Обложка готова','ok',5000);
+    } else {
+      throw new Error(d.error || 'No image');
+    }
+  } catch(e){
+    setSt('⚠ Kapak hatası: '+e.message,'err');
+    _elogAdd('⚠ Cover hata: '+e.message);
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='🎨 Создать полную обложку (AI)'; }
+  }
+}
+
 // ════════════════════════════════════════════════════════════
 // QC SYSTEM — 2 UZMAN HAKEMİ
 // ════════════════════════════════════════════════════════════
@@ -1491,11 +1548,7 @@ function trtLogo(dark){
 // Platform-aware card: typography adapts to each platform's actual ratio
 // ── KATEGORİ FİLTRESİ — içerik tipi görselde gösterilmez ──
 function getDisplayCat(){
-  if(!S.cat) return '';
-  const blocked = ['НОВОСТИ','NEWS','HABER','VIDEO','ВИДЕО',
-    'FEATURE','СТАТЬЯ','ARTICLE','INFOGRAPHIC','ИНФОГРАФИКА',
-    'Q&A','QA','BREAKING','СРОЧНО'];
-  return blocked.includes(S.cat.toUpperCase().trim()) ? '' : S.cat;
+  return ''; // Kategoriler kapakta gösterilmez — editöryal karar
 }
 
 // TRT World kurumsal renk seçici — kategoriye göre accent
