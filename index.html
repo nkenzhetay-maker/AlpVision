@@ -1068,7 +1068,7 @@ async function analyze(){
     S.hl  = d.headline    || '';
     S.sub = d.subheadline || '';
     S.cat = d.category    || '';
-    S.src = d.source      || '';
+    S.src = (d.source && !d.source.toLowerCase().includes('trt')) ? d.source : '';
     S.urgency    = d.urgency     || 'normal';
     S.dallePrompt= d.dallePrompt || '';
     S.pexelsQ    = d.pexelsQuery || '';
@@ -1076,10 +1076,27 @@ async function analyze(){
     _altStrategyIdx = 0;     // Yeni analiz → alt sayaç sıfırla
     _triedConcepts  = [];
 
-    // Şablon/renk seçimi
-    const sm={dark:'typographic',teal:'split',red:'photo_panel',gold:'feature',grey:'typographic'};
-    if(d.colorScheme && sm[d.colorScheme]) S.aiTpl = sm[d.colorScheme];
-    if(d.template){ S.aiTpl = d.template; S.photoTpl = d.template; }
+    // Template seçimi — AI'dan gelen template doğrudan kullan
+    const VALID_TPLS = ['dark_minimal','photo_overlay','color_block','pure_typography',
+      'accent_color','collage_dark','map_visual','portrait_illus','invitation','magazine_cover',
+      'silhouette','insider','trt_headline','trt_breaking','tweet_card',
+      'typographic','photo_panel','split','feature','geometric'];
+    if(d.template && VALID_TPLS.includes(d.template)){
+      S.aiTpl = d.template;
+      S.photoTpl = d.template;
+    } else {
+      const sm={dark:'dark_minimal',red:'collage_dark',teal:'color_block',
+                gold:'feature',grey:'split',navy:'dark_minimal',light:'pure_typography'};
+      if(d.colorScheme && sm[d.colorScheme]) S.aiTpl = sm[d.colorScheme];
+    }
+    // Fotograf onerisi — AI'dan gelen photoQuery ile otomatik ara
+    if(d.photoQuery){
+      S.pexelsQ = d.photoQuery;
+      S.photoSubject = d.photoSubject || null;
+      S.photoContext = d.photoContext || 'place';
+      S.photoOrientation = d.photoOrientation || 'landscape';
+      _autoSearchPhoto(d.photoQuery, d.photoSubject, d.photoOrientation);
+    }
 
     // platformNotes varsa güncelle
     if(d.platformNotes) S.platformNotes = d.platformNotes;
@@ -1218,6 +1235,37 @@ async function genDalle(prompt){
 async function searchPex(query){
   const r=await fetch('/api/search-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,orientation:'landscape'})});
   const d=await r.json();return d.photos||[];
+}
+
+async function _autoSearchPhoto(query, subject, orientation){
+  try {
+    const q = subject ? subject+' '+query : query;
+    const r = await fetch('/api/search-photo',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({query:q, orientation:orientation||'landscape'})
+    });
+    const d = await r.json();
+    const photos = d.photos||[];
+    if(!photos.length) return;
+    const grid = document.getElementById('ph-grid');
+    if(!grid) return;
+    photos.slice(0,6).forEach(p => {
+      const div = document.createElement('div');
+      div.className='ph-thumb'; div.dataset.url=p.src_large;
+      div.dataset.medium=p.src_medium; div.dataset.src=p.photographer||'';
+      div.innerHTML='<img src="'+p.src_tiny+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;">';
+      div.onclick = () => {
+        document.querySelectorAll('.ph-thumb').forEach(x=>x.classList.remove('on'));
+        div.classList.add('on');
+        S.bg={type:'url',url:p.src_large};
+        S.src=p.photographer&&!p.photographer.toLowerCase().includes('trt')?p.photographer:'';
+        const ps=document.getElementById('p-src'); if(ps) ps.value=S.src;
+        renderPreview();
+      };
+      grid.prepend(div);
+    });
+    _elogAdd('✓ '+photos.length+' фото: '+q);
+  } catch(e){ _elogAdd('⚠ Фото: '+e.message); }
 }
 async function regenDalle(){
   const btn=document.getElementById('regen-btn');
