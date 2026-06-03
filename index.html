@@ -569,12 +569,17 @@ const POLICY_RULES = [
 
 // Content type → template + color defaults
 const CTYPE_DEFAULTS = {
-  news:       {tpl:'photo_panel',  scheme:'dark',  urgency:'normal'},
-  infographic:{tpl:'typographic',  scheme:'teal',  urgency:'normal'},
-  feature:    {tpl:'feature',      scheme:'gold',  urgency:'feature'},
-  video:      {tpl:'photo_panel',  scheme:'dark',  urgency:'normal'},
-  article:    {tpl:'split',        scheme:'grey',  urgency:'normal'},
-  qa:         {tpl:'typographic',  scheme:'teal',  urgency:'normal'},
+  news:       {tpl:'photo_panel',   scheme:'dark',  urgency:'normal'},
+  infographic:{tpl:'typographic',   scheme:'teal',  urgency:'normal'},
+  feature:    {tpl:'feature',       scheme:'gold',  urgency:'feature'},
+  video:      {tpl:'trt_headline',  scheme:'dark',  urgency:'normal'},
+  article:    {tpl:'split',         scheme:'grey',  urgency:'normal'},
+  qa:         {tpl:'pure_typography',scheme:'light',urgency:'normal'},
+  breaking:   {tpl:'trt_breaking',  scheme:'red',   urgency:'breaking'},
+  analysis:   {tpl:'dark_minimal',  scheme:'dark',  urgency:'feature'},
+  opinion:    {tpl:'pure_typography',scheme:'light',urgency:'normal'},
+  data:       {tpl:'map_visual',    scheme:'light', urgency:'normal'},
+  social:     {tpl:'tweet_card',    scheme:'navy',  urgency:'normal'},
 };
 
 // ── ALTERNATİF ÜRETİM STATE (global scope) ──
@@ -906,10 +911,26 @@ function buildAiTplGrid(){
   const g=document.getElementById('ai-tpl-grid');if(!g)return;
   g.innerHTML='';
   [
-    {id:'typographic',label:'Типографский',sub:'Крупный заголовок',icon:'Аа'},
-    {id:'photo_panel',label:'Фото + Панель',sub:'Фото + белый блок',icon:'▣'},
-    {id:'split',label:'Сплит',sub:'Текст / Фото',icon:'◫'},
-    {id:'feature',label:'Feature',sub:'AI-фон + блок',icon:'✦'},
+    {id:'typographic',     label:'Типографский',    sub:'Крупный заголовок',      icon:'Аа'},
+    {id:'photo_panel',     label:'Фото + Панель',   sub:'Фото + белый блок',      icon:'▣'},
+    {id:'split',           label:'Сплит',           sub:'Текст / Фото',           icon:'◫'},
+    {id:'feature',         label:'Feature',         sub:'AI-фон + блок',          icon:'✦'},
+    {id:'dark_minimal',    label:'Тёмный',          sub:'Только текст, чёрный',   icon:'◼'},
+    {id:'photo_overlay',   label:'Фото Оверлей',    sub:'Текст поверх фото',      icon:'⬛'},
+    {id:'color_block',     label:'Цветной блок',    sub:'Яркий фон + иллюстр.',   icon:'🟥'},
+    {id:'pure_typography', label:'Чистый текст',    sub:'Белый, только текст',    icon:'T'},
+    {id:'accent_color',    label:'Акцент-цвет',     sub:'Жёлтый/Розовый/Сирень', icon:'🟡'},
+    {id:'collage_dark',    label:'Коллаж',          sub:'Ч/Б коллаж + красный',   icon:'▦'},
+    {id:'map_visual',      label:'Карта/Данные',    sub:'Карта + текст',          icon:'🗺'},
+    {id:'portrait_illus',  label:'Портрет-рисунок', sub:'Карандашный портрет',    icon:'✏'},
+    {id:'invitation',      label:'Приглашение',     sub:'Рамка, по центру',       icon:'□'},
+    {id:'magazine_cover',  label:'Обложка',         sub:'Формат журнала',         icon:'📰'},
+    {id:'silhouette',      label:'Силуэт',          sub:'Силуэт + акварель',      icon:'👤'},
+    {id:'insider',         label:'Инсайдер',        sub:'Видео-стиль TRT',        icon:'🔴'},
+    {id:'trt_headline',    label:'TRT Заголовок',   sub:'Текст поверх + портрет', icon:'📡'},
+    {id:'trt_breaking',    label:'TRT Срочно',      sub:'Нижняя полоса',          icon:'🔔'},
+    {id:'tweet_card',      label:'Твит-карточка',   sub:'Скрин соцсети',          icon:'🐦'},
+    {id:'geometric',       label:'Геометрия',       sub:'Вектор + иллюстрация',   icon:'◆'},
   ].forEach(tpl=>{
     const b=document.createElement('button');
     b.className='tpl-btn'+(S.aiTpl===tpl.id?' on':'');
@@ -1396,7 +1417,7 @@ function buildCard(tpl, bg, platform, forExport){
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.52rem,1.4vw,.86rem);font-weight:400;color:rgba(255,255,255,.62);line-height:1.4;max-width:88%;">${S.sub}</div>`:''}
       <div style="margin-top:clamp(7px,1.6vw,14px);display:flex;align-items:center;gap:7px;">
         <div style="width:22px;height:2px;background:${accent};border-radius:1px;"></div>
-        <span style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.78vw,.48rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${S.src||''}</span>
+        <span style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.78vw,.48rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${(S.src&&!S.src.toLowerCase().includes('trt'))?S.src:''}</span>
       </div>
     </div>`;
 
@@ -1410,7 +1431,7 @@ function buildCard(tpl, bg, platform, forExport){
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.76vw,.48rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.7vw,7px);">${getDisplayCat()}</div>`:''}
       <div style="font-family:Oswald,sans-serif;font-size:clamp(.78rem,${isPt?'5vw':isWeb?'3.2vw':'3.6vw'},2.4rem);font-weight:700;line-height:1.0;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(3px,.65vw,7px);">${S.hl||'ЗАГОЛОВОК'}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.25vw,.74rem);font-weight:400;color:#555;line-height:1.3;">${S.sub}</div>`:''}
-      ${S.src?`<div style="margin-top:clamp(2px,.55vw,5px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.7vw,.44rem);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#bbb;">Фото: ${S.src}</div>`:''}
+      ${(S.src&&!S.src.toLowerCase().includes('trt'))?`<div style="margin-top:clamp(2px,.55vw,5px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.7vw,.44rem);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#bbb;">Фото: ${S.src}</div>`:''}
     </div>`;
   }
 
@@ -1427,7 +1448,202 @@ function buildCard(tpl, bg, platform, forExport){
     </div>`;
   }
 
-  // feature
+  // ── dark_minimal: siyah zemin, sadece metin ──
+  if(tpl==='dark_minimal') return `
+    <div style="position:absolute;inset:0;background:#0a0a0a;"></div>
+    ${trtLogo(true)}
+    ${getDisplayCat()?`<div style="position:absolute;top:${isPt?'14%':'12%'};left:6%;z-index:2;font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};">${getDisplayCat()}</div>`:''}
+    <div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);z-index:2;">
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.8vw':isWeb?'3.6vw':'4.4vw'},2.8rem);font-weight:700;line-height:1.15;color:#fff;margin-bottom:clamp(8px,1.8vw,16px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.5rem,1.3vw,.78rem);font-weight:300;color:rgba(255,255,255,.55);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
+    </div>`;
+
+  // ── photo_overlay: fotoğraf üstünde metin ortada ──
+  if(tpl==='photo_overlay') return `
+    <div style="position:absolute;inset:0;background:${bgCss};filter:${bg?'brightness(.5) contrast(1.1)':'none'};"></div>
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,.35);"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;top:${isPt?'18%':'15%'};left:6%;right:6%;z-index:2;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(4px,.9vw,9px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.88rem,${isPt?'5.6vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.12;color:#fff;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(255,255,255,.7);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+    </div>`;
+
+  // ── color_block: düz renk zemin + illüstrasyon alanı ──
+  if(tpl==='color_block'){
+    const cbg = S.cat&&/ЭКОНОМ|ФИНАНС/.test(S.cat.toUpperCase())?'#042E58':
+                S.cat&&/ВОЙН|КРИЗИС|КОНФЛИКТ/.test(S.cat.toUpperCase())?'#B11731':
+                S.cat&&/ТЕХНО|AI|ЦИФР/.test(S.cat.toUpperCase())?'#216125':'#042E58';
+    const ctxt = '#F2F2F0';
+    return `
+    <div style="position:absolute;inset:0;background:${cbg};"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;top:${isPt?'12%':'10%'};left:6%;right:6%;z-index:2;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,242,240,.55);margin-bottom:clamp(4px,.9vw,8px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.5vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.15;color:${ctxt};margin-bottom:clamp(6px,1.4vw,12px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(242,242,240,.65);line-height:1.4;font-style:italic;margin-bottom:clamp(6px,1.4vw,12px);">${S.sub}</div>`:''}
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.38rem,.9vw,.56rem);font-weight:600;color:rgba(242,242,240,.4);letter-spacing:.1em;">→</div>
+    </div>
+    ${bg?`<div style="position:absolute;bottom:0;left:0;right:0;height:45%;background:url(${bg}) center/cover no-repeat;mask-image:linear-gradient(to bottom,transparent,rgba(0,0,0,.7) 40%,rgba(0,0,0,.9));-webkit-mask-image:linear-gradient(to bottom,transparent,rgba(0,0,0,.7) 40%,rgba(0,0,0,.9));"></div>`:''}`;
+  }
+
+  // ── pure_typography: beyaz zemin, sadece büyük metin ──
+  if(tpl==='pure_typography') return `
+    <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:50%;left:8%;right:8%;transform:translateY(-50%);z-index:2;">
+      <div style="width:32px;height:3px;background:${accent};margin-bottom:clamp(10px,2.2vw,20px);"></div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(1rem,${isPt?'6.2vw':isWeb?'3.8vw':'4.8vw'},3rem);font-weight:700;line-height:1.18;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(8px,1.8vw,16px);font-family:Manrope,sans-serif;font-size:clamp(.52rem,1.35vw,.8rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
+    </div>`;
+
+  // ── accent_color: sarı/pembe/mor düz zemin ──
+  if(tpl==='accent_color'){
+    const acolors = ['#C48901','#E91E8C','#6B3FA0','#00B6CB','#216125'];
+    const aidx = S.hl ? S.hl.length % acolors.length : 0;
+    const abg = acolors[aidx];
+    const atxt = abg==='#C48901'?'#1C1C1C':'#F2F2F0';
+    return `
+    <div style="position:absolute;inset:0;background:${abg};"></div>
+    ${trtLogo(abg!=='#C48901')}
+    <div style="position:absolute;bottom:${isPt?'12%':'10%'};left:7%;right:7%;z-index:2;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${atxt==='#1C1C1C'?'rgba(28,28,28,.5)':'rgba(242,242,240,.55)'};margin-bottom:clamp(4px,.9vw,8px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.5vw':'4.2vw'},2.6rem);font-weight:900;line-height:1.1;color:${atxt};">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:${atxt==='#1C1C1C'?'rgba(28,28,28,.65)':'rgba(242,242,240,.7)'};line-height:1.4;">${S.sub}</div>`:''}
+    </div>`;
+  }
+
+  // ── collage_dark: siyah-beyaz + kırmızı aksanlar ──
+  if(tpl==='collage_dark') return `
+    <div style="position:absolute;inset:0;background:${bgCss};filter:${bg?'grayscale(100%) brightness(.45) contrast(1.2)':'none'};"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(177,23,49,.18) 0%,transparent 60%);"></div>
+    <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#B11731;z-index:3;"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'4% 6% 5%':'3% 6% 4%'};z-index:3;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#B11731;margin-bottom:clamp(3px,.7vw,7px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'4vw'},2.4rem);font-weight:700;line-height:.96;color:#fff;text-transform:uppercase;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(4px,.9vw,9px);font-family:Manrope,sans-serif;font-size:clamp(.46rem,1.15vw,.7rem);font-weight:400;color:rgba(255,255,255,.6);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+    </div>`;
+
+  // ── map_visual: harita/veri görsel ──
+  if(tpl==='map_visual') return `
+    <div style="position:absolute;inset:0;background:#F5F4F0;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:${isPt?'12%':'10%'};left:6%;right:6%;z-index:2;">
+      <div style="width:28px;height:3px;background:${accent};margin-bottom:clamp(6px,1.4vw,12px);"></div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.78rem,${isPt?'4.8vw':isWeb?'3vw':'3.6vw'},2.2rem);font-weight:700;line-height:1.2;color:#1C1C1C;margin-bottom:clamp(4px,.9vw,9px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.44rem,1.1vw,.66rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;">${S.sub}</div>`:''}
+    </div>
+    ${bg?`<div style="position:absolute;bottom:5%;left:6%;right:6%;height:${isPt?'42%':'48%'};background:url(${bg}) center/contain no-repeat;opacity:.85;z-index:1;"></div>`:'<div style="position:absolute;bottom:8%;left:10%;right:10%;height:40%;background:radial-gradient(circle,rgba(4,46,88,.08) 0%,transparent 70%);border:1.5px solid rgba(4,46,88,.15);border-radius:50%;z-index:1;"></div>'}`;
+
+  // ── portrait_illus: kalem çizimi portre tarzı ──
+  if(tpl==='portrait_illus') return `
+    <div style="position:absolute;inset:0;background:#F5F4F0;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:${isPt?'12%':'10%'};left:6%;right:6%;z-index:2;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.7vw,6px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.8rem,${isPt?'5vw':isWeb?'3.1vw':'3.8vw'},2.3rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(5px,1.2vw,10px);font-family:Manrope,sans-serif;font-size:clamp(.46rem,1.1vw,.68rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+    </div>
+    ${bg?`<div style="position:absolute;bottom:0;left:10%;right:10%;height:${isPt?'50%':'52%'};background:url(${bg}) center top/contain no-repeat;filter:grayscale(40%);z-index:1;"></div>`:''}`;
+
+  // ── invitation: çerçeveli, ortalanmış ──
+  if(tpl==='invitation') return `
+    <div style="position:absolute;inset:0;background:#fff;"></div>
+    <div style="position:absolute;inset:3%;border:1.5px solid ${accent};z-index:1;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:50%;left:10%;right:10%;transform:translateY(-50%);z-index:2;text-align:center;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:${accent};margin-bottom:clamp(6px,1.4vw,12px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'3.9vw'},2.4rem);font-weight:700;line-height:1.18;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.46rem,1.15vw,.7rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+      <div style="width:24px;height:2px;background:${accent};margin:clamp(8px,1.8vw,14px) auto 0;"></div>
+    </div>`;
+
+  // ── magazine_cover: dergi kapağı ──
+  if(tpl==='magazine_cover') return `
+    <div style="position:absolute;inset:0;background:${bgCss};filter:${bg?'brightness(.72) contrast(1.08)':'none'};"></div>
+    <div style="position:absolute;top:0;left:0;right:0;height:${isPt?'22%':'18%'};background:${accent};z-index:2;display:flex;flex-direction:column;justify-content:center;padding:0 5%;">
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(1rem,${isPt?'7vw':'4.5vw'},2.8rem);font-weight:700;color:#fff;letter-spacing:.02em;">TRT НА РУССКОМ</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.44rem);color:rgba(255,255,255,.7);letter-spacing:.1em;margin-top:2px;">${S.sub||''}</div>
+    </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'4% 5% 5%':'3% 5% 4%'};z-index:2;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);">
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.88rem,${isPt?'5.5vw':'3.6vw'},2.2rem);font-weight:700;color:#fff;text-transform:uppercase;line-height:.96;">${S.hl||'ЗАГОЛОВОК'}</div>
+    </div>`;
+
+  // ── silhouette: siluet + açık zemin ──
+  if(tpl==='silhouette') return `
+    <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:${isPt?'10%':'8%'};left:6%;right:6%;z-index:2;">
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.8rem,${isPt?'5vw':isWeb?'3.1vw':'3.8vw'},2.3rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(5px,1.2vw,10px);font-family:Manrope,sans-serif;font-size:clamp(.46rem,1.1vw,.68rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+    </div>
+    ${bg?`<div style="position:absolute;bottom:0;left:0;right:0;height:55%;background:url(${bg}) center bottom/contain no-repeat;filter:grayscale(80%);opacity:.6;mix-blend-mode:multiply;z-index:1;"></div>`:'<div style="position:absolute;bottom:5%;left:25%;width:50%;height:45%;background:rgba(28,28,28,.08);clip-path:polygon(50% 0%,85% 20%,100% 60%,80% 100%,20% 100%,0% 60%,15% 20%);z-index:1;"></div>'}`;
+
+  // ── insider: kırmızı nokta + video etiketi ──
+  if(tpl==='insider') return `
+    <div style="position:absolute;inset:0;background:${bgCss};filter:${bg?'brightness(.48) contrast(1.12)':'none'};"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(8,14,24,.92) 55%,#060d14 100%);"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'4% 5% 5%':'3% 5% 4%'};z-index:2;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:clamp(5px,1.1vw,10px);">
+        <div style="width:8px;height:8px;border-radius:50%;background:#B11731;"></div>
+        <span style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.74vw,.46rem);font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.8);text-transform:uppercase;">СРОЧНО</span>
+      </div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.88rem,${isPt?'5.5vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.96;color:#fff;text-transform:uppercase;">${S.hl||'ЗАГОЛОВОК'}</div>
+    </div>`;
+
+  // ── trt_headline: metin üstte + portre altta ──
+  if(tpl==='trt_headline') return `
+    <div style="position:absolute;inset:0;background:#1C1C1C;"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;top:${isPt?'12%':'10%'};left:5%;right:5%;z-index:2;text-align:center;">
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'3.9vw'},2.4rem);font-weight:700;line-height:1.2;color:#fff;">${S.hl||'ЗАГОЛОВОК'}</div>
+    </div>
+    ${bg?`<div style="position:absolute;bottom:0;left:0;right:0;height:${isPt?'55%':'58%'};background:url(${bg}) center top/cover no-repeat;z-index:1;"></div>`:''}`;
+
+  // ── trt_breaking: fotoğraf + alt şerit ──
+  if(tpl==='trt_breaking') return `
+    <div style="position:absolute;inset:0;background:${bgCss};"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;bottom:0;left:0;right:0;background:#B11731;padding:${isPt?'3.5% 5% 4%':'2.5% 5% 3%'};z-index:2;">
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.78rem,${isPt?'4.8vw':isWeb?'3vw':'3.6vw'},2.2rem);font-weight:700;line-height:1.0;color:#fff;text-transform:uppercase;">${S.hl||'ЗАГОЛОВОК'}</div>
+    </div>`;
+
+  // ── tweet_card: sosyal medya screenshot tarzı ──
+  if(tpl==='tweet_card') return `
+    <div style="position:absolute;inset:0;background:#042E58;"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);z-index:2;">
+      <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:clamp(10px,2.2vw,20px);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:clamp(8px,1.8vw,14px);">
+          <div style="width:32px;height:32px;border-radius:50%;background:${accent};display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:Oswald,sans-serif;font-size:.7rem;font-weight:700;color:#fff;">TRT</span>
+          </div>
+          <div>
+            <div style="font-family:Manrope,sans-serif;font-size:clamp(.38rem,.9vw,.56rem);font-weight:700;color:#fff;">TRT НА РУССКОМ</div>
+            <div style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.76vw,.46rem);color:rgba(255,255,255,.45);">@trtrussian</div>
+          </div>
+        </div>
+        <div style="font-family:Manrope,sans-serif;font-size:clamp(.54rem,1.4vw,.84rem);font-weight:400;color:rgba(255,255,255,.9);line-height:1.55;">${S.hl||'ЗАГОЛОВОК'}</div>
+        ${S.sub?`<div style="margin-top:clamp(5px,1.1vw,10px);font-family:Manrope,sans-serif;font-size:clamp(.42rem,1vw,.64rem);color:rgba(255,255,255,.5);line-height:1.4;">${S.sub}</div>`:''}
+      </div>
+    </div>`;
+
+  // ── geometric: vektör/geometrik ──
+  if(tpl==='geometric') return `
+    <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    <div style="position:absolute;bottom:-5%;right:-5%;width:55%;height:55%;background:${accent};opacity:.12;border-radius:50%;z-index:1;"></div>
+    <div style="position:absolute;top:20%;left:-8%;width:35%;height:35%;background:${accent};opacity:.08;transform:rotate(45deg);z-index:1;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);z-index:2;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(4px,.9vw,8px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.0;color:#1C1C1C;text-transform:uppercase;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;">${S.sub}</div>`:''}
+      <div style="margin-top:clamp(8px,1.8vw,16px);width:36px;height:36px;border:2.5px solid ${accent};transform:rotate(45deg);"></div>
+    </div>`;
+
+  // feature (fallback)
   return `
     <div style="position:absolute;inset:0;background:${bgCss};"></div>
     <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.06) 0%,rgba(8,14,24,.88) 50%,rgba(8,14,24,1) 100%);"></div>
@@ -1437,7 +1653,7 @@ function buildCard(tpl, bg, platform, forExport){
       <div style="width:20px;height:3px;background:${accent};border-radius:2px;margin-bottom:clamp(5px,1.2vw,11px);"></div>
       <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.5vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(4px,.95vw,10px);">${S.hl||'ЗАГОЛОВОК'}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.25vw,.74rem);font-weight:400;color:rgba(255,255,255,.65);line-height:1.4;">${S.sub}</div>`:''}
-      <div style="margin-top:clamp(4px,.95vw,9px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.46rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${S.src||''}</div>
+      <div style="margin-top:clamp(4px,.95vw,9px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.46rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${(S.src&&!S.src.toLowerCase().includes('trt'))?S.src:''}</div>
     </div>`;
 }
 
