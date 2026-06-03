@@ -1461,7 +1461,7 @@ function renderQC(data){
 // ════════════════════════════════════════════════════════════
 // CARD BUILDER — Per-platform responsive design
 // ════════════════════════════════════════════════════════════
-function getActiveBg(){ return S.mode==='photo'?S.userPhotoB64||'':S.bg?.url||''; }
+function getActiveBg(){ return S.userPhotoB64 || S.bg?.url || S.bg?.base64 || ''; }
 function getActiveTpl(){ return S.mode==='photo'?S.photoTpl:S.aiTpl; }
 
 function trtLogo(dark){
@@ -2214,8 +2214,8 @@ function _showBuiltSlide(idx){
   canvas.style.width  = cw + 'px';
   canvas.style.height = ch + 'px';
 
-  // Mevcut bg'yi kullan (Pexels foto veya DALL-E)
-  const bg = S.bg ? (S.bg.url || S.bg.base64 || null) : null;
+  // Mevcut bg'yi kullan — kullanıcı yüklemesi öncelikli
+  const bg = S.userPhotoB64 || (S.bg ? (S.bg.url || S.bg.base64 || null) : null);
 
   // Geçici olarak aiTpl + scheme değiştir, render et, geri al
   const prevTpl = S.aiTpl;
@@ -2384,21 +2384,50 @@ function _buildInfSlides(d){
     _elogAdd('✓ Медиастратег: '+slides.length+' slayt (carouselPlan)');
   }
 
-  // Fallback: carouselPlan yoksa editorialAnalysis'ten üret
+  // Fallback: carouselPlan yoksa metinden akıllı 5 slayt üret
   if(slides.length === 0){
-    slides.push({title:d.headline||'', headline:d.headline||'', body:d.subheadline||'', subtext:d.subheadline||'', scheme:'navy', template:'TEMPLATE_HOOK'});
-    if(d.editorialAnalysis){
-      const ea = d.editorialAnalysis;
-      if(ea.realCenter)     slides.push({title:'Суть',        headline:'Суть',        body:ea.realCenter,    subtext:ea.realCenter,    scheme:'beige', template:'TEMPLATE_HOOK'});
-      if(ea.socialMediaHook) slides.push({title:'Зачем знать',headline:'Зачем знать', body:ea.socialMediaHook, subtext:ea.socialMediaHook, scheme:'teal', template:'TEMPLATE_LIST'});
-    }
-    if(d.concepts && Array.isArray(d.concepts)){
-      d.concepts.slice(0,2).forEach(con=>{
-        slides.push({title:con.title||'', headline:con.title||'', body:con.description||'', subtext:con.description||'', scheme:'dark', template:'TEMPLATE_LIST'});
-      });
-    }
-    slides.push({title:d.headline||'TRT НА РУССКОМ', headline:d.headline||'TRT НА РУССКОМ', body:'Сохраните и поделитесь', subtext:'Сохраните и поделитесь', scheme:'navy', template:'TEMPLATE_CTA'});
-    _elogAdd('✓ İnfografik fallback: '+slides.length+' slayt');
+    const hl  = d.headline    || S.hl  || '';
+    const sub = d.subheadline || S.sub || '';
+    const cat = d.category    || S.cat || '';
+    const ea  = d.editorialAnalysis || {};
+
+    // Slayt 1: HOOK — kapak
+    slides.push({
+      headline: hl, subtext: sub,
+      scheme:'navy', template:'TEMPLATE_HOOK', bullets:[], stat:''
+    });
+
+    // Slayt 2: BAĞLAM — ana gerçek
+    const center = ea.realCenter || sub || '';
+    if(center) slides.push({
+      headline: 'Суть события', subtext: center,
+      scheme:'beige', template:'TEMPLATE_HOOK', bullets:[], stat:''
+    });
+
+    // Slayt 3: DETAYLAR — metinden madde madde
+    const bodyText = (d.body || d.text || '').slice(0, 400);
+    const bullets  = bodyText
+      ? bodyText.split(/[.!?]/).filter(s=>s.trim().length>20).slice(0,3).map(s=>s.trim())
+      : [sub];
+    slides.push({
+      headline: 'Подробности', subtext: '',
+      bullets, scheme:'teal', template:'TEMPLATE_LIST', stat:''
+    });
+
+    // Slayt 4: BAĞLAM/ANALİZ
+    const metaHook = ea.economistMetaphor ? '' : sub;
+    slides.push({
+      headline: 'Что это значит', subtext: metaHook || center || sub,
+      scheme:'dark', template:'TEMPLATE_HOOK', bullets:[], stat:''
+    });
+
+    // Slayt 5: CTA
+    slides.push({
+      headline: 'TRT НА РУССКОМ', subtext: 'Сохраните и поделитесь',
+      scheme:'navy', template:'TEMPLATE_CTA', bullets:[], stat:''
+    });
+
+    _elogAdd('✓ Carousel fallback: '+slides.length+' slayt üretildi');
   }
 
   S.infSlides = slides;
