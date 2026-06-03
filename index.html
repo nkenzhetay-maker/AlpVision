@@ -1775,8 +1775,9 @@ function renderPreview(){
     _renderInfographicCarousel();
     return;
   }
-  if(S.mode==='ai'){S.hl=document.getElementById('m-hl').value;S.sub=document.getElementById('m-sub').value;S.cat=document.getElementById('m-cat').value;S.src=document.getElementById('m-src').value;}
-  else{S.hl=document.getElementById('p-hl').value;S.sub=document.getElementById('p-sub').value;S.cat=document.getElementById('p-cat').value;S.src=document.getElementById('p-src').value;}
+  const _v=id=>{const e=document.getElementById(id);return e?e.value:'';};
+  if(S.mode==='ai'){S.hl=_v('m-hl');S.sub=_v('m-sub');S.cat=_v('m-cat');S.src=_v('m-src');}
+  else{S.hl=_v('p-hl');S.sub=_v('p-sub');S.cat=_v('p-cat');S.src=_v('p-src');}
 
   const p=PLATFORMS[S.prevPlatIdx]||PLATFORMS[0];
   const canvas=document.getElementById('single-canvas');
