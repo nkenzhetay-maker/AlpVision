@@ -946,10 +946,52 @@ async function analyze(){
   _progressTimer = _startProgress(['🔍 Metni okuyorum...','🧠 Editöryal çerçeve kuruyorum...','🎨 The Economist tarzı 20 konsept hazırlıyorum...','🖼 Görsel direktifler üretiliyor...'], 18);
 
   try{
-    const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text:txt,contentType:S.contentType,_fastMode:S.fastMode})});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.error||'Error');
+    // ── FAZ 1: HIZLI (Haiku ~2-3sn) — Başlık + Canva şablonları ──
+    _elogAdd('⚡ Faz 1: Hızlı analiz başladı...');
+    const rFast = await fetch('/api/analyze-fast',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:txt, contentType:S.contentType})});
+    const dFast = await rFast.json();
+
+    if(dFast.headline){
+      // Hızlı sonuçları hemen göster
+      S.hl = dFast.headline;
+      S.subhl = dFast.subheadline || '';
+      S.category = dFast.category || 'МИРОВЫЕ';
+      S.source = dFast.source || '';
+      S.photoCredit = dFast.photoCredit || '';
+      S.urgency = dFast.urgency || 'normal';
+      _elogAdd('✓ Faz 1 tamamlandı: '+dFast.headline);
+
+      // Canva galerisi hemen göster
+      if(dFast.canvaTemplates && dFast.canvaTemplates.length > 0){
+        _renderCanvaGallery(dFast.canvaTemplates);
+        _elogAdd('✓ '+dFast.canvaTemplates.length+' Canva şablonu hazır');
+      }
+
+      // Önizlemeyi hızlıca çiz (görsel olmadan)
+      renderPreview();
+      setSt('✓ Şablonlar hazır — görsel üretiliyor...', 'on', 0, null);
+    }
+
+    // ── FAZ 2: DERİN (Sonnet ~8-10sn) — DALL-E + Konseptler — ARKA PLANDA ──
+    _elogAdd('🎨 Faz 2: Derin analiz başladı (arka plan)...');
+    fetch('/api/analyze-deep',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:txt, headline:dFast.headline||'', contentType:S.contentType})})
+    .then(r2=>r2.json())
+    .then(dDeep=>{
+      if(dDeep._phase === 'deep'){
+        _elogAdd('✓ Faz 2 tamamlandı: '+dDeep._engine);
+        // Derin analiz verilerini birleştir
+        const d = {...dFast, ...dDeep};
+        S._rawAnalysis = d;
+        _processDeeepResult(d, txt);
+      }
+    })
+    .catch(err=>{ _elogAdd('⚠ Faz 2 hata: '+err.message); });
+
+    // Faz 1 verisiyle devam et
+    const d = dFast;
+    S._rawAnalysis = d;
 
     // Ham analiz verisi kaydet
     S._rawAnalysis = d;
@@ -1801,6 +1843,48 @@ function _openPlatformCanva(templateId, platform){
   };
   const url = `https://www.canva.com/design?create=true&template=${templateId}`;
   window.open(url, '_blank');
+}
+
+
+// ── FAZ 2 tamamlandığında çağrılır — DALL-E + konseptler işle ──
+function _processDeeepResult(d, txt){
+  // altPrompts kaydet
+  if(d.altPrompts && Array.isArray(d.altPrompts)){
+    const cleaned = d.altPrompts
+      .map(p => {
+        if(typeof p !== 'string') return null;
+        return p.replace(/^S\d+:\s*/i,'').replace(/^PROMPT_\d+:\s*/i,'').trim();
+      })
+      .filter(p => p && p.length > 20 && !p.startsWith('['));
+    if(cleaned.length > 0){
+      S.altPrompts = cleaned;
+      S.altTotal = cleaned.length;
+      _elogAdd('✓ '+cleaned.length+' Economist konsepti hazır');
+    }
+  }
+
+  // DALL-E prompt kaydet + görsel üret
+  if(d.dallePrompt && d.dallePrompt.length > 20){
+    S.dallePrompt = d.dallePrompt;
+    _elogAdd('🖼 DALL-E görsel üretiliyor...');
+    generateBg(d.dallePrompt);
+  }
+
+  // Editorial analiz güncelle
+  if(d.editorialAnalysis){
+    const ea = d.editorialAnalysis;
+    if(ea.realCenter)    document.getElementById('ed-center')  && (document.getElementById('ed-center').textContent  = ea.realCenter);
+    if(ea.dominantEmotion) document.getElementById('ed-emotion') && (document.getElementById('ed-emotion').textContent = ea.dominantEmotion);
+    if(ea.socialMediaHook) document.getElementById('ed-social')  && (document.getElementById('ed-social').textContent  = ea.socialMediaHook);
+  }
+
+  // Konseptleri göster
+  if(d.concepts && d.concepts.length > 0){
+    S.concepts = d.concepts;
+    renderConcepts && renderConcepts(d.concepts);
+  }
+
+  setSt('✓ Анализ завершён', 'ok', 3000, null);
 }
 
 function _buildInfSlides(d){
