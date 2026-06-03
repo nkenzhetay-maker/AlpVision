@@ -958,18 +958,42 @@ async function analyze(){
       S.subhl = dFast.subheadline || '';
       S.category = dFast.category || 'МИРОВЫЕ';
       S.source = dFast.source || '';
-      S.photoCredit = dFast.photoCredit || '';
-      S.urgency = dFast.urgency || 'normal';
+      // TRT kanalları için kaynak notu gerekmez
+  const rawCredit = dFast.photoCredit || '';
+  S.photoCredit = (rawCredit.toLowerCase().includes('trt')) ? '' : rawCredit;
+      S.urgency  = dFast.urgency    || 'normal';
+      S.pexelsQ  = dFast.pexelsQuery || '';
+      // UI alanlarını doldur
+      const hlEl = document.getElementById('m-hl'); if(hlEl) hlEl.value = S.hl;
+      const subEl = document.getElementById('m-sub'); if(subEl) subEl.value = S.subhl||S.sub||'';
+      const catEl = document.getElementById('m-cat'); if(catEl) catEl.value = S.category||S.cat||'';
       _elogAdd('✓ Faz 1 tamamlandı: '+dFast.headline);
 
-      // Canva galerisi hemen göster
+      // Canva galerisi hemen göster — renderPreview'ı çağırma, ezmesin
       if(dFast.canvaTemplates && dFast.canvaTemplates.length > 0){
         _renderCanvaGallery(dFast.canvaTemplates);
         _elogAdd('✓ '+dFast.canvaTemplates.length+' Canva şablonu hazır');
+      } else {
+        // Canva yoksa normal önizleme
+        renderPreview();
       }
 
-      // Önizlemeyi hızlıca çiz (görsel olmadan)
-      renderPreview();
+      // Arka planda Pexels foto çek
+      if(S.pexelsQ){
+        searchPex(S.pexelsQ).then(function(photos){
+          if(photos && photos.length > 0){
+            S.bg = {type:'pexels', url:photos[0].src_large, thumb:photos[0].src_medium};
+            _elogAdd('✓ Pexels foto: '+photos[0].src_medium.slice(0,40));
+            // Canva slayt varsa overlay'i güncelle, yoksa preview'ı yeniden çiz
+            if(S._canvaTemplates && S._canvaTemplates.length > 0){
+              _showCanvaSlide(S._canvaIdx || 0);
+            } else {
+              renderPreview();
+            }
+          }
+        }).catch(function(){});
+      }
+
       setSt('✓ Şablonlar hazır — görsel üretiliyor...', 'on', 0, null);
     }
 
@@ -1516,8 +1540,8 @@ async function _generateAltBackground(){
 // ── ALTERNATİF: sıradaki görsel göster (yoksa üret) ──
 
 function backToPreview(){
-  if(S._canvaTemplates && S._canvaTemplates.length > 0){
-    _showCanvaSlide((S._canvaIdx || 0) - 1);
+  if(S.hl){
+    _showBuiltSlide((S._builtIdx !== undefined ? S._builtIdx : 1) - 1);
     return;
   }
   // Normal önizlemeye dön
@@ -1528,9 +1552,9 @@ function backToPreview(){
 }
 
 async function generateAlt(){
-  // Canva şablonları varsa → bir sonraki şablonu göster
-  if(S._canvaTemplates && S._canvaTemplates.length > 0){
-    _showCanvaSlide((S._canvaIdx || 0) + 1);
+  // Önce built slide sistemi (buildCard), sonra DALL-E
+  if(S.hl){
+    _showBuiltSlide((S._builtIdx !== undefined ? S._builtIdx : -1) + 1);
     return;
   }
   if(!S.hl && !S.dalleB64 && !S.dallePrompt){ setSt('⚠ Önce «Анализировать и создать превью» butonuna basın','err'); return; }
@@ -1802,15 +1826,109 @@ const CANVA_THUMBS = {
   "EAHLccBt_XA":"https://template-private.canva.com/EAHLccBt_XA/1/0/640w-JTP8Pou7nKw.jpg"
 };
 
-// Şablon listesini state'e kaydet, önizlemeyi güncelle
+// Şablon listesini state'e kaydet, ilk şablonu buildCard ile göster
 function _renderCanvaGallery(templates){
   if(!templates || templates.length === 0) return;
   S._canvaTemplates = templates;
   S._canvaIdx = 0;
-  _showCanvaSlide(0);
+  // Canva yerine buildCard ile render et
+  _showBuiltSlide(0);
 }
 
 // İstenilen index'teki şablonu önizlemede göster
+
+// ── buildCard ile şablon önizleme sistemi ──
+// 20 şablon kombinasyonu
+const BUILT_TEMPLATES = [
+  {tpl:'photo_panel',   scheme:'dark',  label:'TRT Тёмный'},
+  {tpl:'typographic',   scheme:'dark',  label:'Типографский'},
+  {tpl:'split',         scheme:'teal',  label:'Разделённый'},
+  {tpl:'feature',       scheme:'navy',  label:'Репортаж'},
+  {tpl:'photo_panel',   scheme:'red',   label:'Срочные новости'},
+  {tpl:'typographic',   scheme:'teal',  label:'Тёмно-синий'},
+  {tpl:'split',         scheme:'red',   label:'Красный блок'},
+  {tpl:'feature',       scheme:'dark',  label:'Тёмный репортаж'},
+  {tpl:'photo_panel',   scheme:'gold',  label:'Золотой'},
+  {tpl:'typographic',   scheme:'navy',  label:'Флотский'},
+  {tpl:'split',         scheme:'dark',  label:'Тёмное деление'},
+  {tpl:'feature',       scheme:'teal',  label:'Бирюзовый'},
+  {tpl:'photo_panel',   scheme:'teal',  label:'Бирюзовая панель'},
+  {tpl:'typographic',   scheme:'red',   label:'Красный заголовок'},
+  {tpl:'split',         scheme:'gold',  label:'Золотое деление'},
+  {tpl:'feature',       scheme:'red',   label:'Красный репортаж'},
+  {tpl:'photo_panel',   scheme:'navy',  label:'Тёмно-синяя панель'},
+  {tpl:'typographic',   scheme:'gold',  label:'Золотой заголовок'},
+  {tpl:'split',         scheme:'navy',  label:'Синее деление'},
+  {tpl:'feature',       scheme:'gold',  label:'Золотой репортаж'}
+];
+
+function _showBuiltSlide(idx){
+  const total = BUILT_TEMPLATES.length;
+  S._builtIdx = ((idx % total) + total) % total;
+  const t = BUILT_TEMPLATES[S._builtIdx];
+  const current = S._builtIdx + 1;
+
+  // Önizleme platformunu al
+  const p = PLATFORMS[S.prevPlatIdx] || PLATFORMS[0];
+  const canvas = document.getElementById('single-canvas');
+  const center = document.querySelector('.center');
+  const prevBody = document.querySelector('.prev-body');
+  if(!canvas || !center) return;
+
+  // Boyutları hesapla
+  const vw = center.offsetWidth - 32;
+  const vh = (prevBody ? prevBody.offsetHeight : 600) - 32;
+  const [rw, rh] = p.ratio.includes('/') ? p.ratio.split('/').map(Number) : [parseFloat(p.ratio), 1];
+  const ratio = rw / rh;
+  let cw = Math.min(vw, vh * ratio);
+  let ch = cw / ratio;
+  if(ch > vh){ ch = vh; cw = ch * ratio; }
+
+  canvas.style.width  = cw + 'px';
+  canvas.style.height = ch + 'px';
+
+  // Mevcut bg'yi kullan (Pexels foto veya DALL-E)
+  const bg = S.bg ? (S.bg.url || S.bg.base64 || null) : null;
+
+  // Geçici olarak aiTpl değiştir, render et, geri al
+  const prevTpl = S.aiTpl;
+  S.aiTpl = t.tpl;
+  canvas.innerHTML = buildCard(t.tpl, bg, p, false);
+  S.aiTpl = prevTpl;
+
+  // Şablon adı + sayaç overlay
+  let badge = document.getElementById('built-badge');
+  if(!badge){
+    badge = document.createElement('div');
+    badge.id = 'built-badge';
+    badge.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(1,32,63,.85);color:#00B6CB;font-size:.55rem;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.08em;z-index:20;pointer-events:none;';
+    const wrap = canvas.parentElement;
+    if(wrap){ wrap.style.position='relative'; wrap.appendChild(badge); }
+  }
+  badge.textContent = current + ' / ' + total + '  ' + t.label;
+
+  // single-wrap göster
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('gallery-wrap').style.display = 'none';
+  document.getElementById('single-wrap').style.display = 'flex';
+
+  // Hint güncelle
+  const hint = document.getElementById('lbl-hint');
+  if(hint){ hint.style.display = 'block'; hint.textContent = '← Назад · ' + current + '/20 · ' + t.label + ' · → Следующий'; }
+
+  // Prev/Next butonlarını güncelle
+  document.querySelectorAll('.btn-act[onclick*="generateAlt"]').forEach(function(btn){
+    btn.onclick = function(){ _showBuiltSlide(S._builtIdx + 1); };
+    btn.textContent = '→ Следующий';
+  });
+  document.querySelectorAll('.btn-act[onclick*="backToPreview"]').forEach(function(btn){
+    btn.onclick = function(){ _showBuiltSlide(S._builtIdx - 1); };
+    btn.textContent = '← Назад';
+  });
+
+  _elogAdd('Şablon ' + current + '/20: ' + t.label);
+}
+
 function _showCanvaSlide(idx){
   const templates = S._canvaTemplates;
   if(!templates || templates.length === 0) return;
@@ -1821,40 +1939,45 @@ function _showCanvaSlide(idx){
   const total = templates.length;
   const current = S._canvaIdx + 1;
 
-  // Önizleme alanını Canva thumbnail ile doldur
-  const previewWrap = document.getElementById('preview-wrap') || document.getElementById('preview-inner');
-  if(previewWrap){
-    const W = previewWrap.offsetWidth || 400;
-    const H = Math.round(W * 1.25); // 4:5 oran
+  // single-wrap'i göster, empty ve gallery-wrap'i gizle
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('gallery-wrap').style.display = 'none';
+  const sw = document.getElementById('single-wrap');
+  sw.style.display = 'flex';
 
-    previewWrap.style.backgroundImage = thumb ? 'url('+thumb+')' : 'none';
-    previewWrap.style.backgroundSize = 'cover';
-    previewWrap.style.backgroundPosition = 'center';
+  // single-canvas içine Canva thumbnail render et
+  const canvas = document.getElementById('single-canvas');
+  if(!canvas) return;
 
-    // Overlay — başlık + şablon adı + sayaç
-    let overlay = document.getElementById('canva-overlay');
-    if(!overlay){
-      overlay = document.createElement('div');
-      overlay.id = 'canva-overlay';
-      overlay.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:16px;pointer-events:none;';
-      previewWrap.style.position = 'relative';
-      previewWrap.appendChild(overlay);
-    }
-    overlay.innerHTML =
-      '<div style="font-size:.6rem;color:#00B6CB;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;">'+current+' / '+total+' — '+label+'</div>'
-      +'<div style="font-size:.75rem;color:#F2F2F0;font-weight:700;line-height:1.3;">'+(S.hl||'')+'</div>'
-      +'<div style="margin-top:8px;">'
-        +'<button onclick="window.open(\'https://www.canva.com/design?create=true&template='+t.id+'\',\'_blank\')" style="background:#01203F;border:1px solid #00B6CB;color:#F2F2F0;padding:5px 12px;border-radius:4px;font-size:.6rem;font-weight:700;cursor:pointer;margin-right:6px;">Canva\'da Aç →</button>'
-      +'</div>';
-  }
+  const canvaUrl = 'https://www.canva.com/design?create=true&template=' + t.id;
 
-  // Следующий / Назад butonlarını güncelle
-  const nextBtn = document.getElementById('alt-next-btn');
-  const prevBtn = document.getElementById('alt-prev-btn');
-  if(nextBtn) nextBtn.onclick = function(){ _showCanvaSlide(S._canvaIdx + 1); };
-  if(prevBtn) prevBtn.onclick = function(){ _showCanvaSlide(S._canvaIdx - 1); };
+  canvas.innerHTML =
+    '<div style="position:relative;width:100%;max-width:400px;margin:0 auto;">'
+    // Thumbnail
+    + (thumb
+        ? '<img src="'+thumb+'" style="width:100%;display:block;border-radius:6px;" onerror="this.style.opacity=0;">'
+        : '<div style="width:100%;aspect-ratio:4/5;background:#1C1C1C;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#666;font-size:2rem;">🎨</div>')
+    // Overlay — şablon adı + sayaç
+    + '<div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(rgba(0,0,0,.7),transparent);padding:10px 12px;border-radius:6px 6px 0 0;">'
+      + '<span style="font-size:.6rem;font-weight:700;color:#00B6CB;letter-spacing:.1em;text-transform:uppercase;">'
+      + current+' / '+total+' &nbsp;·&nbsp; '+label
+      + '</span>'
+    + '</div>'
+    // Alt overlay — başlık + buton
+    + '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:16px 12px 12px;border-radius:0 0 6px 6px;">'
+      + '<div style="font-size:.7rem;font-weight:700;color:#F2F2F0;line-height:1.3;margin-bottom:8px;">'+(S.hl||'')+'</div>'
+      + '<button onclick="window.open(\'' + canvaUrl + '\',\'_blank\')" '
+        + 'style="width:100%;padding:7px;background:#01203F;border:1.5px solid #00B6CB;color:#F2F2F0;border-radius:4px;font-size:.65rem;font-weight:700;cursor:pointer;">'
+        + 'Canva’da Aç →'
+      + '</button>'
+    + '</div>'
+    + '</div>';
 
-  _elogAdd('Şablon: '+label+' ('+current+'/'+total+')');
+  // Hint satırını güncelle
+  const hint = document.getElementById('lbl-hint');
+  if(hint){ hint.style.display='block'; hint.textContent='← Назад / Шаблон: '+label+' | Canva’да Aç →'; }
+
+  _elogAdd('Шаблон: '+label+' ('+current+'/'+total+')');
 }
 
 function _openPlatformCanva(templateId, platform){
