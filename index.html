@@ -461,7 +461,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
       <div class="prev-acts" id="prev-acts" style="display:none">
         <button class="btn-qc" onclick="runVisionQC()" id="btn-vqc" style="border-color:#27ae60;color:#27ae60;">👁 Vision QC</button>
         <button class="btn-qc" onclick="runQC()" id="btn-qc">🎨 QC Проверка</button>
-        <button class="btn-act" onclick="generateAlt()">→ Следующий</button>
+        <button class="btn-act" onclick="backToPreview()" style="margin-right:4px;">← Назад</button><button class="btn-act" onclick="generateAlt()">→ Следующий</button>
         <button class="btn-sm" onclick="openElog()" title="Редакционный журнал" style="font-size:.6rem;padding:4px 8px">📋</button>
         <button class="btn-act" onclick="switchFmt()">⇄ Формат</button>
         <button class="btn-approve" onclick="approveAll()">✓ Утвердить → Все форматы</button>
@@ -1514,7 +1514,25 @@ async function _generateAltBackground(){
 }
 
 // ── ALTERNATİF: sıradaki görsel göster (yoksa üret) ──
+
+function backToPreview(){
+  if(S._canvaTemplates && S._canvaTemplates.length > 0){
+    _showCanvaSlide((S._canvaIdx || 0) - 1);
+    return;
+  }
+  // Normal önizlemeye dön
+  const gw = document.getElementById('gallery-wrap');
+  const sw = document.getElementById('single-wrap');
+  if(gw) gw.style.display='none';
+  if(sw) sw.style.display='block';
+}
+
 async function generateAlt(){
+  // Canva şablonları varsa → bir sonraki şablonu göster
+  if(S._canvaTemplates && S._canvaTemplates.length > 0){
+    _showCanvaSlide((S._canvaIdx || 0) + 1);
+    return;
+  }
   if(!S.hl && !S.dalleB64 && !S.dallePrompt){ setSt('⚠ Önce «Анализировать и создать превью» butonuna basın','err'); return; }
   if(S.analyzing){ setSt('⏳ İşlem devam ediyor...','on'); return; }
 
@@ -1757,92 +1775,91 @@ function _infPrev(){ if(!S.infSlides) return; S._infIdx=((S._infIdx||0)+S.infSli
 // Analiz sonucunda infographic slides oluştur
 
 // ═══════════════════════════════════════════════
-// CANVA ŞABLON GALERİSİ
+// CANVA ŞABLON GALERİSİ — Следующий/Назад sistemi
 // ═══════════════════════════════════════════════
+const STYLE_LABELS = {"trt_dark": "TRT Карт. Тёмный", "trt_dark_v2": "TRT Тёмный v2", "trt_banner": "TRT Баннер", "economist_cream": "Economist Крем", "power_editorial": "Силовой Репортаж", "asymmetry": "Асимметрия", "power_imbalance": "Дисбаланс Сил", "black_split": "Чёрный Блок", "bw_editorial": "Ч/Б Репортаж", "big_number": "Большая Цифра", "big_number_v2": "Большая Цифра v2", "data_viz": "Данные", "quote_editorial": "Цитата", "quote_v2": "Цитата v2", "quote_gray": "Цитата Серая", "quote_v3": "Цитата v3", "data_chart": "График", "comparison": "Сравнение", "trend_analysis": "Тренд", "watercolor": "Акварель"};
+
+const CANVA_THUMBS = {
+  "EAHLcbSuSmo":"https://template-private.canva.com/EAHLcbSuSmo/1/0/640w-JnHiwzoHEJc.jpg",
+  "EAHLcdMwS-E":"https://template-private.canva.com/EAHLcdMwS-E/1/0/640w-maar93RxgQY.jpg",
+  "EAHLcZWnH0Y":"https://template-private.canva.com/EAHLcZWnH0Y/1/0/640w-FNliExraUPY.jpg",
+  "EAHLcZKx8UA":"https://template-private.canva.com/EAHLcZKx8UA/1/0/640w-K4svtq0945g.jpg",
+  "EAHLcZEDHv0":"https://template-private.canva.com/EAHLcZEDHv0/1/0/640w-Raw0Aa_ysLI.jpg",
+  "EAHLcbHdSNw":"https://template-private.canva.com/EAHLcbHdSNw/1/0/640w-Uqu3gcdx0WM.jpg",
+  "EAHLcdNXGXA":"https://template-private.canva.com/EAHLcdNXGXA/1/0/640w-3yFUTu6fo_M.jpg",
+  "EAHLcU_Ullg":"https://template-private.canva.com/EAHLcU_Ullg/1/0/640w-kNG6F0TdhQE.jpg",
+  "EAHLccH0QyI":"https://template-private.canva.com/EAHLccH0QyI/1/0/640w-30siwmPCrNE.jpg",
+  "EAHLcQY-qCY":"https://template-private.canva.com/EAHLcQY-qCY/1/0/640w-Zt4DDAJz4Uw.jpg",
+  "EAHLcazlbZo":"https://template-private.canva.com/EAHLcazlbZo/1/0/640w-FW0-l2cOMSE.jpg",
+  "EAHLcaFMLas":"https://template-private.canva.com/EAHLcaFMLas/1/0/640w-dcHLyTvfDNo.jpg",
+  "EAHLcannr_U":"https://template-private.canva.com/EAHLcannr_U/1/0/640w-2dczyARbokw.jpg",
+  "EAHLcaHdlfA":"https://template-private.canva.com/EAHLcaHdlfA/1/0/640w-CfrrgDrzHZI.jpg",
+  "EAHLcZBObt4":"https://template-private.canva.com/EAHLcZBObt4/1/0/640w-FJxDSHWAVPQ.jpg",
+  "EAHLcSz-Gik":"https://template-private.canva.com/EAHLcSz-Gik/1/0/640w-WUd8WTaCDcs.jpg",
+  "EAHLcVs6bOo":"https://template-private.canva.com/EAHLcVs6bOo/1/0/640w-DqWKt0pUzWk.jpg",
+  "EAHLcU3FTH4":"https://template-private.canva.com/EAHLcU3FTH4/1/0/640w-Ykn9p4Ni154.jpg",
+  "EAHLcXQ8FVQ":"https://template-private.canva.com/EAHLcXQ8FVQ/1/0/640w-_Y83vEKiY18.jpg",
+  "EAHLccBt_XA":"https://template-private.canva.com/EAHLccBt_XA/1/0/640w-JTP8Pou7nKw.jpg"
+};
+
+// Şablon listesini state'e kaydet, önizlemeyi güncelle
 function _renderCanvaGallery(templates){
   if(!templates || templates.length === 0) return;
-  
-  const STYLE_LABELS = {
-    trt_dark:'TRT Karanlık', trt_dark_v2:'TRT Karanlık v2', trt_banner:'TRT Banner',
-    economist_cream:'Economist Krem', power_editorial:'Güç Editorial',
-    asymmetry:'Asimetri', power_imbalance:'Güç Dengesizliği', black_split:'Siyah Bölünmüş',
-    bw_editorial:'S/B Editorial', big_number:'Büyük Rakam', big_number_v2:'Büyük Rakam v2',
-    data_viz:'Veri Grafiği', quote_editorial:'Alıntı', quote_v2:'Alıntı v2',
-    quote_gray:'Alıntı Gri', quote_v3:'Alıntı v3', data_chart:'Veri Çizelgesi',
-    comparison:'Karşılaştırma', trend_analysis:'Trend Analiz', watercolor:'Suluboya Portre'
-  };
+  S._canvaTemplates = templates;
+  S._canvaIdx = 0;
+  _showCanvaSlide(0);
+}
 
-  const grid = document.getElementById('gallery-grid');
-  const title = document.getElementById('gallery-title');
-  if(!grid) return;
-  
-  title.textContent = '🎨 ' + templates.length + ' Canva Şablonu — Birini Seçin';
-  grid.innerHTML = '';
-  
-  // Thumbnail URL'leri — Canva brand template thumbnail
-  const THUMBS = {
-    'EAHLcbSuSmo':'https://template-private.canva.com/EAHLcbSuSmo/1/0/640w-JnHiwzoHEJc.jpg',
-    'EAHLcdMwS-E':'https://template-private.canva.com/EAHLcdMwS-E/1/0/640w-maar93RxgQY.jpg',
-    'EAHLcZWnH0Y':'https://template-private.canva.com/EAHLcZWnH0Y/1/0/640w-FNliExraUPY.jpg',
-    'EAHLcZKx8UA':'https://template-private.canva.com/EAHLcZKx8UA/1/0/640w-K4svtq0945g.jpg',
-    'EAHLcZEDHv0':'https://template-private.canva.com/EAHLcZEDHv0/1/0/640w-Raw0Aa_ysLI.jpg',
-    'EAHLcbHdSNw':'https://template-private.canva.com/EAHLcbHdSNw/1/0/640w-Uqu3gcdx0WM.jpg',
-    'EAHLcdNXGXA':'https://template-private.canva.com/EAHLcdNXGXA/1/0/640w-3yFUTu6fo_M.jpg',
-    'EAHLcU_Ullg':'https://template-private.canva.com/EAHLcU_Ullg/1/0/640w-kNG6F0TdhQE.jpg',
-    'EAHLccH0QyI':'https://template-private.canva.com/EAHLccH0QyI/1/0/640w-30siwmPCrNE.jpg',
-    'EAHLcQY-qCY':'https://template-private.canva.com/EAHLcQY-qCY/1/0/640w-Zt4DDAJz4Uw.jpg',
-    'EAHLcazlbZo':'https://template-private.canva.com/EAHLcazlbZo/1/0/640w-FW0-l2cOMSE.jpg',
-    'EAHLcaFMLas':'https://template-private.canva.com/EAHLcaFMLas/1/0/640w-dcHLyTvfDNo.jpg',
-    'EAHLcannr_U':'https://template-private.canva.com/EAHLcannr_U/1/0/640w-2dczyARbokw.jpg',
-    'EAHLcaHdlfA':'https://template-private.canva.com/EAHLcaHdlfA/1/0/640w-CfrrgDrzHZI.jpg',
-    'EAHLcZBObt4':'https://template-private.canva.com/EAHLcZBObt4/1/0/640w-FJxDSHWAVPQ.jpg',
-    'EAHLcSz-Gik':'https://template-private.canva.com/EAHLcSz-Gik/1/0/640w-WUd8WTaCDcs.jpg',
-    'EAHLcVs6bOo':'https://template-private.canva.com/EAHLcVs6bOo/1/0/640w-DqWKt0pUzWk.jpg',
-    'EAHLcU3FTH4':'https://template-private.canva.com/EAHLcU3FTH4/1/0/640w-Ykn9p4Ni154.jpg',
-    'EAHLcXQ8FVQ':'https://template-private.canva.com/EAHLcXQ8FVQ/1/0/640w-_Y83vEKiY18.jpg',
-    'EAHLccBt_XA':'https://template-private.canva.com/EAHLccBt_XA/1/0/640w-JTP8Pou7nKw.jpg'
-  };
+// İstenilen index'teki şablonu önizlemede göster
+function _showCanvaSlide(idx){
+  const templates = S._canvaTemplates;
+  if(!templates || templates.length === 0) return;
+  S._canvaIdx = ((idx % templates.length) + templates.length) % templates.length;
+  const t = templates[S._canvaIdx];
+  const label = STYLE_LABELS[t.style] || t.style;
+  const thumb = CANVA_THUMBS[t.id] || null;
+  const total = templates.length;
+  const current = S._canvaIdx + 1;
 
-  templates.forEach((t, i) => {
-    const label = STYLE_LABELS[t.style] || t.style;
-    const thumb = THUMBS[t.id] || '';
-    const rank  = i + 1;
-    
-    const card = document.createElement('div');
-    card.style.cssText = 'background:var(--ui-s);border:1.5px solid var(--ui-b);border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s;';
-    card.onmouseover = () => { card.style.borderColor='#00B6CB'; card.style.transform='translateY(-2px)'; };
-    card.onmouseout  = () => { card.style.borderColor='var(--ui-b)'; card.style.transform=''; };
-    
-    card.innerHTML = 
-      '<div style="position:relative;">'
-        + (thumb ? '<img src="'+thumb+'" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block;" onerror="this.style.display=&quot;none&quot;">' : '<div style="width:100%;aspect-ratio:4/5;background:#1C1C1C;display:flex;align-items:center;justify-content:center;color:#666;font-size:1.5rem;">&#x1F3A8;</div>')
-        + '<div style="position:absolute;top:5px;left:5px;background:#01203F;color:#F2F2F0;font-size:.55rem;font-weight:700;padding:2px 6px;border-radius:3px;">#'+rank+'</div>'
-      +'</div>'
-      +'<div style="padding:8px;">'
-        +'<div style="font-size:.65rem;font-weight:700;color:var(--fg);margin-bottom:4px;">'+label+'</div>'
-        +'<button onclick="window.open(t.createUrl,\'_blank\')" style="width:100%;padding:5px;background:#01203F;color:#F2F2F0;border:none;border-radius:4px;font-size:.6rem;font-weight:700;cursor:pointer;margin-bottom:4px;">Canva\u2019da A\u00e7 \u2192</button>'
-        +'<button onclick="_openPlatformCanva(t.id,\'instagram\')" style="width:100%;padding:4px;background:transparent;color:#00B6CB;border:1px solid #00B6CB;border-radius:4px;font-size:.55rem;cursor:pointer;">\ud83d\udcf1 Instagram</button>'
+  // Önizleme alanını Canva thumbnail ile doldur
+  const previewWrap = document.getElementById('preview-wrap') || document.getElementById('preview-inner');
+  if(previewWrap){
+    const W = previewWrap.offsetWidth || 400;
+    const H = Math.round(W * 1.25); // 4:5 oran
+
+    previewWrap.style.backgroundImage = thumb ? 'url('+thumb+')' : 'none';
+    previewWrap.style.backgroundSize = 'cover';
+    previewWrap.style.backgroundPosition = 'center';
+
+    // Overlay — başlık + şablon adı + sayaç
+    let overlay = document.getElementById('canva-overlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.id = 'canva-overlay';
+      overlay.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:16px;pointer-events:none;';
+      previewWrap.style.position = 'relative';
+      previewWrap.appendChild(overlay);
+    }
+    overlay.innerHTML =
+      '<div style="font-size:.6rem;color:#00B6CB;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;">'+current+' / '+total+' — '+label+'</div>'
+      +'<div style="font-size:.75rem;color:#F2F2F0;font-weight:700;line-height:1.3;">'+(S.hl||'')+'</div>'
+      +'<div style="margin-top:8px;">'
+        +'<button onclick="window.open(\'https://www.canva.com/design?create=true&template='+t.id+'\',\'_blank\')" style="background:#01203F;border:1px solid #00B6CB;color:#F2F2F0;padding:5px 12px;border-radius:4px;font-size:.6rem;font-weight:700;cursor:pointer;margin-right:6px;">Canva\'da Aç →</button>'
       +'</div>';
-    
-    grid.appendChild(card);
-  });
-  
-  // Galeriyi göster
-  document.getElementById('gallery-wrap').style.display = 'block';
-  document.getElementById('single-wrap').style.display = 'none';
-  document.getElementById('empty').style.display = 'none';
+  }
+
+  // Следующий / Назад butonlarını güncelle
+  const nextBtn = document.getElementById('alt-next-btn');
+  const prevBtn = document.getElementById('alt-prev-btn');
+  if(nextBtn) nextBtn.onclick = function(){ _showCanvaSlide(S._canvaIdx + 1); };
+  if(prevBtn) prevBtn.onclick = function(){ _showCanvaSlide(S._canvaIdx - 1); };
+
+  _elogAdd('Şablon: '+label+' ('+current+'/'+total+')');
 }
 
 function _openPlatformCanva(templateId, platform){
-  const sizes = {
-    instagram:'1080x1080',
-    telegram:'1280x720',
-    youtube:'1280x720',
-    twitter:'1600x900',
-    web:'1920x1080'
-  };
-  const url = `https://www.canva.com/design?create=true&template=${templateId}`;
-  window.open(url, '_blank');
+  const url = "https://www.canva.com/design?create=true&template="+templateId;
+  window.open(url, "_blank");
 }
 
 
