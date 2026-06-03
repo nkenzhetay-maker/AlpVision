@@ -122,14 +122,49 @@ SADECE JSON döndür — başka hiçbir şey yazma:
     "S20: documentary extreme closeup grain — [BU haberin insan detayı]"
   ],
   "carouselPlan": {
-    "caption": "Rusça Instagram caption 2-3 cümle + emoji",
-    "hashtags": "#новости #TRTрусском",
+    "caption": "Rusça Instagram caption — bu haberin özü 2-3 cümle + emoji (gerçek içerik)",
+    "hashtags": "#новости #TRTрусском #МИД",
     "slides": [
-      {"headline": "Ana başlık", "subtext": "Açıklama 1-2 cümle", "stat": "", "scheme": "navy", "template": "TEMPLATE_HOOK", "bullets": []},
-      {"headline": "2. slayt başlık", "subtext": "Ana gerçek", "stat": "SAYI", "scheme": "beige", "template": "TEMPLATE_DATA", "bullets": ["madde1","madde2"]},
-      {"headline": "3. slayt", "subtext": "Detay", "stat": "", "scheme": "teal", "template": "TEMPLATE_LIST", "bullets": ["nokta1","nokta2","nokta3"]},
-      {"headline": "4. slayt analiz", "subtext": "Bağlam", "stat": "", "scheme": "dark", "template": "TEMPLATE_HOOK", "bullets": []},
-      {"headline": "TRT НА РУССКОМ", "subtext": "Сохраните и поделитесь", "stat": "", "scheme": "navy", "template": "TEMPLATE_CTA", "bullets": []}
+      {
+        "headline": "BU HABERİN BAŞLIĞI — max 7 kelime Rusça",
+        "subtext": "Bu haberin alt başlığı — max 12 kelime",
+        "stat": "",
+        "scheme": "navy",
+        "template": "TEMPLATE_HOOK",
+        "bullets": []
+      },
+      {
+        "headline": "Ключевые факты",
+        "subtext": "Bu haberin en önemli gerçeği Rusça",
+        "stat": "Varsa sayısal veri (ör: 1200 км)",
+        "scheme": "beige",
+        "template": "TEMPLATE_DATA",
+        "bullets": []
+      },
+      {
+        "headline": "Подробности",
+        "subtext": "",
+        "stat": "",
+        "scheme": "teal",
+        "template": "TEMPLATE_LIST",
+        "bullets": ["Bu haberden madde 1 Rusça","Bu haberden madde 2 Rusça","Bu haberden madde 3 Rusça"]
+      },
+      {
+        "headline": "Что это значит",
+        "subtext": "Bu haberin bölgesel/küresel önemi Rusça 1-2 cümle",
+        "stat": "",
+        "scheme": "dark",
+        "template": "TEMPLATE_HOOK",
+        "bullets": []
+      },
+      {
+        "headline": "TRT НА РУССКОМ",
+        "subtext": "Сохраните и поделитесь",
+        "stat": "",
+        "scheme": "navy",
+        "template": "TEMPLATE_CTA",
+        "bullets": []
+      }
     ]
   },
   "visualNote": "Rusça — seçilen metaforun neden güçlü olduğunu açıkla",
