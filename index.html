@@ -743,6 +743,16 @@ function onFileSelect(e){
     document.getElementById('upload-preview-wrap').style.display='';
     document.getElementById('upload-img').src=S.userPhotoB64;
     document.getElementById('photo-warn').style.display='';
+    // Başlık varsa direkt carousel aç
+    if(S.hl){
+      document.getElementById('empty').style.display='none';
+      document.getElementById('single-wrap').style.display='flex';
+      document.getElementById('prev-acts').style.display='';
+      document.getElementById('lbl-hint').style.display='';
+      S._builtIdx = S._builtIdx || 0;
+      _showBuiltSlide(S._builtIdx);
+      setSt('✓ Фото применено — листайте шаблоны →','',4000);
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -791,14 +801,18 @@ function photoPreview(){
   S.sub = (document.getElementById('p-sub') || {value:''}).value   || '';
   S.cat = (document.getElementById('p-cat') || {value:''}).value   || '';
   S.src = (document.getElementById('p-src') || {value:''}).value   || '';
+
   document.getElementById('empty').style.display='none';
   document.getElementById('single-wrap').style.display='flex';
   document.getElementById('prev-acts').style.display='';
   document.getElementById('lbl-hint').style.display='';
   S.qcDone=false;
   document.getElementById('qc-bar').style.display='none';
-  renderPreview();
-  setSt('Превью создано','');
+
+  // Foto + 20 şablon carousel'e geç
+  S._builtIdx = S._builtIdx || 0;
+  _showBuiltSlide(S._builtIdx);
+  setSt('✓ Фото применено к шаблонам — листайте →','',4000);
 }
 
 // ── AI MODE ──
