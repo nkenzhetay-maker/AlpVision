@@ -15,3 +15,9 @@
 
 [functions."vision-qc"]
   timeout = 26
+
+[functions."analyze-fast"]
+  timeout = 10
+
+[functions."analyze-deep"]
+  timeout = 26
