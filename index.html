@@ -804,9 +804,35 @@ function renderEditorialPanel(d){
   const a = d.editorialAnalysis || {};
   const concepts = d.concepts || [];
   const selected = d.selectedConcept || 1;
+  const ed = S.edDecision || {}; // Editorial Director kararı
 
   let html = '<div class="sec" id="editorial-panel-sec">';
-  html += '<div class="sec-lbl">🧠 Редакционный анализ</div>';
+  html += '<div class="sec-lbl">🎨 Art Director</div>';
+
+  // Art Director kararı — önce göster
+  if(ed.artDirectorNote || ed.visualDecision?.strategy){
+    html += '<div class="editorial-panel" style="border-left:3px solid #C48901;">';
+    if(ed.visualDecision?.strategy){
+      html += '<div class="ed-title">Стратегия</div>';
+      html += '<div class="ed-text" style="color:#C48901;font-weight:700;">'+ed.visualDecision.strategy+'</div>';
+    }
+    if(ed.artDirectorNote){
+      html += '<div class="ed-title" style="margin-top:6px;">Решение</div>';
+      html += '<div class="ed-text" style="font-style:italic;">'+ed.artDirectorNote+'</div>';
+    }
+    if(ed.realStory){
+      html += '<div class="ed-title" style="margin-top:6px;">Суть истории</div>';
+      html += '<div class="ed-text">'+ed.realStory+'</div>';
+    }
+    if(ed.fewShotMatch){
+      html += '<div class="ed-text" style="margin-top:4px;opacity:.5;font-size:.65rem;">📚 Référence: '+ed.fewShotMatch+'</div>';
+    }
+    html += '</div>';
+    // Hafızaya ekle butonu
+    html += '<button onclick="trainEditorialMemory()" class="btn-sm" style="margin-top:4px;width:100%;opacity:.7;">📌 Bu kararı hafızaya ekle</button>';
+  }
+
+  html += '<div class="sec-lbl" style="margin-top:8px;">🧠 Редакционный анализ</div>';
 
   // Analiz kutusu
   if(a.realCenter || a.psychologicalCore){
@@ -960,9 +986,50 @@ async function analyze(){
   }
   _elogAdd('=== Новый анализ ===');
   _elogAdd('Тип контента: '+S.contentType+' | Режим: '+(S.fastMode?'быстрый':'стандарт'));
-  _progressTimer = _startProgress(['🔍 Metni okuyorum...','🧠 Editöryal çerçeve kuruyorum...','🎨 The Economist tarzı 20 konsept hazırlıyorum...','🖼 Görsel direktifler üretiliyor...'], 18);
+  _progressTimer = _startProgress([
+    '🎨 Art Director metni okuyor...',
+    '🧠 Few-shot örneklerle karşılaştırıyor...',
+    '📸 Görsel strateji belirleniyor...',
+    '✍️ Editöryal karar veriliyor...',
+    '🖼 Tasarım direktifleri hazırlanıyor...'
+  ], 22);
 
   try{
+    // ── FAZ 0: EDITORIAL DIRECTOR — GPT-4o Art Director kararı ──
+    _elogAdd('🎨 Editorial Director başladı (GPT-4o)...');
+    let edDecision = null;
+    try {
+      const rED = await fetch('/api/editorial-director', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          text: txt,
+          headline: '',
+          referenceImages: [] // İleride referans görseller buraya gelecek
+        })
+      });
+      edDecision = await rED.json();
+      if(edDecision && !edDecision.error) {
+        S.edDecision = edDecision;
+        _elogAdd('✓ Art Director: '+edDecision.visualDecision?.strategy+' → '+edDecision.visualDecision?.template);
+        _elogAdd('🎭 '+edDecision.artDirectorNote);
+        if(edDecision.fewShotMatch) _elogAdd('📚 Few-shot: '+edDecision.fewShotMatch);
+
+        // Kişi fotoğrafı Wikipedia'dan geldi mi?
+        if(edDecision.photoResult?.url) {
+          S.bg = {type:'url', url: edDecision.photoResult.url};
+          S.src = '';
+          _elogAdd('📷 Portre bulundu: '+edDecision.photoResult.person);
+        }
+
+        // Collage mode
+        if(edDecision.collageMode) S.collageMode = true;
+        if(edDecision.subjects) S.photoSubjects = edDecision.subjects;
+      }
+    } catch(edErr) {
+      _elogAdd('⚠ Editorial Director hata: '+edErr.message+' — devam ediliyor');
+    }
+
     // ── FAZ 1: HIZLI (Haiku ~2-3sn) — Başlık + Canva şablonları ──
     _elogAdd('⚡ Faz 1: Hızlı analiz başladı...');
     const rFast = await fetch('/api/analyze-fast',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1297,6 +1364,32 @@ async function regenDalle(){
   finally{btn.disabled=false;btn.textContent=t('regenBtn');}
 }
 
+// ── Editöryal Hafıza — Başarılı kararı eğitime ekle ──
+async function trainEditorialMemory(){
+  const ed = S.edDecision;
+  if(!ed) return;
+  const trainEntry = {
+    text: (document.getElementById('txt')||{}).value?.slice(0,500) || '',
+    headline: S.hl || '',
+    decision: ed.visualDecision,
+    emotion: ed.editorialEmotion,
+    artDirectorNote: ed.artDirectorNote,
+    template: S.aiTpl || ed.visualDecision?.template,
+    timestamp: Date.now()
+  };
+  try {
+    await fetch('/api/editorial-director', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'train', trainEntry})
+    });
+    _elogAdd('✓ Hafızaya eklendi: '+trainEntry.emotion+' → '+trainEntry.template);
+    setSt('✓ Karar hafızaya eklendi','ok',3000);
+  } catch(e) {
+    _elogAdd('⚠ Hafıza hatası: '+e.message);
+  }
+}
+
 // ── AI Photo Generator ──
 async function genPhotoAI(){
   const btn = document.getElementById('photo-ai-btn');
@@ -1497,7 +1590,7 @@ async function runQC(){
 }`;
 
   try{
-    const r=await fetch('/api/analyze',{
+    const r=await fetch('/api/analyze-deep',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({text:prompt,_qcMode:true})
     });
