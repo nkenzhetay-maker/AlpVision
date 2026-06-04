@@ -72,6 +72,8 @@ Aşağıdaki 20 template'ten BİRİNİ seç. Tam ID'yi yaz:
 colorScheme: dark/red/teal/gold/grey/navy/light
 photoQuery: Pexels için 3-5 kelime İngilizce sorgu
 photoSubject: Ana kişi tam adı (İngilizce) veya null
+photoSubjects: Haberdeki TÜM tanınmış kamu figürlerinin İngilizce tam adları (cumhurbaşkanı, bakan vb.)
+collageMode: İki veya daha fazla lider/ülke karşılaşması varsa true — kolaj kapak için
 photoContext: person/place/object/abstract
 photoOrientation: portrait/landscape
 
@@ -95,8 +97,10 @@ SADECE JSON döndür — başka hiçbir şey yazma:
   "template": "TEMPLATE_ID",
   "colorScheme": "RENK",
   "photoQuery": "english pexels query 3-5 words",
-  "photoSubject": "Full Name or null",
+  "photoSubject": "Primary person full name in English or null",
+  "photoSubjects": ["All named public figures in English — presidents, ministers etc"],
   "photoContext": "person|place|object|abstract",
+  "collageMode": false,
   "photoOrientation": "portrait|landscape",
   "dallePrompt": "S1 matte gouache prompt — bu habere özel, no text, Economist style",
   "altPrompts": [
