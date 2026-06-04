@@ -1011,6 +1011,15 @@ async function analyze(){
       edDecision = await rED.json();
       if(edDecision && !edDecision.error) {
         S.edDecision = edDecision;
+        // Başlık hemen ata — ЗАГОЛОВОК sorununun önüne geç
+        if(edDecision.headline) {
+          S.hl = edDecision.headline;
+          S.sub = edDecision.subheadline || '';
+          const mhl = document.getElementById('m-hl');
+          const msub = document.getElementById('m-sub');
+          if(mhl) mhl.value = S.hl;
+          if(msub) msub.value = S.sub;
+        }
         _elogAdd('✓ Art Director: '+edDecision.visualDecision?.strategy+' → '+edDecision.visualDecision?.template);
         _elogAdd('🎭 '+edDecision.artDirectorNote);
         if(edDecision.fewShotMatch) _elogAdd('📚 Few-shot: '+edDecision.fewShotMatch);
@@ -2017,6 +2026,11 @@ function renderPreview(){
     _renderInfographicCarousel();
     return;
   }
+  // Carousel aktifse — _showBuiltSlide ile senkronize et, ezme
+  if(S._builtActive && S._builtIdx !== undefined && S.hl){
+    _showBuiltSlide(S._builtIdx);
+    return;
+  }
   const _v=id=>{const e=document.getElementById(id);return e?e.value:'';};
   if(S.mode==='ai'){S.hl=_v('m-hl');S.sub=_v('m-sub');S.cat=_v('m-cat');S.src=_v('m-src');}
   else{S.hl=_v('p-hl');S.sub=_v('p-sub');S.cat=_v('p-cat');S.src=_v('p-src');}
@@ -2507,6 +2521,7 @@ let BUILT_TEMPLATES = _buildRotatedTemplates('','normal','photo_panel');
 function _showBuiltSlide(idx){
   const total = BUILT_TEMPLATES.length;
   S._builtIdx = ((idx % total) + total) % total;
+  S._builtActive = true; // renderPreview'ın carousel'i ezmesini engelle
   const t = BUILT_TEMPLATES[S._builtIdx];
   const current = S._builtIdx + 1;
 
