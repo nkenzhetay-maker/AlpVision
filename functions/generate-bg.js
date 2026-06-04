@@ -103,9 +103,27 @@ exports.handler = async (event) => {
   let finalPrompt, reqBody;
   const model = "gpt-image-1";
 
-  if (mode === "cover") {
-    // TAM KAPAK — habere özel, kompozisyon dahil
-    finalPrompt = buildCoverPrompt(headline, cleanConcept || cleaned, category);
+  if (mode === "cover" || mode === "collage") {
+    const subjects = body.subjects || [];
+    let finalConcept = cleanConcept || cleaned;
+
+    if (mode === "collage" && subjects.length >= 2) {
+      // Economist kolaj tarzı — iki figür karşı karşıya
+      finalPrompt = [
+        "Editorial magazine cover collage illustration in The Economist style.",
+        "Black and white photographic composition with bold red color accents.",
+        "Two powerful figures facing each other divided by a vertical red line.",
+        "Dark dramatic mood, high contrast black and white, editorial gravitas.",
+        "Red rectangular accent blocks overlaid on the composition.",
+        "Bold black header area in upper 30% — empty for text overlay.",
+        "NO text, NO letters anywhere in the image.",
+        "Subjects of the story: " + finalConcept,
+        TRT_PALETTE + ".",
+        "Style reference: The Economist fear factor cover — stark, journalistic, powerful."
+      ].join(" ");
+    } else {
+      finalPrompt = buildCoverPrompt(headline, finalConcept, category);
+    }
     reqBody = { model, prompt: finalPrompt, n: 1, size, quality: "high" };
 
   } else if (mode === "photo") {
