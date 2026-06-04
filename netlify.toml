@@ -21,3 +21,6 @@
 
 [functions."analyze-deep"]
   timeout = 26
+
+[functions."editorial-director"]
+  timeout = 26
