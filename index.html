@@ -1089,10 +1089,25 @@ async function analyze(){
     }
     // Fotograf onerisi — AI'dan gelen photoQuery ile otomatik ara
     if(d.photoQuery){
-      S.pexelsQ = d.photoQuery;
-      S.photoSubject = d.photoSubject || null;
-      S.photoContext = d.photoContext || 'place';
+      S.pexelsQ       = d.photoQuery;
+      S.photoSubject  = d.photoSubject  || null;
+      S.photoSubjects = d.photoSubjects || [];
+      S.collageMode   = d.collageMode   || false;
+      S.photoContext  = d.photoContext  || 'place';
       S.photoOrientation = d.photoOrientation || 'landscape';
+
+      // Collage mode: iki lider/ülke çatışması → collage_dark öne al
+      if(S.collageMode && S.photoSubjects.length >= 2){
+        const cIdx = BUILT_TEMPLATES.findIndex(t => t.tpl === 'collage_dark');
+        if(cIdx > 0){ const [c]=BUILT_TEMPLATES.splice(cIdx,1); BUILT_TEMPLATES.unshift(c); }
+        _elogAdd('🎭 Коллаж: '+S.photoSubjects.slice(0,2).join(' vs '));
+      }
+
+      // Kişi varsa önce Wikimedia'dan portrait ara
+      if(S.photoSubject){
+        _autoSearchPhoto(S.photoSubject+' portrait official', S.photoSubject, 'portrait');
+      }
+      // Genel sorgu
       _autoSearchPhoto(d.photoQuery, d.photoSubject, d.photoOrientation);
     }
 
@@ -1106,10 +1121,11 @@ async function analyze(){
     ub.className='ubadge '+S.urgency;
     ub.textContent=t('u'+S.urgency.charAt(0).toUpperCase()+S.urgency.slice(1))||S.urgency;
 
-    ['sec-meta','sec-bg','sec-policy'].forEach(id=>{
+    ['sec-meta','sec-policy'].forEach(id=>{
       const el=document.getElementById(id);
       if(el) el.style.display='';
     });
+    // sec-bg gizli — DALL-E hata mesajı kullanıcıya gösterilmez
     buildAiTplGrid();
 
     // Editoryal analiz panelini göster
@@ -1127,9 +1143,15 @@ async function analyze(){
     document.getElementById('lbl-hint').style.display='';
     document.getElementById('qc-bar').style.display='none';
 
-    setSt(S.fastMode ? '⚡ Загружаю фото...' : t('genBg'), 'on');
+    // Şablon listesini haber kategorisine göre yenile
+    BUILT_TEMPLATES = _buildRotatedTemplates(S.cat, S.urgency, S.aiTpl);
+    _elogAdd('✓ '+BUILT_TEMPLATES.length+' şablon hazır: '+BUILT_TEMPLATES[0].label+' önde');
+
+    setSt('✓ Анализ завершён — шаблоны готовы', 'ok', 3000);
     await loadBgs(S.fastMode);
-    renderPreview();
+    // Carousel başlat — AI'ın önerdiği şablondan
+    S._builtIdx = 0;
+    _showBuiltSlide(0);
     const engine = d._engine ? ' [' + d._engine.toUpperCase() + ']' : '';
     const mc = d._memoryCount || 0;
     if(mc > 0){
@@ -1164,10 +1186,9 @@ async function loadBgs(fastMode){
   const g=document.getElementById('ph-grid');
   g.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;padding:8px">⏳ Генерация...</div>';
 
-  // DALL-E prompt kontrolü
+  // DALL-E prompt kontrolü — sessizce çık
   if(!S.dallePrompt || S.dallePrompt.trim().length < 10){
-    g.innerHTML='<div style="color:#B11731;font-size:.65rem;padding:8px">❌ DALL-E prompt boş — analiz başarısız</div>';
-    setSt('❌ DALL-E prompt alınamadı — yeniden analiz edin','err');
+    _elogAdd('⚠ DALL-E prompt bekliyor — derin analiz devam ediyor');
     return;
   }
 
@@ -1353,11 +1374,12 @@ async function genCoverAI(){
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        mode: 'cover',
+        mode: S.collageMode ? 'collage' : 'cover',
         prompt: concept,
         concept: concept,
         headline: S.hl || '',
         category: S.cat || '',
+        subjects: S.photoSubjects || [],
         platform: (PLATFORMS[S.prevPlatIdx] || PLATFORMS[0]).id
       })
     });
@@ -1693,14 +1715,31 @@ function buildCard(tpl, bg, platform, forExport){
 
   // ── collage_dark: siyah-beyaz + kırmızı aksanlar ──
   if(tpl==='collage_dark') return `
-    <div style="position:absolute;inset:0;background:${bgCss};filter:${bg?'grayscale(100%) brightness(.45) contrast(1.2)':'none'};"></div>
-    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(177,23,49,.18) 0%,transparent 60%);"></div>
-    <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:#B11731;z-index:3;"></div>
-    ${trtLogo(true)}
-    <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'4% 6% 5%':'3% 6% 4%'};z-index:3;">
-      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:#B11731;margin-bottom:clamp(3px,.7vw,7px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'4vw'},2.4rem);font-weight:700;line-height:.96;color:#fff;text-transform:uppercase;">${S.hl||'ЗАГОЛОВОК'}</div>
-      ${S.sub?`<div style="margin-top:clamp(4px,.9vw,9px);font-family:Manrope,sans-serif;font-size:clamp(.46rem,1.15vw,.7rem);font-weight:400;color:rgba(255,255,255,.6);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+    <!-- Economist kolaj: B&W foto + kırmızı aksanlar + siyah başlık bloğu -->
+    <div style="position:absolute;inset:0;background:#111;"></div>
+
+    <!-- Ana fotoğraf — grayscale, alt %65 -->
+    ${bg?`<div style="position:absolute;top:${isPt?'30%':'28%'};left:0;right:0;bottom:0;
+      background:url(${bg}) center top/cover no-repeat;
+      filter:grayscale(100%) brightness(.55) contrast(1.3);"></div>`:''}
+
+    <!-- Kırmızı diagonal overlay aksanlar -->
+    <div style="position:absolute;top:${isPt?'30%':'28%'};left:8%;width:3px;height:40%;background:#B11731;z-index:2;"></div>
+    <div style="position:absolute;top:${isPt?'38%':'35%'};right:12%;width:18%;height:30%;background:rgba(177,23,49,.85);z-index:2;"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:#B11731;z-index:2;"></div>
+
+    <!-- Siyah başlık bloğu — üstte -->
+    <div style="position:absolute;top:0;left:0;right:0;height:${isPt?'30%':'28%'};background:#0a0a0a;z-index:3;
+      display:flex;flex-direction:column;justify-content:flex-end;padding:${isPt?'0 6% 4%':'0 5% 3%'};">
+      ${trtLogo(true)}
+      <div style="font-family:Georgia,'Times New Roman',serif;
+        font-size:clamp(.82rem,${isPt?'4.8vw':isWeb?'2.8vw':'3.6vw'},2.2rem);
+        font-weight:400;line-height:1.18;color:#fff;
+        letter-spacing:-.01em;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(3px,.7vw,7px);
+        font-family:Georgia,serif;font-size:clamp(.4rem,1vw,.62rem);
+        font-weight:400;color:rgba(255,255,255,.55);line-height:1.4;
+        font-style:italic;">${S.sub}</div>`:''}
     </div>`;
 
   // ── map_visual: harita/veri görsel ──
@@ -1820,6 +1859,49 @@ function buildCard(tpl, bg, platform, forExport){
       ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;">${S.sub}</div>`:''}
       <div style="margin-top:clamp(8px,1.8vw,16px);width:36px;height:36px;border:2.5px solid ${accent};transform:rotate(45deg);"></div>
     </div>`;
+
+
+  // ── letter_envelope: zarf çizgili arka plan (Economist "By Invitation") ──
+  if(tpl==='letter_envelope') return `
+    <div style="position:absolute;inset:0;background:#F5F1E8;"></div>
+    <!-- Zarf köşe çizgileri -->
+    <div style="position:absolute;top:0;left:0;right:0;height:8px;background:repeating-linear-gradient(90deg,#B11731 0,#B11731 20px,#fff 20px,#fff 30px,#042E58 30px,#042E58 50px,#fff 50px,#fff 60px);z-index:1;"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:8px;background:repeating-linear-gradient(90deg,#B11731 0,#B11731 20px,#fff 20px,#fff 30px,#042E58 30px,#042E58 50px,#fff 50px,#fff 60px);z-index:1;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:50%;left:8%;right:8%;transform:translateY(-50%);z-index:2;text-align:center;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.32rem,.8vw,.5rem);font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:${accent};margin-bottom:clamp(8px,2vw,18px);">ПО ПРИГЛАШЕНИЮ</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.88rem,${isPt?'5.4vw':isWeb?'3.2vw':'4vw'},2.5rem);font-weight:700;line-height:1.2;color:#1C1C1C;font-style:italic;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(8px,2vw,18px);font-family:Georgia,serif;font-size:clamp(.5rem,1.3vw,.78rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
+    </div>`;
+
+  // ── illus_bottom: metin üst + illüstrasyon alt (Economist "Socialism" tarzı) ──
+  if(tpl==='illus_bottom') return `
+    <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:${isPt?'12%':'10%'};left:6%;right:6%;z-index:2;">
+      <div style="width:28px;height:3px;background:${accent};margin-bottom:clamp(5px,1.2vw,12px);"></div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.78rem,${isPt?'5vw':isWeb?'3vw':'3.8vw'},2.4rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      ${S.sub?`<div style="margin-top:clamp(5px,1.2vw,11px);font-family:Georgia,serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+    </div>
+    ${bg?`<div style="position:absolute;bottom:0;left:0;right:0;height:${isPt?'48%':'52%'};background:url(${bg}) center top/cover no-repeat;z-index:1;"></div>`
+      :`<div style="position:absolute;bottom:0;left:0;right:0;height:${isPt?'50%':'54%'};background:linear-gradient(to bottom,#DCD0BA,#F2F2F0);z-index:1;display:flex;align-items:center;justify-content:center;">
+        <div style="width:40%;height:80%;background:rgba(28,28,28,.06);border-radius:50% 50% 0 0;"></div>
+       </div>`}`;
+
+  // ── photo_text_top: üstte metin kutusu + altta tam fotoğraf (Netanyahu tarzı) ──
+  if(tpl==='photo_text_top') return `
+    <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    <!-- Üst metin bloğu -->
+    <div style="position:absolute;top:0;left:0;right:0;height:${isPt?'42%':'38%'};background:#F2F2F0;z-index:2;padding:${isPt?'5% 5% 3%':'4% 5% 2%'};display:flex;flex-direction:column;justify-content:flex-end;">
+      ${trtLogo(false)}
+      <div style="margin-bottom:clamp(4px,1vw,10px);">
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:400;color:${accent};letter-spacing:.05em;margin-bottom:clamp(4px,.9vw,9px);">${S.cat||''}</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3vw':'3.8vw'},2.4rem);font-weight:700;line-height:1.15;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+        ${S.sub?`<div style="margin-top:clamp(4px,.9vw,9px);font-family:Georgia,serif;font-size:clamp(.46rem,1.15vw,.7rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+      </div>
+    </div>
+    <!-- Alt tam fotoğraf -->
+    <div style="position:absolute;bottom:0;left:0;right:0;height:${isPt?'58%':'62%'};background:${bgCss};z-index:1;border-top:3px solid ${accent};"></div>`;
 
   // feature (fallback)
   return `
@@ -2234,28 +2316,100 @@ function _renderCanvaGallery(templates){
 
 // ── buildCard ile şablon önizleme sistemi ──
 // 20 şablon kombinasyonu
-const BUILT_TEMPLATES = [
+// Tüm şablon havuzu — 40 kombinasyon
+const ALL_TEMPLATES = [
+  // Koyu temalar
   {tpl:'dark_minimal',    scheme:'dark',  label:'Тёмный минимал'},
+  {tpl:'dark_minimal',    scheme:'red',   label:'Тёмный красный'},
+  {tpl:'dark_minimal',    scheme:'navy',  label:'Тёмный синий'},
   {tpl:'photo_overlay',   scheme:'dark',  label:'Фото оверлей'},
-  {tpl:'color_block',     scheme:'navy',  label:'Цветной блок'},
-  {tpl:'pure_typography', scheme:'light', label:'Чистый текст'},
-  {tpl:'accent_color',    scheme:'gold',  label:'Акцент-жёлтый'},
-  {tpl:'collage_dark',    scheme:'red',   label:'Коллаж Тёмный'},
-  {tpl:'map_visual',      scheme:'light', label:'Карта/Данные'},
-  {tpl:'portrait_illus',  scheme:'light', label:'Портрет-рисунок'},
-  {tpl:'invitation',      scheme:'navy',  label:'Приглашение'},
-  {tpl:'magazine_cover',  scheme:'red',   label:'Обложка журнала'},
-  {tpl:'silhouette',      scheme:'light', label:'Силуэт'},
-  {tpl:'insider',         scheme:'dark',  label:'Срочно (Insider)'},
-  {tpl:'trt_headline',    scheme:'dark',  label:'TRT Заголовок'},
+  {tpl:'photo_overlay',   scheme:'red',   label:'Фото красный'},
+  {tpl:'collage_dark',    scheme:'red',   label:'Коллаж красный'},
+  {tpl:'collage_dark',    scheme:'dark',  label:'Коллаж тёмный'},
+  {tpl:'insider',         scheme:'dark',  label:'Срочно тёмный'},
+  {tpl:'insider',         scheme:'red',   label:'Срочно красный'},
   {tpl:'trt_breaking',    scheme:'red',   label:'TRT Срочно'},
+  // Светлые темы
+  {tpl:'pure_typography', scheme:'light', label:'Белый текст'},
+  {tpl:'pure_typography', scheme:'gold',  label:'Кремовый текст'},
+  {tpl:'portrait_illus',  scheme:'light', label:'Портрет светлый'},
+  {tpl:'map_visual',      scheme:'light', label:'Карта/Данные'},
+  {tpl:'silhouette',      scheme:'light', label:'Силуэт светлый'},
+  {tpl:'invitation',      scheme:'light', label:'Рамка светлая'},
+  // Цветные блоки
+  {tpl:'color_block',     scheme:'navy',  label:'Синий блок'},
+  {tpl:'color_block',     scheme:'red',   label:'Красный блок'},
+  {tpl:'color_block',     scheme:'teal',  label:'Бирюзовый блок'},
+  {tpl:'accent_color',    scheme:'gold',  label:'Акцент золото'},
+  {tpl:'accent_color',    scheme:'red',   label:'Акцент красный'},
+  {tpl:'accent_color',    scheme:'navy',  label:'Акцент синий'},
+  // Фото + текст
+  {tpl:'photo_panel',     scheme:'dark',  label:'Фото + тёмная панель'},
+  {tpl:'photo_panel',     scheme:'light', label:'Фото + белая панель'},
+  {tpl:'split',           scheme:'teal',  label:'Сплит бирюза'},
+  {tpl:'split',           scheme:'dark',  label:'Сплит тёмный'},
+  {tpl:'split',           scheme:'light', label:'Сплит белый'},
+  {tpl:'trt_headline',    scheme:'dark',  label:'TRT заголовок'},
+  {tpl:'magazine_cover',  scheme:'red',   label:'Обложка красная'},
+  {tpl:'magazine_cover',  scheme:'navy',  label:'Обложка синяя'},
+  // Типографика
+  {tpl:'typographic',     scheme:'dark',  label:'Типо тёмный'},
+  {tpl:'typographic',     scheme:'light', label:'Типо светлый'},
+  {tpl:'typographic',     scheme:'red',   label:'Типо красный'},
+  // Специальные
   {tpl:'tweet_card',      scheme:'navy',  label:'Твит-карточка'},
-  {tpl:'typographic',     scheme:'dark',  label:'Типографский'},
-  {tpl:'photo_panel',     scheme:'dark',  label:'Фото + Панель'},
-  {tpl:'split',           scheme:'teal',  label:'Сплит'},
-  {tpl:'feature',         scheme:'navy',  label:'Feature'},
-  {tpl:'geometric',       scheme:'light', label:'Геометрия'}
+  {tpl:'invitation',      scheme:'navy',  label:'Рамка синяя'},
+  {tpl:'geometric',       scheme:'light', label:'Геометрия светл.'},
+  {tpl:'geometric',       scheme:'navy',  label:'Геометрия синяя'},
+  {tpl:'feature',         scheme:'navy',  label:'Feature синий'},
+  {tpl:'feature',         scheme:'dark',  label:'Feature тёмный'},
+  {tpl:'feature',         scheme:'gold',  label:'Feature золото'},
+  // Economist özel stiller
+  {tpl:'letter_envelope', scheme:'light', label:'Конверт (By Invitation)'},
+  {tpl:'letter_envelope', scheme:'navy',  label:'Конверт синий'},
+  {tpl:'illus_bottom',    scheme:'light', label:'Текст + иллюстрация'},
+  {tpl:'illus_bottom',    scheme:'gold',  label:'Текст + иллюстр. крем'},
+  {tpl:'photo_text_top',  scheme:'light', label:'Текст верх + фото низ'},
+  {tpl:'photo_text_top',  scheme:'navy',  label:'Текст верх + фото (синий)'},
 ];
+
+// Her analizde farklı 20 şablon — kategori ve aciliyete göre akıllı seçim
+function _buildRotatedTemplates(category, urgency, aiTpl){
+  const cat = (category||'').toUpperCase();
+  const isBreaking = urgency === 'breaking';
+  const isDiplomacy = /ДИПЛОМАТ|ПОЛИТ/.test(cat);
+  const isEconomy   = /ЭКОНОМ|ФИНАНС/.test(cat);
+  const isMilitary  = /ВОЙН|БЕЗОПАСН|ВОЕНН/.test(cat);
+
+  // Kategori bazlı öncelik grupları
+  let priority = [];
+  if(isBreaking) priority = ALL_TEMPLATES.filter(t => ['insider','trt_breaking','collage_dark','dark_minimal','photo_overlay','photo_text_top'].includes(t.tpl));
+  else if(isDiplomacy) priority = ALL_TEMPLATES.filter(t => ['letter_envelope','invitation','pure_typography','split','photo_text_top','dark_minimal'].includes(t.tpl));
+  else if(isEconomy)   priority = ALL_TEMPLATES.filter(t => ['color_block','map_visual','typographic','geometric','illus_bottom','split'].includes(t.tpl));
+  else if(isMilitary)  priority = ALL_TEMPLATES.filter(t => ['collage_dark','insider','dark_minimal','photo_overlay','trt_breaking','photo_text_top'].includes(t.tpl));
+  else priority = ALL_TEMPLATES.filter(t => ['photo_text_top','illus_bottom','letter_envelope','pure_typography','split'].includes(t.tpl));
+
+  // AI'ın seçtiği template önce gelsin
+  let rest = ALL_TEMPLATES.filter(t => !priority.find(p => p.tpl===t.tpl && p.scheme===t.scheme));
+
+  // Shuffle rest — her seferinde farklı sıra
+  for(let i=rest.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [rest[i],rest[j]]=[rest[j],rest[i]];
+  }
+
+  // AI template'i en başa al
+  let all = [...priority, ...rest];
+  if(aiTpl){
+    const aiIdx = all.findIndex(t => t.tpl === aiTpl);
+    if(aiIdx > 0){ const [ai] = all.splice(aiIdx,1); all.unshift(ai); }
+  }
+
+  return all.slice(0, 20);
+}
+
+// Aktif şablon listesi — analiz sonrası güncellenir
+let BUILT_TEMPLATES = _buildRotatedTemplates('','normal','photo_panel');
 
 function _showBuiltSlide(idx){
   const total = BUILT_TEMPLATES.length;
