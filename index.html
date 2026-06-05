@@ -1072,14 +1072,16 @@ async function analyze(){
       }
 
       // Arka planda Pexels foto çek
-      if(S.pexelsQ){
+      // Pexels araması — kişi fotoğrafı varsa veya Editorial Director aldıysa atla
+      if(S.pexelsQ && !S.photoSubject && !S.bg?.url){
         searchPex(S.pexelsQ).then(function(photos){
           if(photos && photos.length > 0){
+            // Mevcut bg varsa (Wikipedia/wikimedia) ezme
+            if(S.bg?.url) return;
             S.bg = {type:'pexels', url:photos[0].src_large, thumb:photos[0].src_medium};
             _elogAdd('✓ Pexels foto: '+photos[0].src_medium.slice(0,40));
-            // Canva slayt varsa overlay'i güncelle, yoksa preview'ı yeniden çiz
-            if(S._canvaTemplates && S._canvaTemplates.length > 0){
-              _showCanvaSlide(S._canvaIdx || 0);
+            if(S._builtActive){
+              _showBuiltSlide(S._builtIdx);
             } else {
               renderPreview();
             }
@@ -1334,7 +1336,8 @@ async function searchPex(query){
 
 async function _autoSearchPhoto(query, subject, orientation){
   try {
-    const q = subject ? subject+' '+query : query;
+    // Subject varsa sadece kişi adı ile ara — "Trump protest" gibi yanlış eşleşme önle
+    const q = subject ? subject : query;
     const r = await fetch('/api/search-photo',{method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({query:q, orientation:orientation||'landscape'})
@@ -1715,7 +1718,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(true)}
     <div style="position:absolute;${isPt?'bottom:11%':'bottom:10%'};left:5%;right:5%;z-index:2;">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.34rem,.82vw,.54rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(5px,1.1vw,10px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(${isPt?'1.4rem':'1rem'},${isPt?'8.5vw':'6vw'},4rem);font-weight:700;line-height:.92;color:#fff;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:clamp(7px,1.5vw,16px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(${isPt?'1.4rem':'1rem'},${isPt?'8.5vw':'6vw'},4rem);font-weight:700;line-height:.92;color:#fff;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:clamp(7px,1.5vw,16px);">${S.hl||''}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.52rem,1.4vw,.86rem);font-weight:400;color:rgba(255,255,255,.62);line-height:1.4;max-width:88%;">${S.sub}</div>`:''}
       <div style="margin-top:clamp(7px,1.6vw,14px);display:flex;align-items:center;gap:7px;">
         <div style="width:22px;height:2px;background:${accent};border-radius:1px;"></div>
@@ -1731,7 +1734,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(true)}
     <div style="position:absolute;bottom:0;left:0;right:0;height:${ph};background:#f5f4f0;z-index:2;border-top:3px solid ${accent};display:flex;flex-direction:column;justify-content:center;padding:${isPt?'3.5% 5% 4%':isWeb?'2.5% 4% 3%':'3% 4.5% 3.5%'};">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.76vw,.48rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.7vw,7px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(.78rem,${isPt?'5vw':isWeb?'3.2vw':'3.6vw'},2.4rem);font-weight:700;line-height:1.0;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(3px,.65vw,7px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.78rem,${isPt?'5vw':isWeb?'3.2vw':'3.6vw'},2.4rem);font-weight:700;line-height:1.0;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(3px,.65vw,7px);">${S.hl||''}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.25vw,.74rem);font-weight:400;color:#555;line-height:1.3;">${S.sub}</div>`:''}
       ${(S.src&&!S.src.toLowerCase().includes('trt'))?`<div style="margin-top:clamp(2px,.55vw,5px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.7vw,.44rem);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#bbb;">Фото: ${S.src}</div>`:''}
     </div>`;
@@ -1744,7 +1747,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(true)}
     <div style="position:absolute;top:${isPt?'14%':'0'};left:0;bottom:0;width:${pw};background:#f5f4f0;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:${isPt?'4.5% 5% 7%':'4.5% 4% 5%'};">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.46rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.8vw,9px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.8vw':'4.3vw'},2.5rem);font-weight:700;line-height:.97;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(3px,.72vw,8px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.8vw':'4.3vw'},2.5rem);font-weight:700;line-height:.97;color:#0D1B2E;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(3px,.72vw,8px);">${S.hl||''}</div>
       ${S.sub?`<div style="font-family:Oswald,sans-serif;font-size:clamp(.65rem,2.5vw,1.4rem);font-weight:300;line-height:1.1;color:#1A3A6B;text-transform:uppercase;">${S.sub}</div>`:''}
       <div style="margin-top:clamp(5px,1.2vw,12px);width:26px;height:3px;background:${accent};border-radius:2px;"></div>
     </div>`;
@@ -1756,7 +1759,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(true)}
     ${getDisplayCat()?`<div style="position:absolute;top:${isPt?'14%':'12%'};left:6%;z-index:2;font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};">${getDisplayCat()}</div>`:''}
     <div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);z-index:2;">
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.8vw':isWeb?'3.6vw':'4.4vw'},2.8rem);font-weight:700;line-height:1.15;color:#fff;margin-bottom:clamp(8px,1.8vw,16px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.8vw':isWeb?'3.6vw':'4.4vw'},2.8rem);font-weight:700;line-height:1.15;color:#fff;margin-bottom:clamp(8px,1.8vw,16px);">${S.hl||''}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.5rem,1.3vw,.78rem);font-weight:300;color:rgba(255,255,255,.55);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
     </div>`;
 
@@ -1767,7 +1770,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(true)}
     <div style="position:absolute;top:${isPt?'18%':'15%'};left:6%;right:6%;z-index:2;">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(4px,.9vw,9px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.88rem,${isPt?'5.6vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.12;color:#fff;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.88rem,${isPt?'5.6vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.12;color:#fff;">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(255,255,255,.7);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
     </div>`;
 
@@ -1782,7 +1785,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(true)}
     <div style="position:absolute;top:${isPt?'12%':'10%'};left:6%;right:6%;z-index:2;">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,242,240,.55);margin-bottom:clamp(4px,.9vw,8px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.5vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.15;color:${ctxt};margin-bottom:clamp(6px,1.4vw,12px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.5vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.15;color:${ctxt};margin-bottom:clamp(6px,1.4vw,12px);">${S.hl||''}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(242,242,240,.65);line-height:1.4;font-style:italic;margin-bottom:clamp(6px,1.4vw,12px);">${S.sub}</div>`:''}
       <div style="font-family:Manrope,sans-serif;font-size:clamp(.38rem,.9vw,.56rem);font-weight:600;color:rgba(242,242,240,.4);letter-spacing:.1em;">→</div>
     </div>
@@ -1795,7 +1798,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(false)}
     <div style="position:absolute;top:50%;left:8%;right:8%;transform:translateY(-50%);z-index:2;">
       <div style="width:32px;height:3px;background:${accent};margin-bottom:clamp(10px,2.2vw,20px);"></div>
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(1rem,${isPt?'6.2vw':isWeb?'3.8vw':'4.8vw'},3rem);font-weight:700;line-height:1.18;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(1rem,${isPt?'6.2vw':isWeb?'3.8vw':'4.8vw'},3rem);font-weight:700;line-height:1.18;color:#1C1C1C;">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(8px,1.8vw,16px);font-family:Manrope,sans-serif;font-size:clamp(.52rem,1.35vw,.8rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
     </div>`;
 
@@ -1810,39 +1813,28 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(abg!=='#C48901')}
     <div style="position:absolute;bottom:${isPt?'12%':'10%'};left:7%;right:7%;z-index:2;">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${atxt==='#1C1C1C'?'rgba(28,28,28,.5)':'rgba(242,242,240,.55)'};margin-bottom:clamp(4px,.9vw,8px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.5vw':'4.2vw'},2.6rem);font-weight:900;line-height:1.1;color:${atxt};">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.5vw':'4.2vw'},2.6rem);font-weight:900;line-height:1.1;color:${atxt};">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:${atxt==='#1C1C1C'?'rgba(28,28,28,.65)':'rgba(242,242,240,.7)'};line-height:1.4;">${S.sub}</div>`:''}
     </div>`;
   }
 
   // ── collage_dark: siyah-beyaz + kırmızı aksanlar ──
-  if(tpl==='collage_dark') return `
-    <!-- Economist kolaj: B&W foto + kırmızı aksanlar + siyah başlık bloğu -->
+  if(tpl==='collage_dark'){
+    const logoHtml = '<div style="display:flex;align-items:baseline;gap:4px;"><span style="font-family:Manrope,sans-serif;font-size:clamp(11px,2.6vw,16px);font-weight:900;color:#fff;letter-spacing:-.5px;text-transform:uppercase;">TRT</span><span style="font-family:Manrope,sans-serif;font-size:clamp(11px,2.6vw,16px);font-weight:500;color:#fff;letter-spacing:.06em;text-transform:uppercase;"> НА РУССКОМ</span></div>';
+    return `
     <div style="position:absolute;inset:0;background:#111;"></div>
-
-    <!-- Ana fotoğraf — grayscale, alt %65 -->
-    ${bg?`<div style="position:absolute;top:${isPt?'30%':'28%'};left:0;right:0;bottom:0;
-      background:url(${bg}) center top/cover no-repeat;
-      filter:grayscale(100%) brightness(.55) contrast(1.3);"></div>`:''}
-
-    <!-- Kırmızı diagonal overlay aksanlar -->
+    ${bg?`<div style="position:absolute;top:${isPt?'30%':'28%'};left:0;right:0;bottom:0;background:url(${bg}) center top/cover no-repeat;filter:grayscale(100%) brightness(.55) contrast(1.3);"></div>`:''}
     <div style="position:absolute;top:${isPt?'30%':'28%'};left:8%;width:3px;height:40%;background:#B11731;z-index:2;"></div>
     <div style="position:absolute;top:${isPt?'38%':'35%'};right:12%;width:18%;height:30%;background:rgba(177,23,49,.85);z-index:2;"></div>
     <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:#B11731;z-index:2;"></div>
-
-    <!-- Siyah başlık bloğu — üstte -->
-    <div style="position:absolute;top:0;left:0;right:0;height:${isPt?'30%':'28%'};background:#0a0a0a;z-index:3;
-      display:flex;flex-direction:column;justify-content:flex-end;padding:${isPt?'0 6% 4%':'0 5% 3%'};">
-      ${trtLogo(true)}
-      <div style="font-family:Georgia,'Times New Roman',serif;
-        font-size:clamp(.82rem,${isPt?'4.8vw':isWeb?'2.8vw':'3.6vw'},2.2rem);
-        font-weight:400;line-height:1.18;color:#fff;
-        letter-spacing:-.01em;">${S.hl||'ЗАГОЛОВОК'}</div>
-      ${S.sub?`<div style="margin-top:clamp(3px,.7vw,7px);
-        font-family:Georgia,serif;font-size:clamp(.4rem,1vw,.62rem);
-        font-weight:400;color:rgba(255,255,255,.55);line-height:1.4;
-        font-style:italic;">${S.sub}</div>`:''}
+    <div style="position:absolute;top:0;left:0;right:0;height:${isPt?'32%':'30%'};background:#0a0a0a;z-index:3;display:flex;flex-direction:column;justify-content:space-between;padding:${isPt?'4% 5% 3%':'3% 5% 2%'};">
+      ${logoHtml}
+      <div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.75rem,${isPt?'4.2vw':isWeb?'2.4vw':'3.2vw'},2rem);font-weight:700;line-height:1.15;color:#fff;letter-spacing:-.01em;">${S.hl||''}</div>
+        ${S.sub?`<div style="margin-top:clamp(2px,.6vw,6px);font-family:Georgia,serif;font-size:clamp(.38rem,.92vw,.58rem);font-weight:400;color:rgba(255,255,255,.5);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+      </div>
     </div>`;
+  }
 
   // ── map_visual: harita/veri görsel ──
   if(tpl==='map_visual') return `
@@ -1850,7 +1842,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(false)}
     <div style="position:absolute;top:${isPt?'12%':'10%'};left:6%;right:6%;z-index:2;">
       <div style="width:28px;height:3px;background:${accent};margin-bottom:clamp(6px,1.4vw,12px);"></div>
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.78rem,${isPt?'4.8vw':isWeb?'3vw':'3.6vw'},2.2rem);font-weight:700;line-height:1.2;color:#1C1C1C;margin-bottom:clamp(4px,.9vw,9px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.78rem,${isPt?'4.8vw':isWeb?'3vw':'3.6vw'},2.2rem);font-weight:700;line-height:1.2;color:#1C1C1C;margin-bottom:clamp(4px,.9vw,9px);">${S.hl||''}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.44rem,1.1vw,.66rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;">${S.sub}</div>`:''}
     </div>
     ${bg?`<div style="position:absolute;bottom:5%;left:6%;right:6%;height:${isPt?'42%':'48%'};background:url(${bg}) center/contain no-repeat;opacity:.85;z-index:1;"></div>`:'<div style="position:absolute;bottom:8%;left:10%;right:10%;height:40%;background:radial-gradient(circle,rgba(4,46,88,.08) 0%,transparent 70%);border:1.5px solid rgba(4,46,88,.15);border-radius:50%;z-index:1;"></div>'}`;
@@ -1861,7 +1853,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(false)}
     <div style="position:absolute;top:${isPt?'12%':'10%'};left:6%;right:6%;z-index:2;">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.7vw,6px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.8rem,${isPt?'5vw':isWeb?'3.1vw':'3.8vw'},2.3rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.8rem,${isPt?'5vw':isWeb?'3.1vw':'3.8vw'},2.3rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(5px,1.2vw,10px);font-family:Manrope,sans-serif;font-size:clamp(.46rem,1.1vw,.68rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
     </div>
     ${bg?`<div style="position:absolute;bottom:0;left:10%;right:10%;height:${isPt?'50%':'52%'};background:url(${bg}) center top/contain no-repeat;filter:grayscale(40%);z-index:1;"></div>`:''}`;
@@ -1873,7 +1865,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(false)}
     <div style="position:absolute;top:50%;left:10%;right:10%;transform:translateY(-50%);z-index:2;text-align:center;">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:${accent};margin-bottom:clamp(6px,1.4vw,12px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'3.9vw'},2.4rem);font-weight:700;line-height:1.18;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'3.9vw'},2.4rem);font-weight:700;line-height:1.18;color:#1C1C1C;">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.46rem,1.15vw,.7rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
       <div style="width:24px;height:2px;background:${accent};margin:clamp(8px,1.8vw,14px) auto 0;"></div>
     </div>`;
@@ -1886,7 +1878,7 @@ function buildCard(tpl, bg, platform, forExport){
       <div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.44rem);color:rgba(255,255,255,.7);letter-spacing:.1em;margin-top:2px;">${S.sub||''}</div>
     </div>
     <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'4% 5% 5%':'3% 5% 4%'};z-index:2;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 100%);">
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(.88rem,${isPt?'5.5vw':'3.6vw'},2.2rem);font-weight:700;color:#fff;text-transform:uppercase;line-height:.96;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.88rem,${isPt?'5.5vw':'3.6vw'},2.2rem);font-weight:700;color:#fff;text-transform:uppercase;line-height:.96;">${S.hl||''}</div>
     </div>`;
 
   // ── silhouette: siluet + açık zemin ──
@@ -1894,7 +1886,7 @@ function buildCard(tpl, bg, platform, forExport){
     <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
     ${trtLogo(false)}
     <div style="position:absolute;top:${isPt?'10%':'8%'};left:6%;right:6%;z-index:2;">
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.8rem,${isPt?'5vw':isWeb?'3.1vw':'3.8vw'},2.3rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.8rem,${isPt?'5vw':isWeb?'3.1vw':'3.8vw'},2.3rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(5px,1.2vw,10px);font-family:Manrope,sans-serif;font-size:clamp(.46rem,1.1vw,.68rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
     </div>
     ${bg?`<div style="position:absolute;bottom:0;left:0;right:0;height:55%;background:url(${bg}) center bottom/contain no-repeat;filter:grayscale(80%);opacity:.6;mix-blend-mode:multiply;z-index:1;"></div>`:'<div style="position:absolute;bottom:5%;left:25%;width:50%;height:45%;background:rgba(28,28,28,.08);clip-path:polygon(50% 0%,85% 20%,100% 60%,80% 100%,20% 100%,0% 60%,15% 20%);z-index:1;"></div>'}`;
@@ -1909,7 +1901,7 @@ function buildCard(tpl, bg, platform, forExport){
         <div style="width:8px;height:8px;border-radius:50%;background:#B11731;"></div>
         <span style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.74vw,.46rem);font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.8);text-transform:uppercase;">СРОЧНО</span>
       </div>
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(.88rem,${isPt?'5.5vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.96;color:#fff;text-transform:uppercase;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.88rem,${isPt?'5.5vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.96;color:#fff;text-transform:uppercase;">${S.hl||''}</div>
     </div>`;
 
   // ── trt_headline: metin üstte + portre altta ──
@@ -1917,7 +1909,7 @@ function buildCard(tpl, bg, platform, forExport){
     <div style="position:absolute;inset:0;background:#1C1C1C;"></div>
     ${trtLogo(true)}
     <div style="position:absolute;top:${isPt?'12%':'10%'};left:5%;right:5%;z-index:2;text-align:center;">
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'3.9vw'},2.4rem);font-weight:700;line-height:1.2;color:#fff;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'3.9vw'},2.4rem);font-weight:700;line-height:1.2;color:#fff;">${S.hl||''}</div>
     </div>
     ${bg?`<div style="position:absolute;bottom:0;left:0;right:0;height:${isPt?'55%':'58%'};background:url(${bg}) center top/cover no-repeat;z-index:1;"></div>`:''}`;
 
@@ -1926,7 +1918,7 @@ function buildCard(tpl, bg, platform, forExport){
     <div style="position:absolute;inset:0;background:${bgCss};"></div>
     ${trtLogo(true)}
     <div style="position:absolute;bottom:0;left:0;right:0;background:#B11731;padding:${isPt?'3.5% 5% 4%':'2.5% 5% 3%'};z-index:2;">
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(.78rem,${isPt?'4.8vw':isWeb?'3vw':'3.6vw'},2.2rem);font-weight:700;line-height:1.0;color:#fff;text-transform:uppercase;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.78rem,${isPt?'4.8vw':isWeb?'3vw':'3.6vw'},2.2rem);font-weight:700;line-height:1.0;color:#fff;text-transform:uppercase;">${S.hl||''}</div>
     </div>`;
 
   // ── tweet_card: sosyal medya screenshot tarzı ──
@@ -1944,7 +1936,7 @@ function buildCard(tpl, bg, platform, forExport){
             <div style="font-family:Manrope,sans-serif;font-size:clamp(.32rem,.76vw,.46rem);color:rgba(255,255,255,.45);">@trtrussian</div>
           </div>
         </div>
-        <div style="font-family:Manrope,sans-serif;font-size:clamp(.54rem,1.4vw,.84rem);font-weight:400;color:rgba(255,255,255,.9);line-height:1.55;">${S.hl||'ЗАГОЛОВОК'}</div>
+        <div style="font-family:Manrope,sans-serif;font-size:clamp(.54rem,1.4vw,.84rem);font-weight:400;color:rgba(255,255,255,.9);line-height:1.55;">${S.hl||''}</div>
         ${S.sub?`<div style="margin-top:clamp(5px,1.1vw,10px);font-family:Manrope,sans-serif;font-size:clamp(.42rem,1vw,.64rem);color:rgba(255,255,255,.5);line-height:1.4;">${S.sub}</div>`:''}
       </div>
     </div>`;
@@ -1957,7 +1949,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(false)}
     <div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);z-index:2;">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(4px,.9vw,8px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.0;color:#1C1C1C;text-transform:uppercase;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.9rem,${isPt?'5.6vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.0;color:#1C1C1C;text-transform:uppercase;">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.4;">${S.sub}</div>`:''}
       <div style="margin-top:clamp(8px,1.8vw,16px);width:36px;height:36px;border:2.5px solid ${accent};transform:rotate(45deg);"></div>
     </div>`;
@@ -1972,7 +1964,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(false)}
     <div style="position:absolute;top:50%;left:8%;right:8%;transform:translateY(-50%);z-index:2;text-align:center;">
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.32rem,.8vw,.5rem);font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:${accent};margin-bottom:clamp(8px,2vw,18px);">ПО ПРИГЛАШЕНИЮ</div>
-      <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.88rem,${isPt?'5.4vw':isWeb?'3.2vw':'4vw'},2.5rem);font-weight:700;line-height:1.2;color:#1C1C1C;font-style:italic;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.88rem,${isPt?'5.4vw':isWeb?'3.2vw':'4vw'},2.5rem);font-weight:700;line-height:1.2;color:#1C1C1C;font-style:italic;">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(8px,2vw,18px);font-family:Georgia,serif;font-size:clamp(.5rem,1.3vw,.78rem);font-weight:400;color:rgba(28,28,28,.6);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
     </div>`;
 
@@ -1982,7 +1974,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${trtLogo(false)}
     <div style="position:absolute;top:${isPt?'12%':'10%'};left:6%;right:6%;z-index:2;">
       <div style="width:28px;height:3px;background:${accent};margin-bottom:clamp(5px,1.2vw,12px);"></div>
-      <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.78rem,${isPt?'5vw':isWeb?'3vw':'3.8vw'},2.4rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.78rem,${isPt?'5vw':isWeb?'3vw':'3.8vw'},2.4rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${S.hl||''}</div>
       ${S.sub?`<div style="margin-top:clamp(5px,1.2vw,11px);font-family:Georgia,serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
     </div>
     ${bg?`<div style="position:absolute;bottom:0;left:0;right:0;height:${isPt?'48%':'52%'};background:url(${bg}) center top/cover no-repeat;z-index:1;"></div>`
@@ -1998,7 +1990,7 @@ function buildCard(tpl, bg, platform, forExport){
       ${trtLogo(false)}
       <div style="margin-bottom:clamp(4px,1vw,10px);">
         <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:400;color:${accent};letter-spacing:.05em;margin-bottom:clamp(4px,.9vw,9px);">${S.cat||''}</div>
-        <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3vw':'3.8vw'},2.4rem);font-weight:700;line-height:1.15;color:#1C1C1C;">${S.hl||'ЗАГОЛОВОК'}</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3vw':'3.8vw'},2.4rem);font-weight:700;line-height:1.15;color:#1C1C1C;">${S.hl||''}</div>
         ${S.sub?`<div style="margin-top:clamp(4px,.9vw,9px);font-family:Georgia,serif;font-size:clamp(.46rem,1.15vw,.7rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
       </div>
     </div>
@@ -2013,7 +2005,7 @@ function buildCard(tpl, bg, platform, forExport){
     ${getDisplayCat()?`<div style="position:absolute;top:3.5%;right:4%;z-index:2;font-family:Manrope,sans-serif;font-size:clamp(.3rem,.74vw,.48rem);font-weight:800;letter-spacing:.2em;text-transform:uppercase;padding:2px 8px;border-radius:2px;background:${accent};color:#fff;">${getDisplayCat()}</div>`:''}
     <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'4.5% 5% 5%':isWeb?'3% 4.5% 3.5%':'3.2% 4.5% 4%'};z-index:2;">
       <div style="width:20px;height:3px;background:${accent};border-radius:2px;margin-bottom:clamp(5px,1.2vw,11px);"></div>
-      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.5vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(4px,.95vw,10px);">${S.hl||'ЗАГОЛОВОК'}</div>
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.5vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:clamp(4px,.95vw,10px);">${S.hl||''}</div>
       ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.25vw,.74rem);font-weight:400;color:rgba(255,255,255,.65);line-height:1.4;">${S.sub}</div>`:''}
       <div style="margin-top:clamp(4px,.95vw,9px);font-family:Manrope,sans-serif;font-size:clamp(.3rem,.72vw,.46rem);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);">${(S.src&&!S.src.toLowerCase().includes('trt'))?S.src:''}</div>
     </div>`;
@@ -2521,7 +2513,13 @@ let BUILT_TEMPLATES = _buildRotatedTemplates('','normal','photo_panel');
 function _showBuiltSlide(idx){
   const total = BUILT_TEMPLATES.length;
   S._builtIdx = ((idx % total) + total) % total;
-  S._builtActive = true; // renderPreview'ın carousel'i ezmesini engelle
+  S._builtActive = true;
+  // S.hl boşsa — input'tan oku
+  if(!S.hl){
+    const mhl = document.getElementById('m-hl');
+    const phl = document.getElementById('p-hl');
+    S.hl = (mhl&&mhl.value) || (phl&&phl.value) || '';
+  }
   const t = BUILT_TEMPLATES[S._builtIdx];
   const current = S._builtIdx + 1;
 
