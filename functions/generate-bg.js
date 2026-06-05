@@ -67,18 +67,23 @@ exports.handler = async (event) => {
   const headline   = body.headline || "";
   const concept    = body.concept  || rawPrompt;
   const category   = body.category || "";
-  // Platform → boyut mapping
+  // Platform → boyut — önce body.size, yoksa platform'a göre
   const platform = body.platform || "instagram";
   const SIZE_MAP = {
-    instagram: "1024x1536",   // 4:5 portrait
-    twitter:   "1536x1024",   // 16:9 landscape
-    telegram:  "1536x1024",   // 16:9 landscape
-    youtube:   "1536x1024",   // 16:9 landscape
-    facebook:  "1536x1024",   // landscape
-    web:       "1536x1024",   // wide
-    square:    "1024x1024",   // 1:1
+    instagram: "1024x1536",
+    twitter:   "1536x1024",
+    telegram:  "1536x1024",
+    youtube:   "1536x1024",
+    facebook:  "1024x1024",
+    web:       "1536x1024",
+    square:    "1024x1024",
   };
-  const size = SIZE_MAP[platform] || "1024x1536";
+  // gpt-image-1 desteklenen boyutlar
+  const VALID_SIZES = ["1024x1024","1024x1536","1536x1024"];
+  const requestedSize = body.size;
+  const size = (requestedSize && VALID_SIZES.includes(requestedSize))
+    ? requestedSize
+    : (SIZE_MAP[platform] || "1024x1024");
 
   if (!rawPrompt && !concept) {
     return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "No prompt received" }) };
@@ -94,6 +99,22 @@ exports.handler = async (event) => {
     .replace(/[А-ЯЁа-яё]+/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
+
+  // Prompt çok kısaldıysa fallback
+  if (cleaned.length < 15) {
+    console.log('Prompt too short after Cyrillic removal, using generic editorial prompt');
+    const fallback = "Editorial illustration, The Economist style, matte gouache, cream background, single metaphor, no text";
+    return {
+      statusCode: 200,
+      headers: CORS,
+      body: JSON.stringify({
+        base64: null,
+        error: null,
+        fallback: true,
+        message: "Prompt too short — use photoQuery instead"
+      })
+    };
+  }
 
   const cleanConcept = concept
     .replace(/[А-ЯЁа-яё]+/g, '')
