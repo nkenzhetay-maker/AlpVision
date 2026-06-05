@@ -279,11 +279,56 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
 .sdot.on{background:#27ae60;animation:pulse 1.4s ease infinite;}
 .sdot.err{background:var(--red);}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── AUTH — TRT Russian stili ── */
+#authScreen{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;}
+#authScreen.hidden{display:none;}
+.auth-card{background:#1a1a1a;border:1px solid #2a2a2a;padding:40px;max-width:360px;width:100%;}
+.auth-logo{display:flex;align-items:center;gap:14px;margin-bottom:32px;}
+.auth-trt-badge{background:#CC0000;color:#fff;font-family:Manrope,monospace;font-size:13px;font-weight:700;letter-spacing:2px;padding:6px 12px;}
+.auth-title{font-family:Manrope,sans-serif;font-size:11px;color:#666;letter-spacing:2px;text-transform:uppercase;}
+.auth-label{font-family:Manrope,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#666;display:block;margin-bottom:6px;}
+.auth-input{width:100%;background:#111;border:1px solid #2a2a2a;color:#e0e0e0;padding:12px 14px;font-family:Manrope,sans-serif;font-size:14px;outline:none;margin-bottom:14px;box-sizing:border-box;}
+.auth-input:focus{border-color:#CC0000;}
+.auth-btn{width:100%;background:#CC0000;color:#fff;border:none;padding:14px;font-family:Manrope,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;}
+.auth-btn:hover:not(:disabled){background:#AA0000;}
+.auth-btn:disabled{opacity:.4;cursor:not-allowed;}
+.auth-msg{font-family:Manrope,sans-serif;font-size:11px;margin-top:10px;padding:10px;text-align:center;}
+.auth-msg.err{color:#ff6666;background:rgba(204,0,0,.08);border:1px solid rgba(204,0,0,.3);}
+.auth-msg.ok{color:#68d391;background:rgba(33,97,37,.08);border:1px solid rgba(33,97,37,.3);}
+.auth-back{font-family:Manrope,sans-serif;font-size:11px;color:#444;text-align:center;margin-top:16px;}
+.auth-back a{color:#CC0000;cursor:pointer;}
+.auth-code-input{font-size:26px;letter-spacing:10px;text-align:center;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body onkeydown="if(event.key==='Escape'&&!S.analyzing){document.getElementById('analyze-overlay').style.display='none';}">
 
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-trt-badge">TRT</div>
+      <div class="auth-title">Russian Dijital · AlpVision</div>
+    </div>
+    <div id="authStep1">
+      <label class="auth-label">E-posta Adresi</label>
+      <input class="auth-input" type="email" id="authEmail" placeholder="ornek@gmail.com" onkeydown="if(event.key==='Enter')authSendCode()">
+      <button class="auth-btn" id="authSendBtn" onclick="authSendCode()">Doğrulama Kodu Gönder</button>
+      <div id="authMsg1" class="auth-msg" style="display:none;"></div>
+    </div>
+    <div id="authStep2" style="display:none;">
+      <div style="font-family:Manrope,sans-serif;font-size:12px;color:#68d391;margin-bottom:18px;padding:10px;background:rgba(33,97,37,.1);border:1px solid rgba(33,97,37,.25);border-radius:3px;">✓ Kod <span id="authEmailShow" style="font-weight:700;"></span> adresine gönderildi</div>
+      <label class="auth-label">Doğrulama Kodu (6 hane)</label>
+      <input class="auth-input auth-code-input" type="text" id="authCode" placeholder="000000" maxlength="6" onkeydown="if(event.key==='Enter')authVerify()">
+      <button class="auth-btn" onclick="authVerify()">Giriş Yap</button>
+      <div id="authMsg2" class="auth-msg" style="display:none;"></div>
+      <div class="auth-back">Kodu almadınız mı? <a onclick="authBack()">Tekrar deneyin</a></div>
+    </div>
+  </div>
+</div>
+
+<div id="appWrap" style="display:none">
 <header class="hdr">
   <div class="brand">
     <span class="wm"><span class="w-alp">Alp</span><span class="w-vis">Vision</span></span>
@@ -304,6 +349,7 @@ input.mf-v{background:transparent;border:none;outline:none;color:var(--txt);font
     </button>
     <button class="lang-btn on" onclick="setLang('ru')">RU</button>
     <button class="lang-btn" onclick="setLang('tr')">TR</button>
+    <button onclick="authLogout()" title="Çıkış" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);cursor:pointer;font-family:Manrope,sans-serif;font-size:.6rem;padding:3px 8px;border-radius:3px;">⏻</button>
   </div>
 </header>
 
@@ -3179,7 +3225,124 @@ async function _dlAll(){
 }
 
 window.addEventListener('resize',()=>{if(S.userPhotoB64||S.hl)renderPreview();});
+
+// ════════════════════════════════════════════════════════════
+// AUTH SİSTEMİ — EmailJS OTP
+// ════════════════════════════════════════════════════════════
+const _AUTH = {
+  PUBLIC_KEY:  'VmCtNOVj83UjISimq',
+  SERVICE_ID:  'service_mdtv5k8',
+  TEMPLATE_ID: 'template_lavno6l',
+  ALLOWED:     ['nkenzhetay@gmail.com'],
+  OTP_MS:      10 * 60 * 1000, // 10 dakika
+  _code: null,
+  _time: null,
+  _token: null
+};
+
+// EmailJS init
+if(typeof emailjs !== 'undefined') emailjs.init(_AUTH.PUBLIC_KEY);
+
+function _authInit(){
+  const token = localStorage.getItem('alp_token');
+  const ts    = parseInt(localStorage.getItem('alp_token_ts') || '0');
+  // 8 saatlik oturum
+  if(token && Date.now() - ts < 30 * 60 * 1000){
+    _authShowApp();
+  } else {
+    localStorage.removeItem('alp_token');
+    localStorage.removeItem('alp_token_ts');
+    _authShowLogin();
+  }
+}
+
+function _authShowLogin(){
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('appWrap').style.display = 'none';
+}
+
+function _authShowApp(){
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('appWrap').style.display = '';
+}
+
+function _authMsg(step, txt, type){
+  const el = document.getElementById('authMsg'+step);
+  if(!el) return;
+  el.textContent = txt;
+  el.className = 'auth-msg ' + (type||'');
+  el.style.display = txt ? '' : 'none';
+}
+
+async function authSendCode(){
+  const email = (document.getElementById('authEmail').value||'').trim().toLowerCase();
+  if(!email){ _authMsg(1,'E-posta adresinizi girin.','err'); return; }
+  if(!_AUTH.ALLOWED.includes(email)){ _authMsg(1,'Bu e-posta adresi sisteme kayıtlı değil.','err'); return; }
+
+  const btn = document.getElementById('authSendBtn');
+  btn.disabled = true; btn.textContent = 'Gönderiliyor...';
+  _authMsg(1,'','');
+
+  _AUTH._code = Math.floor(100000 + Math.random() * 900000).toString();
+  _AUTH._time = Date.now();
+
+  try {
+    await emailjs.send(_AUTH.SERVICE_ID, _AUTH.TEMPLATE_ID, {
+      to_email: email,
+      to_name:  email.split('@')[0],
+      otp_code: _AUTH._code,
+      message:  'AlpVision giriş kodunuz: ' + _AUTH._code + ' (10 dakika geçerli)'
+    });
+    document.getElementById('authStep1').style.display = 'none';
+    document.getElementById('authStep2').style.display = 'block';
+    document.getElementById('authEmailShow').textContent = email;
+    document.getElementById('authCode').focus();
+  } catch(e) {
+    // EmailJS başarısızsa kodu ekranda göster (fallback)
+    document.getElementById('authStep1').style.display = 'none';
+    document.getElementById('authStep2').style.display = 'block';
+    document.getElementById('authEmailShow').textContent = email;
+    _authMsg(2, '⚠ E-posta gönderilemedi. Geçici kod: ' + _AUTH._code, 'err');
+    document.getElementById('authCode').value = _AUTH._code;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Doğrulama Kodu Gönder';
+  }
+}
+
+function authVerify(){
+  const kod = (document.getElementById('authCode').value||'').trim();
+  if(kod.length !== 6){ _authMsg(2,'6 haneli kodu girin.','err'); return; }
+  if(!_AUTH._code || Date.now() - _AUTH._time > _AUTH.OTP_MS){
+    _authMsg(2,'Kodun süresi doldu. Yeni kod isteyin.','err'); return;
+  }
+  if(kod !== _AUTH._code){ _authMsg(2,'Hatalı kod. Tekrar deneyin.','err'); return; }
+
+  // Başarılı giriş
+  _AUTH._code = null;
+  const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  localStorage.setItem('alp_token', token);
+  localStorage.setItem('alp_token_ts', Date.now().toString());
+  _authShowApp();
+}
+
+function authBack(){
+  _AUTH._code = null;
+  document.getElementById('authStep1').style.display = 'block';
+  document.getElementById('authStep2').style.display = 'none';
+  document.getElementById('authMsg1').style.display = 'none';
+  document.getElementById('authCode').value = '';
+}
+
+function authLogout(){
+  localStorage.removeItem('alp_token');
+  localStorage.removeItem('alp_token_ts');
+  _authShowLogin();
+}
+
+// Sayfa yüklenince auth kontrolü
+_authInit();
 setLang('ru');
 </script>
+</div><!-- /appWrap -->
 </body>
 </html>
