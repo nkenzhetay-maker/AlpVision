@@ -999,6 +999,13 @@ function buildAiTplGrid(){
     {id:'trt_breaking',    label:'TRT Срочно',      sub:'Нижняя полоса',          icon:'🔔'},
     {id:'tweet_card',      label:'Твит-карточка',   sub:'Скрин соцсети',          icon:'🐦'},
     {id:'geometric',       label:'Геометрия',       sub:'Вектор + иллюстрация',   icon:'◆'},
+    {id:'duotone',         label:'Дуотон',          sub:'Двухцветное фото',       icon:'◑'},
+    {id:'data_headline',   label:'Цифра',           sub:'Крупное число + контекст',icon:'#'},
+    {id:'word_stack',      label:'Стопка слов',     sub:'Слова разного веса',     icon:'≡'},
+    {id:'redacted',        label:'Засекречено',     sub:'Текст с чёрными полосами',icon:'█'},
+    {id:'scale_contrast',  label:'Масштаб',         sub:'Маленький vs. гигант',   icon:'⇕'},
+    {id:'before_after',    label:'До / После',      sub:'Разделённый кадр',       icon:'⟺'},
+    {id:'negative_space',  label:'Пустота',         sub:'Много пространства',     icon:'○'},
   ].forEach(tpl=>{
     const b=document.createElement('button');
     b.className='tpl-btn'+(S.aiTpl===tpl.id?' on':'');
@@ -1799,25 +1806,27 @@ function buildCard(tpl, bg, platform, forExport){
     </div>`;
   }
 
-  // ── dark_minimal: siyah zemin, sadece metin ──
+  // ── dark_minimal: koyu zemin, tipografi odaklı, ince aksanlı çizgi ──
   if(tpl==='dark_minimal') return `
-    <div style="position:absolute;inset:0;background:#0a0a0a;"></div>
+    <div style="position:absolute;inset:0;background:#0D0D0F;"></div>
+    <div style="position:absolute;top:0;left:6%;width:2px;height:100%;background:linear-gradient(to bottom,transparent 0%,${accent} 30%,${accent} 70%,transparent 100%);opacity:.4;z-index:1;"></div>
     ${trtLogo(true)}
-    ${getDisplayCat()?`<div style="position:absolute;top:${isPt?'14%':'12%'};left:6%;z-index:2;font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};">${getDisplayCat()}</div>`:''}
-    <div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);z-index:2;">
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.9rem,${isPt?'5.8vw':isWeb?'3.6vw':'4.4vw'},2.8rem);font-weight:700;line-height:1.15;color:#fff;margin-bottom:clamp(8px,1.8vw,16px);">${S.hl||''}</div>
-      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.5rem,1.3vw,.78rem);font-weight:300;color:rgba(255,255,255,.55);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
+    ${getDisplayCat()?`<div style="position:absolute;top:${isPt?'14%':'12%'};left:9%;z-index:2;font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};">${getDisplayCat()}</div>`:''}
+    <div style="position:absolute;top:50%;left:9%;right:6%;transform:translateY(-50%);z-index:2;">
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.9rem,${isPt?'5.8vw':isWeb?'3.6vw':'4.4vw'},2.8rem);font-weight:700;line-height:1.0;color:#F2F2F0;text-transform:uppercase;letter-spacing:-.02em;margin-bottom:clamp(8px,1.8vw,16px);">${S.hl||''}</div>
+      ${S.sub?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.5rem,1.3vw,.78rem);font-weight:300;color:rgba(242,242,240,.45);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
     </div>`;
 
-  // ── photo_overlay: fotoğraf üstünde metin ortada ──
+  // ── photo_overlay: fotoğraf üstünde metin, alt gradient şerit ──
   if(tpl==='photo_overlay') return `
-    <div style="position:absolute;inset:0;background:${bgCss};filter:${bg?'brightness(.5) contrast(1.1)':'none'};"></div>
-    <div style="position:absolute;inset:0;background:rgba(0,0,0,.35);"></div>
+    <div style="position:absolute;inset:0;background:${bgCss};filter:${bg?'brightness(.55) contrast(1.12)':'none'};"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.15) 0%,rgba(0,0,0,.1) 40%,rgba(0,0,0,.75) 100%);"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:${accent};z-index:3;"></div>
     ${trtLogo(true)}
-    <div style="position:absolute;top:${isPt?'18%':'15%'};left:6%;right:6%;z-index:2;">
+    <div style="position:absolute;bottom:${isPt?'8%':'7%'};left:6%;right:6%;z-index:2;">
       ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(4px,.9vw,9px);">${getDisplayCat()}</div>`:''}
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(.88rem,${isPt?'5.6vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:1.12;color:#fff;">${S.hl||''}</div>
-      ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(255,255,255,.7);line-height:1.4;font-style:italic;">${S.sub}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.88rem,${isPt?'5.6vw':isWeb?'3.4vw':'4.2vw'},2.6rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;letter-spacing:-.01em;">${S.hl||''}</div>
+      ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(255,255,255,.6);line-height:1.4;">${S.sub}</div>`:''}
     </div>`;
 
   // ── color_block: düz renk zemin + illüstrasyon alanı ──
@@ -1838,14 +1847,16 @@ function buildCard(tpl, bg, platform, forExport){
     ${bg?`<div style="position:absolute;bottom:0;left:0;right:0;height:45%;background:url(${bg}) center/cover no-repeat;mask-image:linear-gradient(to bottom,transparent,rgba(0,0,0,.7) 40%,rgba(0,0,0,.9));-webkit-mask-image:linear-gradient(to bottom,transparent,rgba(0,0,0,.7) 40%,rgba(0,0,0,.9));"></div>`:''}`;
   }
 
-  // ── pure_typography: beyaz zemin, sadece büyük metin ──
+  // ── pure_typography: açık zemin, tipografi hiyerarşisi baskın ──
   if(tpl==='pure_typography') return `
     <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    <div style="position:absolute;top:0;right:0;width:35%;height:100%;background:${accent};opacity:.06;z-index:1;"></div>
     ${trtLogo(false)}
-    <div style="position:absolute;top:50%;left:8%;right:8%;transform:translateY(-50%);z-index:2;">
+    <div style="position:absolute;top:${isPt?'22%':'18%'};left:8%;right:12%;z-index:2;">
       <div style="width:32px;height:3px;background:${accent};margin-bottom:clamp(10px,2.2vw,20px);"></div>
-      <div style="font-family:Manrope,sans-serif;font-size:clamp(1rem,${isPt?'6.2vw':isWeb?'3.8vw':'4.8vw'},3rem);font-weight:700;line-height:1.18;color:#1C1C1C;">${S.hl||''}</div>
-      ${S.sub?`<div style="margin-top:clamp(8px,1.8vw,16px);font-family:Manrope,sans-serif;font-size:clamp(.52rem,1.35vw,.8rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.5;font-style:italic;">${S.sub}</div>`:''}
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.28rem,.7vw,.42rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(6px,1.4vw,12px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(1rem,${isPt?'6.2vw':isWeb?'3.8vw':'4.8vw'},3rem);font-weight:700;line-height:1.0;color:#1C1C1C;text-transform:uppercase;letter-spacing:-.02em;">${S.hl||''}</div>
+      ${S.sub?`<div style="margin-top:clamp(10px,2.2vw,18px);font-family:Georgia,'Times New Roman',serif;font-size:clamp(.52rem,1.35vw,.8rem);font-weight:400;color:rgba(28,28,28,.5);line-height:1.55;font-style:italic;max-width:80%;">${S.sub}</div>`:''}
     </div>`;
 
   // ── accent_color: sarı/pembe/mor düz zemin ──
@@ -2042,6 +2053,125 @@ function buildCard(tpl, bg, platform, forExport){
     </div>
     <!-- Alt tam fotoğraf -->
     <div style="position:absolute;bottom:0;left:0;right:0;height:${isPt?'58%':'62%'};background:${bgCss};z-index:1;border-top:3px solid ${accent};"></div>`;
+
+  // ── duotone: iki renkli fotoğraf işleme ──
+  if(tpl==='duotone'){
+    const duoPairs = {red:['#B11731','#042E58'],navy:['#042E58','#00B6CB'],teal:['#00B6CB','#1C1C1C'],gold:['#C48901','#042E58'],dark:['#B11731','#1C1C1C']};
+    const [c1,c2] = duoPairs[S._builtScheme] || duoPairs.red;
+    return `
+    <div style="position:absolute;inset:0;background:${c2};"></div>
+    ${bg?`<div style="position:absolute;inset:0;background:url(${bg}) center/cover no-repeat;filter:grayscale(100%) contrast(1.4);mix-blend-mode:luminosity;opacity:.7;"></div>`:''}
+    <div style="position:absolute;inset:0;background:${c1};mix-blend-mode:multiply;opacity:.6;"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;bottom:${isPt?'8%':'7%'};left:5%;right:5%;z-index:2;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.3rem,.76vw,.46rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:clamp(4px,.9vw,8px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(1.1rem,${isPt?'7.5vw':isWeb?'4vw':'5.2vw'},3.2rem);font-weight:700;line-height:.9;color:#fff;text-transform:uppercase;letter-spacing:-.02em;">${S.hl||''}</div>
+      ${S.sub?`<div style="margin-top:clamp(6px,1.4vw,12px);font-family:Manrope,sans-serif;font-size:clamp(.48rem,1.2vw,.72rem);font-weight:400;color:rgba(255,255,255,.55);line-height:1.4;">${S.sub}</div>`:''}
+    </div>`;
+  }
+
+  // ── data_headline: devasa rakam + bağlam ──
+  if(tpl==='data_headline'){
+    const rawNum = S.dataStat || S.hl.match(/[\d,.]+\s*[%$€₺₽TMBтрлнмлрд]*/)?.[0] || '';
+    const num = rawNum.trim();
+    const rest_hl = num ? S.hl.replace(rawNum,'').replace(/\s{2,}/g,' ').trim() : '';
+    const showSplit = num && rest_hl.length > 5;
+    return `
+    <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:50%;left:6%;right:6%;transform:translateY(-50%);z-index:2;">
+      ${showSplit
+        ? `<div style="font-family:Oswald,sans-serif;font-size:clamp(3rem,${isPt?'22vw':isWeb?'12vw':'16vw'},10rem);font-weight:700;line-height:.85;color:${accent};letter-spacing:-.04em;font-variant-numeric:tabular-nums;">${num}</div>
+           <div style="margin-top:clamp(4px,1vw,10px);width:40px;height:3px;background:${accent};"></div>
+           <div style="margin-top:clamp(8px,1.8vw,16px);font-family:Manrope,sans-serif;font-size:clamp(.7rem,${isPt?'3.8vw':isWeb?'2vw':'2.8vw'},1.6rem);font-weight:700;line-height:1.2;color:#1C1C1C;">${rest_hl}</div>`
+        : `<div style="font-family:Oswald,sans-serif;font-size:clamp(1.2rem,${isPt?'8vw':isWeb?'4.5vw':'6vw'},4rem);font-weight:700;line-height:.92;color:#1C1C1C;text-transform:uppercase;">${S.hl||''}</div>
+           <div style="margin-top:clamp(6px,1.4vw,12px);width:40px;height:3px;background:${accent};"></div>`}
+      ${S.sub?`<div style="margin-top:clamp(4px,.9vw,8px);font-family:Manrope,sans-serif;font-size:clamp(.44rem,1.1vw,.66rem);font-weight:400;color:rgba(28,28,28,.55);line-height:1.4;">${S.sub}</div>`:''}
+    </div>`;
+  }
+
+  // ── word_stack: kelime yığını, farklı ağırlıklar ──
+  if(tpl==='word_stack'){
+    const words = (S.hl||'').split(/\s+/).slice(0,5);
+    const weights = [900,300,700,400,800];
+    const sizes = ['8vw','5.5vw','7vw','4.5vw','6vw'];
+    const stackHtml = words.map((w,i) =>
+      `<div style="font-family:Oswald,sans-serif;font-size:clamp(.8rem,${isPt?sizes[i%5]:(parseFloat(sizes[i%5])*.7)+'vw'},3.5rem);font-weight:${weights[i%5]};line-height:1.0;color:${i===0?accent:'#1C1C1C'};text-transform:uppercase;letter-spacing:${weights[i%5]<500?'.08em':'-.02em'};">${w}</div>`
+    ).join('');
+    return `
+    <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:50%;left:7%;right:7%;transform:translateY(-50%);z-index:2;">
+      ${stackHtml}
+      ${S.sub?`<div style="margin-top:clamp(12px,2.5vw,22px);font-family:Manrope,sans-serif;font-size:clamp(.44rem,1.1vw,.66rem);font-weight:400;color:rgba(28,28,28,.5);line-height:1.4;border-top:1px solid rgba(28,28,28,.15);padding-top:clamp(6px,1.4vw,12px);">${S.sub}</div>`:''}
+    </div>`;
+  }
+
+  // ── redacted: sansürlü metin efekti ──
+  if(tpl==='redacted'){
+    const hl = S.hl||'';
+    const words = hl.split(/\s+/);
+    const redactedHtml = words.map((w,i) => {
+      const shouldRedact = i % 4 === 2 || i % 5 === 3;
+      return shouldRedact
+        ? `<span style="background:#1C1C1C;color:#1C1C1C;padding:0 4px;">${w}</span>`
+        : `<span>${w}</span>`;
+    }).join(' ');
+    return `
+    <div style="position:absolute;inset:0;background:#F5F1E8;"></div>
+    ${trtLogo(false)}
+    <div style="position:absolute;top:${isPt?'14%':'12%'};left:6%;z-index:2;">
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.28rem,.7vw,.42rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};">СЕКРЕТНО</div>
+    </div>
+    <div style="position:absolute;top:50%;left:7%;right:7%;transform:translateY(-50%);z-index:2;">
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3.2vw':'3.9vw'},2.4rem);font-weight:700;line-height:1.25;color:#1C1C1C;">${redactedHtml}</div>
+      ${S.sub?`<div style="margin-top:clamp(10px,2.2vw,18px);font-family:Georgia,serif;font-size:clamp(.46rem,1.15vw,.7rem);font-weight:400;color:rgba(28,28,28,.5);line-height:1.5;font-style:italic;border-left:3px solid ${accent};padding-left:10px;">${S.sub}</div>`:''}
+    </div>
+    <div style="position:absolute;bottom:5%;right:6%;z-index:2;font-family:Manrope,sans-serif;font-size:clamp(.24rem,.6vw,.36rem);font-weight:600;letter-spacing:.15em;color:rgba(28,28,28,.25);text-transform:uppercase;">РАССЕКРЕЧЕНО</div>`;
+  }
+
+  // ── scale_contrast: küçük figür vs dev nesne ──
+  if(tpl==='scale_contrast') return `
+    <div style="position:absolute;inset:0;background:#1C1C1C;"></div>
+    ${bg?`<div style="position:absolute;top:5%;left:15%;right:15%;bottom:25%;background:url(${bg}) center/contain no-repeat;opacity:.9;z-index:1;"></div>`
+      :`<div style="position:absolute;top:10%;left:20%;right:20%;bottom:30%;background:${accent};opacity:.12;border-radius:4px;z-index:1;"></div>`}
+    <div style="position:absolute;bottom:22%;left:45%;width:12px;height:24px;background:rgba(242,242,240,.8);clip-path:polygon(50% 0%,100% 35%,80% 35%,80% 100%,20% 100%,20% 35%,0% 35%);z-index:2;"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;bottom:${isPt?'5%':'4%'};left:5%;right:5%;z-index:2;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.28rem,.7vw,.42rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.7vw,6px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.78rem,${isPt?'4.8vw':isWeb?'2.8vw':'3.4vw'},2rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;">${S.hl||''}</div>
+    </div>`;
+
+  // ── before_after: ikiye bölünmüş dönüşüm ──
+  if(tpl==='before_after') return `
+    <div style="position:absolute;inset:0;background:#F2F2F0;"></div>
+    <div style="position:absolute;top:0;left:0;width:50%;bottom:0;background:#1C1C1C;z-index:1;"></div>
+    <div style="position:absolute;top:0;left:50%;width:50%;bottom:0;background:#F2F2F0;z-index:1;"></div>
+    ${bg?`<div style="position:absolute;top:0;left:0;width:50%;bottom:0;background:url(${bg}) center/cover no-repeat;filter:grayscale(100%) brightness(.5);z-index:2;"></div><div style="position:absolute;top:0;left:50%;width:50%;bottom:0;background:url(${bg}) center/cover no-repeat;filter:saturate(1.3);z-index:2;"></div>`:''}
+    <div style="position:absolute;top:0;left:calc(50% - 1.5px);width:3px;bottom:0;background:${accent};z-index:4;"></div>
+    ${trtLogo(true)}
+    <div style="position:absolute;bottom:0;left:0;right:0;padding:${isPt?'4% 5% 5%':'3% 5% 4%'};z-index:5;background:linear-gradient(to top,rgba(28,28,28,.95) 0%,rgba(28,28,28,.7) 60%,transparent 100%);">
+      <div style="font-family:Oswald,sans-serif;font-size:clamp(.82rem,${isPt?'5.2vw':isWeb?'3vw':'3.8vw'},2.4rem);font-weight:700;line-height:.95;color:#fff;text-transform:uppercase;">${S.hl||''}</div>
+      ${S.sub?`<div style="margin-top:clamp(5px,1.2vw,10px);font-family:Manrope,sans-serif;font-size:clamp(.44rem,1.1vw,.66rem);font-weight:400;color:rgba(255,255,255,.6);line-height:1.4;">${S.sub}</div>`:''}
+    </div>
+    <div style="position:absolute;top:${isPt?'14%':'12%'};left:5%;z-index:5;font-family:Manrope,sans-serif;font-size:clamp(.26rem,.65vw,.38rem);font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.5);">ДО</div>
+    <div style="position:absolute;top:${isPt?'14%':'12%'};right:5%;z-index:5;font-family:Manrope,sans-serif;font-size:clamp(.26rem,.65vw,.38rem);font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(28,28,28,.5);">ПОСЛЕ</div>`;
+
+  // ── negative_space: boşluk baskın, konu küçük ──
+  if(tpl==='negative_space'){
+    const nsBg = S._builtScheme==='light'?'#F2F2F0':'#1C1C1C';
+    const nsFg = nsBg==='#F2F2F0'?'#1C1C1C':'#F2F2F0';
+    const nsLogo = nsBg!=='#F2F2F0';
+    return `
+    <div style="position:absolute;inset:0;background:${nsBg};"></div>
+    ${trtLogo(nsLogo)}
+    ${bg?`<div style="position:absolute;top:35%;left:38%;width:24%;height:30%;background:url(${bg}) center/cover no-repeat;border-radius:2px;z-index:1;"></div>`
+      :`<div style="position:absolute;top:40%;left:42%;width:16%;height:20%;background:${accent};opacity:.15;border-radius:50%;z-index:1;"></div>`}
+    <div style="position:absolute;bottom:${isPt?'8%':'7%'};left:5%;right:50%;z-index:2;">
+      ${getDisplayCat()?`<div style="font-family:Manrope,sans-serif;font-size:clamp(.26rem,.65vw,.38rem);font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:${accent};margin-bottom:clamp(3px,.7vw,6px);">${getDisplayCat()}</div>`:''}
+      <div style="font-family:Manrope,sans-serif;font-size:clamp(.62rem,${isPt?'3.5vw':isWeb?'1.8vw':'2.4vw'},1.4rem);font-weight:700;line-height:1.2;color:${nsFg};">${S.hl||''}</div>
+    </div>`;
+  }
 
   // feature (fallback)
   return `
@@ -2516,6 +2646,22 @@ const ALL_TEMPLATES = [
   {tpl:'illus_bottom',    scheme:'gold',  label:'Текст + иллюстр. крем'},
   {tpl:'photo_text_top',  scheme:'light', label:'Текст верх + фото низ'},
   {tpl:'photo_text_top',  scheme:'navy',  label:'Текст верх + фото (синий)'},
+  // Yeni yapısal şablonlar
+  {tpl:'duotone',         scheme:'red',   label:'Дуотон красный'},
+  {tpl:'duotone',         scheme:'navy',  label:'Дуотон синий'},
+  {tpl:'duotone',         scheme:'teal',  label:'Дуотон бирюза'},
+  {tpl:'data_headline',   scheme:'light', label:'Цифра крупная'},
+  {tpl:'data_headline',   scheme:'navy',  label:'Цифра синяя'},
+  {tpl:'word_stack',      scheme:'light', label:'Стопка слов'},
+  {tpl:'word_stack',      scheme:'red',   label:'Стопка слов красн.'},
+  {tpl:'redacted',        scheme:'light', label:'Засекречено'},
+  {tpl:'redacted',        scheme:'gold',  label:'Засекречено крем'},
+  {tpl:'scale_contrast',  scheme:'dark',  label:'Масштаб контраст'},
+  {tpl:'scale_contrast',  scheme:'red',   label:'Масштаб красный'},
+  {tpl:'before_after',    scheme:'dark',  label:'До / После'},
+  {tpl:'before_after',    scheme:'red',   label:'До / После красн.'},
+  {tpl:'negative_space',  scheme:'dark',  label:'Пустота тёмная'},
+  {tpl:'negative_space',  scheme:'light', label:'Пустота светлая'},
 ];
 
 // Her analizde farklı 20 şablon — kategori ve aciliyete göre akıllı seçim
@@ -2528,11 +2674,11 @@ function _buildRotatedTemplates(category, urgency, aiTpl){
 
   // Kategori bazlı öncelik grupları
   let priority = [];
-  if(isBreaking) priority = ALL_TEMPLATES.filter(t => ['insider','trt_breaking','collage_dark','dark_minimal','photo_overlay','photo_text_top'].includes(t.tpl));
-  else if(isDiplomacy) priority = ALL_TEMPLATES.filter(t => ['letter_envelope','invitation','pure_typography','split','photo_text_top','dark_minimal'].includes(t.tpl));
-  else if(isEconomy)   priority = ALL_TEMPLATES.filter(t => ['color_block','map_visual','typographic','geometric','illus_bottom','split'].includes(t.tpl));
-  else if(isMilitary)  priority = ALL_TEMPLATES.filter(t => ['collage_dark','insider','dark_minimal','photo_overlay','trt_breaking','photo_text_top'].includes(t.tpl));
-  else priority = ALL_TEMPLATES.filter(t => ['photo_text_top','illus_bottom','letter_envelope','pure_typography','split'].includes(t.tpl));
+  if(isBreaking) priority = ALL_TEMPLATES.filter(t => ['insider','trt_breaking','collage_dark','dark_minimal','photo_overlay','photo_text_top','duotone','scale_contrast'].includes(t.tpl));
+  else if(isDiplomacy) priority = ALL_TEMPLATES.filter(t => ['letter_envelope','invitation','pure_typography','split','photo_text_top','dark_minimal','negative_space','before_after'].includes(t.tpl));
+  else if(isEconomy)   priority = ALL_TEMPLATES.filter(t => ['data_headline','color_block','map_visual','typographic','geometric','illus_bottom','split','word_stack'].includes(t.tpl));
+  else if(isMilitary)  priority = ALL_TEMPLATES.filter(t => ['collage_dark','insider','dark_minimal','photo_overlay','trt_breaking','duotone','redacted','scale_contrast'].includes(t.tpl));
+  else priority = ALL_TEMPLATES.filter(t => ['photo_text_top','illus_bottom','letter_envelope','pure_typography','split','word_stack','negative_space'].includes(t.tpl));
 
   // AI'ın seçtiği template önce gelsin
   let rest = ALL_TEMPLATES.filter(t => !priority.find(p => p.tpl===t.tpl && p.scheme===t.scheme));
@@ -2837,7 +2983,7 @@ function _scoreAlt(d, stratName, tpl){
   total += ei;
   if(ei>15) reasons.push('güçlü metafor');
   // Thumbnail gücü
-  const thumbTpls = ['typographic','ec_big_number','brutalist','dark_magazine','red_breaking'];
+  const thumbTpls = ['typographic','ec_big_number','brutalist','dark_magazine','red_breaking','data_headline','word_stack','redacted','duotone','negative_space'];
   const tg = thumbTpls.includes(tpl) ? 18 : 12;
   total += tg;
   if(tg>15) reasons.push('thumbnail odaklı şablon');
